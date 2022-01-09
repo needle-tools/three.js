@@ -41,6 +41,7 @@ class WebXRManager extends EventDispatcher {
 		let newRenderTarget = null;
 
 		const controllers = [];
+		const inputSources = [];
 		const inputSourcesMap = new Map();
 
 		//
@@ -135,6 +136,12 @@ class WebXRManager extends EventDispatcher {
 				controller.disconnect( inputSource );
 
 			} );
+
+			for ( let i = 0; i < inputSources.length; i ++ ) {
+
+				inputSources[ i ] = null;
+
+			}
 
 			inputSourcesMap.clear();
 
@@ -325,22 +332,14 @@ class WebXRManager extends EventDispatcher {
 
 		function onInputSourcesChange( event ) {
 
-			const inputSources = session.inputSources;
-
-			// Assign inputSources to available controllers
-
-			for ( let i = 0; i < controllers.length; i ++ ) {
-
-				inputSourcesMap.set( inputSources[ i ], controllers[ i ] );
-
-			}
-
 			// Notify disconnected
 
 			for ( let i = 0; i < event.removed.length; i ++ ) {
 
 				const inputSource = event.removed[ i ];
 				const controller = inputSourcesMap.get( inputSource );
+				const index = inputSources.indexOf( inputSource );
+				if ( index >= 0 ) inputSources[ index ] = null;
 
 				if ( controller ) {
 
@@ -356,6 +355,31 @@ class WebXRManager extends EventDispatcher {
 			for ( let i = 0; i < event.added.length; i ++ ) {
 
 				const inputSource = event.added[ i ];
+
+				// Assign input source to free controller
+
+				if ( ! inputSourcesMap.has( inputSource ) ) {
+
+					for ( let i = 0; i < controllers.length; i ++ ) {
+
+						if ( i >= inputSources.length ) {
+
+							inputSources.push( inputSource );
+							inputSourcesMap.set( inputSources[ i ], controllers[ i ] );
+							break;
+
+						} else if ( inputSources[ i ] === null ) {
+
+							inputSources[ i ] = inputSource;
+							inputSourcesMap.set( inputSources[ i ], controllers[ i ] );
+							break;
+
+						}
+
+					}
+
+				}
+
 				const controller = inputSourcesMap.get( inputSource );
 
 				if ( controller ) {
@@ -637,13 +661,11 @@ class WebXRManager extends EventDispatcher {
 
 			//
 
-			const inputSources = session.inputSources;
-
 			for ( let i = 0; i < controllers.length; i ++ ) {
 
 				const controller = controllers[ i ];
+				if ( i >= inputSources.length ) continue;
 				const inputSource = inputSources[ i ];
-
 				controller.update( inputSource, frame, referenceSpace );
 
 			}
