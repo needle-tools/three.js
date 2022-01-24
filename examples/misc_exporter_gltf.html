@@ -544,11 +544,11 @@
 				const gltfLoader = new GLTFLoader().setPath( 'models/gltf/' );
 				gltfLoader.setKTX2Loader( ktx2Loader );
 				gltfLoader.setMeshoptDecoder( MeshoptDecoder );
-				gltfLoader.load( 'coffeemat.glb', function ( gltf ) {
+				gltfLoader.load( 'coffeemat.etc1s.glb', function ( gltf ) {
 
-					// coffeemat.glb was produced from the source scene using gltfpack:
-					// gltfpack -i coffeemat/scene.gltf -o coffeemat.glb -cc -tc
-					// The resulting model uses EXT_meshopt_compression (for geometry) and KHR_texture_basisu (for texture compression using ETC1S/BasisLZ)
+					// coffeemat.etc1s.glb was produced from the source scene using gltf-transform:
+					// gltf-transform etc1s coffeemat/scene.gltf coffeemat.etc1s.glb
+					// The resulting model uses KHR_texture_basisu (for texture compression using ETC1S)
 
 					gltf.scene.position.x = 400;
 					gltf.scene.position.z = - 200;

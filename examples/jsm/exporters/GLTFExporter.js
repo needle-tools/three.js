@@ -697,6 +697,42 @@ class GLTFWriter {
 
 	}
 
+	buildReadableTexture( map ) {
+
+		const fullscreenQuadGeometry = new PlaneBufferGeometry( 2, 2, 1, 1 );
+		const fullscreenQuadMaterial = new ShaderMaterial( {
+			uniforms: { blitTexture: new Uniform( map ) },
+			vertexShader: `
+				varying vec2 vUv;
+				void main(){
+					vUv = uv;
+					gl_Position = vec4(position.xy * 1.0,0.,.999999);
+				}`,
+			fragmentShader: `
+				uniform sampler2D blitTexture; 
+				varying vec2 vUv;
+				void main(){ 
+					gl_FragColor = vec4(vUv.xy, 0, 1);
+					gl_FragColor = texture2D( blitTexture, vUv);
+				}`
+		} );
+
+		const fullscreenQuad = new Mesh( fullscreenQuadGeometry, fullscreenQuadMaterial );
+		fullscreenQuad.frustrumCulled = false;
+
+		const temporaryCam = new PerspectiveCamera();
+		const temporaryScene = new Scene();
+		temporaryScene.add( fullscreenQuad );
+
+		const temporaryRenderer = new WebGLRenderer( { antialias: false } );
+		temporaryRenderer.setSize( map.image.width, map.image.height );
+		temporaryRenderer.clear();
+		temporaryRenderer.render( temporaryScene, temporaryCam );
+
+		return new Texture( temporaryRenderer.domElement );
+
+	}
+
 	buildORMTexture( material ) {
 
 		const occlusion = material.aoMap?.image;
@@ -1205,36 +1241,7 @@ class GLTFWriter {
 		// WebGL: https://stackoverflow.com/a/46259029
 		if ( typeof CompressedTexture !== 'undefined' && map instanceof CompressedTexture ) {
 
-			const pg = new PlaneBufferGeometry( 2, 2, 1, 1 );
-			const m = new ShaderMaterial( {
-				uniforms: { blitTexture: new Uniform( map ) },
-				vertexShader: `
-					varying vec2 vUv;
-					void main(){
-						vUv = uv;
-						gl_Position = vec4(position.xy * 1.0,0.,.999999);
-					}`,
-				fragmentShader: `
-					uniform sampler2D blitTexture; 
-					varying vec2 vUv;
-					void main(){ 
-						gl_FragColor = vec4(vUv.xy, 0, 1);
-						gl_FragColor = texture2D( blitTexture, vUv);
-					}`
-			} );
-
-			const myProcess = new Mesh( pg, m );
-			myProcess.frustrumCulled = false;
-
-			const procCamera = new PerspectiveCamera();
-			const procScene = new Scene();
-			procScene.add( myProcess );
-			const renderer = new WebGLRenderer( { antialias: false } );
-			renderer.setSize( map.image.width, map.image.height );
-			renderer.clear();
-			renderer.render( procScene, procCamera );
-
-			modifiedMap = new Texture( renderer.domElement );
+			modifiedMap = this.buildReadableTexture( map );
 
 		}
 
