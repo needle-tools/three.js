@@ -20,6 +20,14 @@ import {
 	Scene,
 	Source,
 	sRGBEncoding,
+	Texture,
+	CompressedTexture,
+	PlaneGeometry,
+	ShaderMaterial,
+	Mesh,
+	PerspectiveCamera,
+	WebGLRenderer,
+	Uniform,
 	Vector3
 } from 'three';
 
@@ -141,6 +149,7 @@ const WEBGL_CONSTANTS = {
 	TRIANGLE_STRIP: 0x0005,
 	TRIANGLE_FAN: 0x0006,
 
+	BYTE: 0x1400,
 	UNSIGNED_BYTE: 0x1401,
 	UNSIGNED_SHORT: 0x1403,
 	FLOAT: 0x1406,
@@ -714,9 +723,47 @@ class GLTFWriter {
 
 	}
 
+	buildReadableTexture( map, maxTextureSize ) {
+
+		const fullscreenQuadGeometry = new PlaneGeometry( 2, 2, 1, 1 );
+		const fullscreenQuadMaterial = new ShaderMaterial( {
+			uniforms: { blitTexture: new Uniform( map ) },
+			vertexShader: `
+				varying vec2 vUv;
+				void main(){
+					vUv = uv;
+					gl_Position = vec4(position.xy * 1.0,0.,.999999);
+				}`,
+			fragmentShader: `
+				uniform sampler2D blitTexture; 
+				varying vec2 vUv;
+				void main(){ 
+					gl_FragColor = vec4(vUv.xy, 0, 1);
+					gl_FragColor = texture2D( blitTexture, vUv);
+				}`
+		} );
+
+		const fullscreenQuad = new Mesh( fullscreenQuadGeometry, fullscreenQuadMaterial );
+		fullscreenQuad.frustrumCulled = false;
+
+		const temporaryCam = new PerspectiveCamera();
+		const temporaryScene = new Scene();
+		temporaryScene.add( fullscreenQuad );
+
+		const temporaryRenderer = new WebGLRenderer( { antialias: false } );
+		temporaryRenderer.setSize( Math.min(map.image.width, maxTextureSize), Math.min(map.image.height, maxTextureSize) );
+		temporaryRenderer.clear();
+		temporaryRenderer.render( temporaryScene, temporaryCam );
+
+		return new Texture( temporaryRenderer.domElement );
+
+	}
+
 	buildMetalRoughTexture( metalnessMap, roughnessMap ) {
 
 		if ( metalnessMap === roughnessMap ) return metalnessMap;
+
+		// if ( occlusion === roughness && roughness === metalness ) return material.aoMap;
 
 		function getEncodingConversion( map ) {
 
@@ -839,7 +886,7 @@ class GLTFWriter {
 
 		let componentSize;
 
-		if ( componentType === WEBGL_CONSTANTS.UNSIGNED_BYTE ) {
+		if ( componentType === WEBGL_CONSTANTS.UNSIGNED_BYTE || componentType === WEBGL_CONSTANTS.BYTE ) {
 
 			componentSize = 1;
 
@@ -893,6 +940,10 @@ class GLTFWriter {
 				} else if ( componentType === WEBGL_CONSTANTS.UNSIGNED_BYTE ) {
 
 					dataView.setUint8( offset, value );
+
+				} else if ( componentType === WEBGL_CONSTANTS.BYTE ) {
+
+					dataView.setInt8( offset, value );
 
 				}
 
@@ -1011,9 +1062,13 @@ class GLTFWriter {
 
 			componentType = WEBGL_CONSTANTS.UNSIGNED_BYTE;
 
+		} else if ( attribute.array.constructor === Int8Array ) {
+
+			componentType = WEBGL_CONSTANTS.BYTE;
+
 		} else {
 
-			throw new Error( 'THREE.GLTFExporter: Unsupported bufferAttribute component type.' );
+			throw new Error( 'THREE.GLTFExporter: Unsupported bufferAttribute component type: ' + attribute.array.constructor );
 
 		}
 
@@ -1107,7 +1162,34 @@ class GLTFWriter {
 
 			if ( image.width > options.maxTextureSize || image.height > options.maxTextureSize ) {
 
-				console.warn( 'GLTFExporter: Image size is bigger than maxTextureSize', image );
+				ctx.drawImage( image, 0, 0, canvas.width, canvas.height );
+
+			} else {
+
+				if ( format !== RGBAFormat ) {
+
+					console.error( 'GLTFExporter: Only RGBAFormat is supported.', image );
+
+				}
+
+				if ( image.width > options.maxTextureSize || image.height > options.maxTextureSize ) {
+
+					console.warn( 'GLTFExporter: Image size is bigger than maxTextureSize', image );
+
+				}
+
+				const data = new Uint8ClampedArray( image.height * image.width * 4 );
+
+				for ( let i = 0; i < data.length; i += 4 ) {
+
+					data[ i + 0 ] = image.data[ i + 0 ];
+					data[ i + 1 ] = image.data[ i + 1 ];
+					data[ i + 2 ] = image.data[ i + 2 ];
+					data[ i + 3 ] = image.data[ i + 3 ];
+
+				}
+
+				ctx.putImageData( new ImageData( data, image.width, image.height ), 0, 0 );
 
 			}
 
@@ -1203,6 +1285,8 @@ class GLTFWriter {
 	 */
 	processTexture( map ) {
 
+		const writer = this;
+		const options = writer.options;
 		const cache = this.cache;
 		const json = this.json;
 
@@ -1210,20 +1294,32 @@ class GLTFWriter {
 
 		if ( ! json.textures ) json.textures = [];
 
-		let mimeType = map.userData.mimeType;
+
+		let modifiedMap = map;
+
+		// make non-readable textures (e.g. CompressedTexture) readable by blitting them into a new texture
+		// TODO: how to detect that a texture isn't readable?
+		if ( typeof CompressedTexture !== 'undefined' && map instanceof CompressedTexture ) {
+
+			modifiedMap = this.buildReadableTexture( map, options.maxTextureSize );
+			modifiedMap.userData.mimeType = 'image/png';
+
+		}
+		
+		let mimeType = modifiedMap.userData.mimeType;
 
 		if ( mimeType === 'image/webp' ) mimeType = 'image/png';
 
 		const textureDef = {
 			sampler: this.processSampler( map ),
-			source: this.processImage( map.image, map.format, map.flipY, mimeType )
+			source: this.processImage( modifiedMap.image, modifiedMap.format, modifiedMap.flipY, mimeType )
 		};
 
 		if ( map.name ) textureDef.name = map.name;
 
 		this._invokeAll( function ( ext ) {
 
-			ext.writeTexture && ext.writeTexture( map, textureDef );
+			ext.writeTexture && ext.writeTexture( modifiedMap, textureDef );
 
 		} );
 
