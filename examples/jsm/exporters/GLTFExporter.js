@@ -1237,8 +1237,8 @@ class GLTFWriter {
 
 		let modifiedMap = map;
 
-		// WIP: convert compressed images by blitting them into a new texture
-		// WebGL: https://stackoverflow.com/a/46259029
+		// make non-readable textures (e.g. CompressedTexture) readable by blitting them into a new texture
+		// TODO: how to detect that a texture isn't readable?
 		if ( typeof CompressedTexture !== 'undefined' && map instanceof CompressedTexture ) {
 
 			modifiedMap = this.buildReadableTexture( map );
