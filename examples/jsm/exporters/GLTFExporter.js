@@ -18,6 +18,13 @@ import {
 	RepeatWrapping,
 	Scene,
 	Texture,
+	CompressedTexture,
+	PlaneBufferGeometry,
+	ShaderMaterial,
+	Mesh,
+	PerspectiveCamera,
+	WebGLRenderer,
+	Uniform,
 	Vector3
 } from 'three';
 
@@ -148,6 +155,7 @@ const WEBGL_CONSTANTS = {
 	TRIANGLE_STRIP: 0x0005,
 	TRIANGLE_FAN: 0x0006,
 
+	BYTE: 0x1400,
 	UNSIGNED_BYTE: 0x1401,
 	UNSIGNED_SHORT: 0x1403,
 	FLOAT: 0x1406,
@@ -800,7 +808,7 @@ class GLTFWriter {
 
 		let componentSize;
 
-		if ( componentType === WEBGL_CONSTANTS.UNSIGNED_BYTE ) {
+		if ( componentType === WEBGL_CONSTANTS.UNSIGNED_BYTE || componentType === WEBGL_CONSTANTS.BYTE ) {
 
 			componentSize = 1;
 
@@ -854,6 +862,10 @@ class GLTFWriter {
 				} else if ( componentType === WEBGL_CONSTANTS.UNSIGNED_BYTE ) {
 
 					dataView.setUint8( offset, value );
+
+				} else if ( componentType === WEBGL_CONSTANTS.BYTE ) {
+
+					dataView.setInt8( offset, value );
 
 				}
 
@@ -972,6 +984,10 @@ class GLTFWriter {
 		} else if ( attribute.array.constructor === Uint8Array ) {
 
 			componentType = WEBGL_CONSTANTS.UNSIGNED_BYTE;
+
+		} else if ( attribute.array.constructor === Int8Array ) {
+
+			componentType = WEBGL_CONSTANTS.BYTE;
 
 		} else {
 
@@ -1182,9 +1198,49 @@ class GLTFWriter {
 
 		if ( ! json.textures ) json.textures = [];
 
+
+		let modifiedMap = map;
+
+		// WIP: convert compressed images by blitting them into a new texture
+		// WebGL: https://stackoverflow.com/a/46259029
+		if ( typeof CompressedTexture !== 'undefined' && map instanceof CompressedTexture ) {
+
+			const pg = new PlaneBufferGeometry( 2, 2, 1, 1 );
+			const m = new ShaderMaterial( {
+				uniforms: { blitTexture: new Uniform( map ) },
+				vertexShader: `
+					varying vec2 vUv;
+					void main(){
+						vUv = uv;
+						gl_Position = vec4(position.xy * 1.0,0.,.999999);
+					}`,
+				fragmentShader: `
+					uniform sampler2D blitTexture; 
+					varying vec2 vUv;
+					void main(){ 
+						gl_FragColor = vec4(vUv.xy, 0, 1);
+						gl_FragColor = texture2D( blitTexture, vUv);
+					}`
+			} );
+
+			const myProcess = new Mesh( pg, m );
+			myProcess.frustrumCulled = false;
+
+			const procCamera = new PerspectiveCamera();
+			const procScene = new Scene();
+			procScene.add( myProcess );
+			const renderer = new WebGLRenderer( { antialias: false } );
+			renderer.setSize( map.image.width, map.image.height );
+			renderer.clear();
+			renderer.render( procScene, procCamera );
+
+			modifiedMap = new Texture( renderer.domElement );
+
+		}
+
 		const textureDef = {
 			sampler: this.processSampler( map ),
-			source: this.processImage( map.image, map.format, map.flipY )
+			source: this.processImage( modifiedMap.image, modifiedMap.format, modifiedMap.flipY )
 		};
 
 		if ( map.name ) textureDef.name = map.name;
