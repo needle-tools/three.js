@@ -695,7 +695,7 @@ class GLTFWriter {
 		const roughness = material.roughnessMap?.image;
 		const metalness = material.metalnessMap?.image;
 
-		if ( occlusion === roughness && roughness === metalness ) return occlusion;
+		if ( occlusion === roughness && roughness === metalness ) return material.aoMap;
 
 		if ( occlusion || roughness || metalness ) {
 
@@ -975,7 +975,7 @@ class GLTFWriter {
 
 		} else {
 
-			throw new Error( 'THREE.GLTFExporter: Unsupported bufferAttribute component type.' );
+			throw new Error( 'THREE.GLTFExporter: Unsupported bufferAttribute component type: ' + attribute.array.constructor );
 
 		}
 
@@ -1051,7 +1051,7 @@ class GLTFWriter {
 
 		const cachedImages = cache.images.get( image );
 		const mimeType = format === RGBAFormat ? 'image/png' : 'image/jpeg';
-		const key = mimeType + ':flipY/' + flipY.toString();
+		const key = mimeType + ':flipY/' + ( flipY || false ).toString();
 
 		if ( cachedImages[ key ] !== undefined ) return cachedImages[ key ];
 
@@ -1086,7 +1086,7 @@ class GLTFWriter {
 
 				if ( format !== RGBAFormat ) {
 
-					console.error( 'GLTFExporter: Only RGBAFormat is supported.' );
+					console.error( 'GLTFExporter: Only RGBAFormat is supported.', image );
 
 				}
 
