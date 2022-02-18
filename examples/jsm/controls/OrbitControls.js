@@ -171,7 +171,7 @@ class OrbitControls extends EventDispatcher {
 
 			return function update() {
 
-				const position = scope.object.position;
+				const position = scope.object.getWorldPosition( object.position );
 
 				offset.copy( position ).sub( scope.target );
 
@@ -253,6 +253,7 @@ class OrbitControls extends EventDispatcher {
 				offset.applyQuaternion( quatInverse );
 
 				position.copy( scope.target ).add( offset );
+				scope.object.parent ? scope.object.parent.worldToLocal( position ) : scope.object.position.copy( position )
 
 				scope.object.lookAt( scope.target );
 
@@ -435,6 +436,7 @@ class OrbitControls extends EventDispatcher {
 		const pan = function () {
 
 			const offset = new Vector3();
+			const position = new Vector3();
 
 			return function pan( deltaX, deltaY ) {
 
@@ -443,7 +445,7 @@ class OrbitControls extends EventDispatcher {
 				if ( scope.object.isPerspectiveCamera ) {
 
 					// perspective
-					const position = scope.object.position;
+					scope.object.getWorldPosition( position );
 					offset.copy( position ).sub( scope.target );
 					let targetDistance = offset.length();
 
@@ -451,14 +453,14 @@ class OrbitControls extends EventDispatcher {
 					targetDistance *= Math.tan( ( scope.object.fov / 2 ) * Math.PI / 180.0 );
 
 					// we use only clientHeight here so aspect ratio does not distort speed
-					panLeft( 2 * deltaX * targetDistance / element.clientHeight, scope.object.matrix );
-					panUp( 2 * deltaY * targetDistance / element.clientHeight, scope.object.matrix );
+					panLeft( 2 * deltaX * targetDistance / element.clientHeight, scope.object.matrixWorld );
+					panUp( 2 * deltaY * targetDistance / element.clientHeight, scope.object.matrixWorld );
 
 				} else if ( scope.object.isOrthographicCamera ) {
 
 					// orthographic
-					panLeft( deltaX * ( scope.object.right - scope.object.left ) / scope.object.zoom / element.clientWidth, scope.object.matrix );
-					panUp( deltaY * ( scope.object.top - scope.object.bottom ) / scope.object.zoom / element.clientHeight, scope.object.matrix );
+					panLeft( deltaX * ( scope.object.right - scope.object.left ) / scope.object.zoom / element.clientWidth, scope.object.matrixWorld );
+					panUp( deltaY * ( scope.object.top - scope.object.bottom ) / scope.object.zoom / element.clientHeight, scope.object.matrixWorld );
 
 				} else {
 
