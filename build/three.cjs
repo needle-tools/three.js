@@ -17962,7 +17962,10 @@ function WebGLUtils(gl, extensions, capabilities) {
 			} else {
 				return null;
 			}
-		}
+		} // if "p" can't be resolved, assume the user defines a WebGL constant as a string (fallback/workaround for packed RGB formats)
+
+
+		return gl[p] !== undefined ? gl[p] : null;
 	}
 
 	return {
@@ -18250,6 +18253,7 @@ class WebXRManager extends EventDispatcher {
 		let initialRenderTarget = null;
 		let newRenderTarget = null;
 		const controllers = [];
+		const inputSources = [];
 		const inputSourcesMap = new Map(); //
 
 		const cameraL = new PerspectiveCamera();
@@ -18318,6 +18322,11 @@ class WebXRManager extends EventDispatcher {
 			inputSourcesMap.forEach(function (controller, inputSource) {
 				controller.disconnect(inputSource);
 			});
+
+			for (let i = 0; i < inputSources.length; i++) {
+				inputSources[i] = null;
+			}
+
 			inputSourcesMap.clear();
 			_currentDepthNear = null;
 			_currentDepthFar = null; // restore framebuffer/rendering state
@@ -18455,16 +18464,12 @@ class WebXRManager extends EventDispatcher {
 		};
 
 		function onInputSourcesChange(event) {
-			const inputSources = session.inputSources; // Assign inputSources to available controllers
-
-			for (let i = 0; i < controllers.length; i++) {
-				inputSourcesMap.set(inputSources[i], controllers[i]);
-			} // Notify disconnected
-
-
+			// Notify disconnected
 			for (let i = 0; i < event.removed.length; i++) {
 				const inputSource = event.removed[i];
 				const controller = inputSourcesMap.get(inputSource);
+				const index = inputSources.indexOf(inputSource);
+				if (index >= 0) inputSources[index] = null;
 
 				if (controller) {
 					controller.dispatchEvent({
@@ -18477,7 +18482,22 @@ class WebXRManager extends EventDispatcher {
 
 
 			for (let i = 0; i < event.added.length; i++) {
-				const inputSource = event.added[i];
+				const inputSource = event.added[i]; // Assign input source to free controller
+
+				if (!inputSourcesMap.has(inputSource)) {
+					for (let i = 0; i < controllers.length; i++) {
+						if (i >= inputSources.length) {
+							inputSources.push(inputSource);
+							inputSourcesMap.set(inputSources[i], controllers[i]);
+							break;
+						} else if (inputSources[i] === null) {
+							inputSources[i] = inputSource;
+							inputSourcesMap.set(inputSources[i], controllers[i]);
+							break;
+						}
+					}
+				}
+
 				const controller = inputSourcesMap.get(inputSource);
 
 				if (controller) {
@@ -18675,10 +18695,9 @@ class WebXRManager extends EventDispatcher {
 			} //
 
 
-			const inputSources = session.inputSources;
-
 			for (let i = 0; i < controllers.length; i++) {
 				const controller = controllers[i];
+				if (i >= inputSources.length) continue;
 				const inputSource = inputSources[i];
 				controller.update(inputSource, frame, referenceSpace);
 			}
@@ -33898,15 +33917,15 @@ class PointLightHelper extends Mesh {
 		// TODO: delete this comment?
 		const distanceGeometry = new THREE.IcosahedronGeometry( 1, 2 );
 		const distanceMaterial = new THREE.MeshBasicMaterial( { color: hexColor, fog: false, wireframe: true, opacity: 0.1, transparent: true } );
-		this.lightSphere = new THREE.Mesh( bulbGeometry, bulbMaterial );
+			this.lightSphere = new THREE.Mesh( bulbGeometry, bulbMaterial );
 		this.lightDistance = new THREE.Mesh( distanceGeometry, distanceMaterial );
-		const d = light.distance;
-		if ( d === 0.0 ) {
-			this.lightDistance.visible = false;
-		} else {
-			this.lightDistance.scale.set( d, d, d );
-		}
-		this.add( this.lightDistance );
+			const d = light.distance;
+			if ( d === 0.0 ) {
+				this.lightDistance.visible = false;
+			} else {
+				this.lightDistance.scale.set( d, d, d );
+			}
+			this.add( this.lightDistance );
 		*/
 	}
 
@@ -33923,12 +33942,12 @@ class PointLightHelper extends Mesh {
 		}
 		/*
 		const d = this.light.distance;
-			if ( d === 0.0 ) {
-				this.lightDistance.visible = false;
-			} else {
-				this.lightDistance.visible = true;
+				if ( d === 0.0 ) {
+					this.lightDistance.visible = false;
+				} else {
+					this.lightDistance.visible = true;
 			this.lightDistance.scale.set( d, d, d );
-			}
+				}
 		*/
 
 	}
@@ -34327,7 +34346,7 @@ class BoxHelper extends LineSegments {
 		1/___0/|
 		| 6__|_7
 		2/___3/
-			0: max.x, max.y, max.z
+				0: max.x, max.y, max.z
 		1: min.x, max.y, max.z
 		2: min.x, min.y, max.z
 		3: max.x, min.y, max.z
