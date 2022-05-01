@@ -43,6 +43,7 @@ class WebXRManager extends EventDispatcher {
 
 		const controllers = [];
 		const inputSourcesMap = new Map();
+		const controllerInputSources = [];
 
 		//
 
@@ -138,6 +139,7 @@ class WebXRManager extends EventDispatcher {
 			} );
 
 			inputSourcesMap.clear();
+			controllerInputSources.length = 0;
 
 			_currentDepthNear = null;
 			_currentDepthFar = null;
@@ -332,23 +334,14 @@ class WebXRManager extends EventDispatcher {
 
 		function onInputSourcesChange( event ) {
 
-			const inputSources = session.inputSources;
-
-			// Assign controllers to available inputSources
-
-			for ( let i = 0; i < inputSources.length; i ++ ) {
-
-				const index = inputSources[ i ].handedness === 'right' ? 1 : 0;
-				inputSourcesMap.set( inputSources[ i ], controllers[ index ] );
-
-			}
-
 			// Notify disconnected
 
 			for ( let i = 0; i < event.removed.length; i ++ ) {
 
 				const inputSource = event.removed[ i ];
 				const controller = inputSourcesMap.get( inputSource );
+				const index = controllerInputSources.indexOf( inputSource );
+				if ( index >= 0 ) controllerInputSources[ index ] = null;
 
 				if ( controller ) {
 
@@ -364,6 +357,31 @@ class WebXRManager extends EventDispatcher {
 			for ( let i = 0; i < event.added.length; i ++ ) {
 
 				const inputSource = event.added[ i ];
+
+				if ( ! inputSourcesMap.has( inputSource ) ) {
+
+					// Assign input source a controller that currently has no input source
+
+					for ( let i = 0; i < controllers.length; i ++ ) {
+						
+						if ( i >= controllerInputSources.length ) {
+
+							controllerInputSources.push( inputSource );
+							inputSourcesMap.set( controllerInputSources[ i ], controllers[ i ] );
+							break;
+
+						} else if ( controllerInputSources[ i ] === null ) {
+
+							controllerInputSources[ i ] = inputSource;
+							inputSourcesMap.set( controllerInputSources[ i ], controllers[ i ] );
+							break;
+
+						}
+
+					}
+
+				}
+
 				const controller = inputSourcesMap.get( inputSource );
 
 				if ( controller ) {
@@ -649,6 +667,7 @@ class WebXRManager extends EventDispatcher {
 
 			for ( let i = 0; i < controllers.length; i ++ ) {
 
+				if ( i >= controllerInputSources.length ) continue;
 				const inputSource = inputSources[ i ];
 				const controller = inputSourcesMap.get( inputSource );
 
