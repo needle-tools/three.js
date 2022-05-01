@@ -42,7 +42,6 @@ class WebXRManager extends EventDispatcher {
 		let newRenderTarget = null;
 
 		const controllers = [];
-		const inputSourcesMap = new Map();
 		const controllerInputSources = [];
 
 		//
@@ -120,7 +119,15 @@ class WebXRManager extends EventDispatcher {
 
 		function onSessionEvent( event ) {
 
-			const controller = inputSourcesMap.get( event.inputSource );
+			const controllerIndex = controllerInputSources.indexOf( event.inputSource );
+
+			if(controllerIndex === -1) {
+
+				return;
+
+			}
+
+			const controller = controllers[ controllerIndex ];
 
 			if ( controller !== undefined ) {
 
@@ -141,18 +148,15 @@ class WebXRManager extends EventDispatcher {
 			session.removeEventListener( 'end', onSessionEnd );
 			session.removeEventListener( 'inputsourceschange', onInputSourcesChange );
 
-			inputSourcesMap.forEach( function ( controller, inputSource ) {
+			for( let i = 0; i < controllers.length; i ++ ) {
 
-				if ( controller !== undefined ) {
+				const inputSource = controllerInputSources[ i ];
 
-					controller.disconnect( inputSource );
+				if( !inputSource ) continue;
 
-				}
+				controllers[i].disconnect( inputSource );
 
-			} );
-
-			inputSourcesMap.clear();
-			controllerInputSources.length = 0;
+			}
 
 			_currentDepthNear = null;
 			_currentDepthFar = null;
@@ -353,14 +357,12 @@ class WebXRManager extends EventDispatcher {
 			for ( let i = 0; i < event.removed.length; i ++ ) {
 
 				const inputSource = event.removed[ i ];
-				const controller = inputSourcesMap.get( inputSource );
 				const index = controllerInputSources.indexOf( inputSource );
-				if ( index >= 0 ) controllerInputSources[ index ] = null;
+				
+				if ( index >= 0 ) {
 
-				if ( controller ) {
-
-					controller.dispatchEvent( { type: 'disconnected', data: inputSource } );
-					inputSourcesMap.delete( inputSource );
+					controllerInputSources[ index ] = null;
+					controllers[ index ].dispatchEvent( { type: 'disconnected', data: inputSource } );
 
 				}
 
@@ -371,8 +373,10 @@ class WebXRManager extends EventDispatcher {
 			for ( let i = 0; i < event.added.length; i ++ ) {
 
 				const inputSource = event.added[ i ];
+				
+				let controllerIndex = controllerInputSources.indexOf( inputSource );
 
-				if ( ! inputSourcesMap.has( inputSource ) ) {
+				if ( controllerIndex < 0 ) {
 
 					// Assign input source a controller that currently has no input source
 
@@ -381,22 +385,26 @@ class WebXRManager extends EventDispatcher {
 						if ( i >= controllerInputSources.length ) {
 
 							controllerInputSources.push( inputSource );
-							inputSourcesMap.set( controllerInputSources[ i ], controllers[ i ] );
+							controllerIndex = i;
 							break;
 
 						} else if ( controllerInputSources[ i ] === null ) {
 
 							controllerInputSources[ i ] = inputSource;
-							inputSourcesMap.set( controllerInputSources[ i ], controllers[ i ] );
+							controllerIndex = i;
 							break;
 
 						}
 
 					}
 
+					// If all controllers do currently receive input we ignore new ones
+
+					if( controllerIndex < 0 ) break;
+
 				}
 
-				const controller = inputSourcesMap.get( inputSource );
+				const controller = controllers[ controllerIndex ];
 
 				if ( controller ) {
 
@@ -686,15 +694,12 @@ class WebXRManager extends EventDispatcher {
 
 			//
 
-			const inputSources = session.inputSources;
-
 			for ( let i = 0; i < controllers.length; i ++ ) {
 
-				if ( i >= controllerInputSources.length ) continue;
-				const inputSource = inputSources[ i ];
-				const controller = inputSourcesMap.get( inputSource );
+				const inputSource = controllerInputSources[ i ];
+				const controller = controllers[ i ]
 
-				if ( controller !== undefined ) {
+				if ( inputSource !== null && controller !== undefined ) {
 
 					controller.update( inputSource, frame, customReferenceSpace || referenceSpace );
 
