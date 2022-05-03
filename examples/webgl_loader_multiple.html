@@ -76,19 +76,21 @@
 					.load( 'quarry_01_1k.hdr', function ( texture ) {
 
 						texture.mapping = THREE.EquirectangularReflectionMapping;
+						texture.generateMipmaps = true;
+						texture.minFilter = THREE.LinearMipmapLinearFilter;
 
 						scene.environment = texture;
 
 						// TODO can the PMREM from scene.environment be reused?
 						let pmremGenerator = new THREE.PMREMGenerator( renderer );
 						let rt = pmremGenerator.fromEquirectangular( texture );
-						scene.background = rt.texture;
+						scene.background = texture;
 
 						// Workaround: can we get a specific mip level from the PMREMGenerator as new texture?
 						// Patch envmap_fragment.glsl.js to load background mip level
 						THREE.ShaderChunk.envmap_fragment = THREE.ShaderChunk.envmap_fragment.replace(
-							`vec4 envColor = textureCubeUV( envMap, reflectVec, 0.0 );`,
-							`vec4 envColor = textureCubeUV( envMap, reflectVec, 1.0 );`
+							`vec4 envColor = textureCube( envMap, vec3( flipEnvMap * reflectVec.x, reflectVec.yz ) );`,
+							`vec4 envColor = textureCubeLodEXT( envMap, vec3( flipEnvMap * reflectVec.x, reflectVec.yz ), 0.7 * 8.0 );`
 						);
 
 						animate();
