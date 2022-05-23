@@ -6,6 +6,7 @@ import {
 	BufferGeometry,
 	ClampToEdgeWrapping,
 	Color,
+	ColorKeyframeTrack,
 	DirectionalLight,
 	DoubleSide,
 	FileLoader,
@@ -2105,10 +2106,92 @@ const ATTRIBUTES = {
 };
 
 const PATH_PROPERTIES = {
+	position: 'position',
 	scale: 'scale',
 	translation: 'position',
 	rotation: 'quaternion',
 	weights: 'morphTargetInfluences'
+};
+
+// TODO move to extension
+const KHR_ANIMATION_POINTER_NAME = 'KHR_animation_pointer';
+const debug = false;
+
+const TARGET_TYPE = {
+	node: 'node',
+	material: 'material',
+	light: 'light',
+};
+
+// HACK monkey patching findNode to ensure we can map to other types required by KHR_animation_pointer.
+const find = PropertyBinding.findNode;
+// "node" is the Animator component in our case
+// "path" is the animated property path, just with translated material names.
+PropertyBinding.findNode = ( node, path ) => {
+
+	if ( path.startsWith( '.materials.' ) ) {
+
+		if ( debug ) console.log( 'FIND', path );
+		const remainingPath = path.substring( '.materials.'.length ).substring( path.indexOf( '.' ) );
+		const nextIndex = remainingPath.indexOf( '.' );
+		const uuid = nextIndex < 0 ? remainingPath : remainingPath.substring( 0, nextIndex );
+		if ( debug ) console.log( remainingPath, uuid );
+		let res = null;
+		node.traverse( x => {
+
+			if ( res !== null || x.type !== 'Mesh' ) return;
+			if ( x[ 'material' ]?.uuid === uuid ) {
+
+				res = x[ 'material' ];
+				if ( debug ) console.log( res, remainingPath );
+				if ( res !== null ) {
+
+					if ( remainingPath.endsWith( '.map' ) )
+						res = res[ 'map' ];
+					else if ( remainingPath.endsWith( '.emissiveMap' ) )
+						res = res[ 'emissiveMap' ];
+
+				}
+
+			}
+
+		} );
+		return res;
+
+	} else if ( path.startsWith( '.nodes.' ) ) {
+
+		const sections = path.split( '.' );
+		let currentTarget = undefined;
+		for ( let i = 1; i < sections.length; i ++ ) {
+
+			const val = sections[ i ];
+			const isUUID = val.length == 36;
+			if ( isUUID ) {
+
+				currentTarget = node.getObjectByProperty( 'uuid', val );
+
+			} else if ( currentTarget && currentTarget[ val ] ) {
+
+				const index = Number.parseInt( val );
+				let key = val;
+				if ( index >= 0 ) key = index;
+				currentTarget = currentTarget[ key ];
+				if ( debug )
+					console.log( currentTarget );
+
+			}
+
+		}
+
+		if ( debug )
+			console.log( 'NODE', path, currentTarget );
+		return currentTarget;
+
+	}
+
+	// console.trace(node);
+	return find( node, path );
+
 };
 
 const INTERPOLATION = {
@@ -3771,6 +3854,179 @@ class GLTFParser {
 
 	}
 
+	tryResolveNodeId( path, type ) {
+
+		let name = '';
+		if ( type === 'node' ) {
+
+			name = path.substring( '/nodes/'.length );
+
+		} else if ( type === 'material' ) {
+
+			name = path.substring( '/materials/'.length );
+
+		}
+
+		name = name.substring( 0, name.indexOf( '/' ) );
+		const index = Number.parseInt( name );
+		return index;
+
+	}
+
+	getAnimationPointerDependency( target ) {
+
+		let targetProperty = undefined;
+
+		// check if this is a extension animation
+		let type = TARGET_TYPE.node;
+		let targetId = undefined;
+
+		const useExtension = target.extensions && target.extensions[ KHR_ANIMATION_POINTER_NAME ];
+		if ( useExtension ) {
+
+			const ext = target.extensions[ KHR_ANIMATION_POINTER_NAME ];
+			let path = ext.path;
+			if ( debug )
+				console.log( 'Original path: ' + path );
+
+			if ( ! path ) {
+
+				console.warn( 'Invalid path', ext, target );
+				return;
+
+			}
+
+			if ( path.startsWith( '/materials/' ) )
+				type = TARGET_TYPE.material;
+
+			if ( path.startsWith( '/extensions/KHR_lights_punctual/lights/' ) )
+				type = TARGET_TYPE.light;
+
+			targetId = this.tryResolveNodeId( path, type );
+			if ( targetId === null ) {
+
+				console.warn( 'Failed resolving animation node id: ' + targetId, path );
+				return;
+
+			}
+
+			// TODO could be parsed better
+
+			switch ( type ) {
+
+				case TARGET_TYPE.material:
+					const pathIndex = ( '/materials/' + targetId.toString() + '/' ).length;
+					const pathStart = path.substring( 0, pathIndex );
+					targetProperty = path.substring( pathIndex );
+					switch ( targetProperty ) {
+
+						case 'baseColorFactor':
+							targetProperty = 'color';
+							break;
+						case 'roughnessFactor':
+							targetProperty = 'roughness';
+							break;
+						case 'metallicFactor':
+							targetProperty = 'metalness';
+							break;
+						case 'emissiveFactor':
+							targetProperty = 'emissive';
+							break;
+						case 'extensions/KHR_materials_emissive_strength/emissiveStrength':
+							targetProperty = 'emissiveIntensity';
+							break;
+						case 'baseColorTexture/extensions/KHR_texture_transform/scale':
+							targetProperty = 'map/repeat';
+							break;
+						case 'baseColorTexture/extensions/KHR_texture_transform/offset':
+							targetProperty = 'map/offset';
+							break;
+						case 'emissiveTexture/extensions/KHR_texture_transform/scale':
+							targetProperty = 'emissiveMap/repeat';
+							break;
+						case 'emissiveTexture/extensions/KHR_texture_transform/offset':
+							targetProperty = 'emissiveMap/offset';
+							break;
+
+					}
+
+					path = pathStart + targetProperty;
+					console.log( pathStart, targetProperty, path );
+					break;
+				case TARGET_TYPE.node:
+					const pathIndexNode = ( '/nodes/' + targetId.toString() + '/' ).length;
+					const pathStartNode = path.substring( 0, pathIndexNode );
+					targetProperty = path.substring( pathIndexNode );
+					switch ( targetProperty ) {
+
+						case 'translation':
+							targetProperty = 'position';
+							break;
+						case 'rotation':
+							targetProperty = 'quaternion';
+							break;
+						case 'scale':
+							targetProperty = 'scale';
+							break;
+
+					}
+
+					path = pathStartNode + targetProperty;
+					break;
+				case TARGET_TYPE.light:
+					const pathIndexLight = ( '/extensions/KHR_lights_punctual/lights/' + targetId.toString() + '/' ).length;
+					const pathStartLight = path.substring( 0, pathIndexLight );
+					targetProperty = path.substring( pathIndexLight );
+					switch ( targetProperty ) {
+
+						case 'color':
+							break;
+						case 'intensity':
+							break;
+
+					}
+
+					return;
+
+			}
+
+			if ( path.includes( 'extensions/builtin_components' ) )
+				path = path.replace( 'extensions/builtin_components ', 'userData/components' );
+
+			target.extensions[ KHR_ANIMATION_POINTER_NAME ].path = path;
+
+		}
+
+		if ( targetId === null ) {
+
+			console.warn( 'Failed resolving animation node id: ' + targetId, target );
+			return;
+
+		}
+
+		// console.log("resolved name", targetId, type, targetProperty)
+
+
+		let depPromise;
+
+		if ( type === TARGET_TYPE.node )
+			depPromise = this.getDependency( 'node', targetId );
+		else if ( type === TARGET_TYPE.material )
+			depPromise = this.getDependency( 'material', targetId );
+		else if ( type === TARGET_TYPE.light ) {
+
+			// depPromise = this.parser.getDependency('light', targetId);
+
+		} else {
+
+			console.error( 'Unhandled type', type );
+
+		}
+
+		return depPromise;
+
+	}
+
 	/**
 	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#animations
 	 * @param {number} animationIndex
@@ -3781,6 +4037,7 @@ class GLTFParser {
 		const json = this.json;
 
 		const animationDef = json.animations[ animationIndex ];
+		const KHR_ANIMATION_POINTER_NAME = 'KHR_animation_pointer';
 
 		const pendingNodes = [];
 		const pendingInputAccessors = [];
@@ -3797,7 +4054,15 @@ class GLTFParser {
 			const input = animationDef.parameters !== undefined ? animationDef.parameters[ sampler.input ] : sampler.input;
 			const output = animationDef.parameters !== undefined ? animationDef.parameters[ sampler.output ] : sampler.output;
 
-			pendingNodes.push( this.getDependency( 'node', name ) );
+			const useExtension = target.extensions && target.extensions[ KHR_ANIMATION_POINTER_NAME ];
+
+			let nodeDependency = undefined;
+			if ( useExtension )
+				nodeDependency = this.getAnimationPointerDependency( target );
+			else
+				nodeDependency = this.getDependency( 'node', name );
+
+			pendingNodes.push( nodeDependency );
 			pendingInputAccessors.push( this.getDependency( 'accessor', input ) );
 			pendingOutputAccessors.push( this.getDependency( 'accessor', output ) );
 			pendingSamplers.push( sampler );
@@ -3833,7 +4098,26 @@ class GLTFParser {
 
 				if ( node === undefined ) continue;
 
-				node.updateMatrix();
+				const ext = target.extensions;
+				let animatedPropertyPath = ext ? ext[ KHR_ANIMATION_POINTER_NAME ]?.path : null;
+				if ( animatedPropertyPath ) {
+
+					animatedPropertyPath = animatedPropertyPath.replaceAll( '/', '.' );
+					// replace material ID by UUID
+					const parts = animatedPropertyPath.split( '.' );
+					parts[ 2 ] = node.uuid;
+					animatedPropertyPath = parts.join( '.' );
+					if ( debug )
+						console.log( node, inputAccessor, outputAccessor, target, animatedPropertyPath );
+
+				}
+
+				if ( node.updateMatrix ) {
+
+					node.updateMatrix();
+					node.matrixAutoUpdate = true;
+
+				}
 
 				let TypedKeyframeTrack;
 
@@ -3852,8 +4136,21 @@ class GLTFParser {
 					case PATH_PROPERTIES.position:
 					case PATH_PROPERTIES.scale:
 					default:
+						switch ( outputAccessor.itemSize ) {
 
-						TypedKeyframeTrack = VectorKeyframeTrack;
+							case 1:
+								TypedKeyframeTrack = NumberKeyframeTrack;
+								break;
+							case 2:
+							case 3:
+								TypedKeyframeTrack = VectorKeyframeTrack;
+								break;
+							case 4:
+								TypedKeyframeTrack = ColorKeyframeTrack;
+								break;
+
+						}
+
 						break;
 
 				}
@@ -3902,7 +4199,7 @@ class GLTFParser {
 				for ( let j = 0, jl = targetNames.length; j < jl; j ++ ) {
 
 					const track = new TypedKeyframeTrack(
-						targetNames[ j ] + '.' + PATH_PROPERTIES[ target.path ],
+						animatedPropertyPath ?? targetNames[ j ] + '.' + PATH_PROPERTIES[ target.path ],
 						inputAccessor.array,
 						outputArray,
 						interpolation
