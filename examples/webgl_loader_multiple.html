@@ -179,6 +179,12 @@
 
 					}
 
+					if(child.isLight) {
+						
+						const spotLightHelper = new THREE.SpotLightHelper( child );
+						scene.add( spotLightHelper );
+					}
+
 				} );
 
 				
