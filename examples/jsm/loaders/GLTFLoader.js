@@ -471,6 +471,7 @@ const EXTENSIONS = {
 	KHR_TEXTURE_TRANSFORM: 'KHR_texture_transform',
 	KHR_MESH_QUANTIZATION: 'KHR_mesh_quantization',
 	KHR_MATERIALS_EMISSIVE_STRENGTH: 'KHR_materials_emissive_strength',
+	KHR_ANIMATION_POINTER: 'KHR_animation_pointer',
 	EXT_TEXTURE_WEBP: 'EXT_texture_webp',
 	EXT_MESHOPT_COMPRESSION: 'EXT_meshopt_compression',
 	EXT_MESH_GPU_INSTANCING: 'EXT_mesh_gpu_instancing'
@@ -1953,12 +1954,12 @@ const PATH_PROPERTIES = {
 };
 
 // TODO move to extension
-const KHR_ANIMATION_POINTER_NAME = 'KHR_animation_pointer';
-const debug = false;
+const debug = true;
 
 const TARGET_TYPE = {
 	node: 'node',
 	material: 'material',
+	camera: 'camera',
 	light: 'light',
 };
 
@@ -1997,7 +1998,7 @@ PropertyBinding.findNode = ( node, path ) => {
 		} );
 		return res;
 
-	} else if ( path.startsWith( '.nodes.' ) ) {
+	} else if ( path.startsWith( '.nodes.' ) || path.startsWith( '.lights.' ) || path.startsWith( '.cameras.' ) ) {
 
 		const sections = path.split( '.' );
 		let currentTarget = undefined;
@@ -2678,6 +2679,15 @@ class GLTFParser {
 
 				case 'camera':
 					dependency = this.loadCamera( index );
+					break;
+
+				case 'light':
+					dependency = this._invokeOne( function ( ext ) {
+
+						console.log('creating light node attachment for', index)
+						return ext._loadLight && ext._loadLight( index );
+
+					} );
 					break;
 
 				default:
@@ -3709,6 +3719,14 @@ class GLTFParser {
 
 			name = path.substring( '/materials/'.length );
 
+		} else if ( type === 'light' ) {
+
+			name = path.substring( '/extensions/KHR_lights_punctual/lights/'.length );
+
+		} else if ( type === 'camera' ) {
+
+			name = path.substring( '/cameras/'.length );
+
 		}
 
 		name = name.substring( 0, name.indexOf( '/' ) );
@@ -3725,10 +3743,10 @@ class GLTFParser {
 		let type = TARGET_TYPE.node;
 		let targetId = undefined;
 
-		const useExtension = target.extensions && target.extensions[ KHR_ANIMATION_POINTER_NAME ];
+		const useExtension = target.extensions && target.extensions[ EXTENSIONS.KHR_ANIMATION_POINTER ];
 		if ( useExtension ) {
 
-			const ext = target.extensions[ KHR_ANIMATION_POINTER_NAME ];
+			const ext = target.extensions[ EXTENSIONS.KHR_ANIMATION_POINTER ];
 			let path = ext.path;
 			if ( debug )
 				console.log( 'Original path: ' + path );
@@ -3742,15 +3760,20 @@ class GLTFParser {
 
 			if ( path.startsWith( '/materials/' ) )
 				type = TARGET_TYPE.material;
-
-			if ( path.startsWith( '/extensions/KHR_lights_punctual/lights/' ) )
+			else if ( path.startsWith( '/extensions/KHR_lights_punctual/lights/' ) )
 				type = TARGET_TYPE.light;
+			else if ( path.startsWith( '/cameras/' ) )
+				type = TARGET_TYPE.camera;
 
 			targetId = this.tryResolveNodeId( path, type );
-			if ( targetId === null ) {
+			if ( targetId === null || isNaN ( targetId ) ) {
 
 				console.warn( 'Failed resolving animation node id: ' + targetId, path );
 				return;
+
+			} else {
+
+				console.log( 'Resolved node ID for '+ type, targetId );
 
 			}
 
@@ -3777,6 +3800,8 @@ class GLTFParser {
 						case 'emissiveFactor':
 							targetProperty = 'emissive';
 							break;
+						case 'alphaCutoff':
+							targetProperty = 'alphaTest';
 						case 'extensions/KHR_materials_emissive_strength/emissiveStrength':
 							targetProperty = 'emissiveIntensity';
 							break;
@@ -3798,10 +3823,12 @@ class GLTFParser {
 					path = pathStart + targetProperty;
 					console.log( pathStart, targetProperty, path );
 					break;
+
 				case TARGET_TYPE.node:
 					const pathIndexNode = ( '/nodes/' + targetId.toString() + '/' ).length;
 					const pathStartNode = path.substring( 0, pathIndexNode );
 					targetProperty = path.substring( pathIndexNode );
+
 					switch ( targetProperty ) {
 
 						case 'translation':
@@ -3813,37 +3840,78 @@ class GLTFParser {
 						case 'scale':
 							targetProperty = 'scale';
 							break;
+						case 'weights':
+							targetProperty = 'morphTargetInfluences';
+							break;
+
+						// TODO matrix
 
 					}
 
 					path = pathStartNode + targetProperty;
 					break;
+
 				case TARGET_TYPE.light:
 					const pathIndexLight = ( '/extensions/KHR_lights_punctual/lights/' + targetId.toString() + '/' ).length;
 					const pathStartLight = path.substring( 0, pathIndexLight );
 					targetProperty = path.substring( pathIndexLight );
+
 					switch ( targetProperty ) {
 
 						case 'color':
 							break;
 						case 'intensity':
 							break;
+						case 'spot/innerConeAngle':
+							// TODO need to set .penumbra, but requires calculations on every animation change (?)
+							targetProperty = 'penumbra';
+							break;
+						case 'spot/outerConeAngle':
+							targetProperty = 'angle';
+							break;
+						case 'range':
+							targetProperty = 'distance';
+							break;
 
 					}
 
-					return;
+					path = '/lights/' + targetId.toString() + '/' + targetProperty;
+					break;
 
+				case TARGET_TYPE.camera:
+					const pathIndexCamera = ( '/cameras/' + targetId.toString() + '/' ).length;
+					const pathStartCamera = path.substring( 0, pathIndexCamera );
+					targetProperty = path.substring( pathIndexCamera );
+
+					switch ( targetProperty ) {
+
+						case 'yfov':
+							targetProperty = 'fov';
+							break;
+						case 'znear':
+							targetProperty = 'near';
+							break;
+						case 'zfar':
+							targetProperty = 'far';
+							break;
+						case 'aspect':
+							break;
+
+					}
+
+					path = pathStartCamera + targetProperty;
+					break;
 			}
 
 			// TODO figure out if/how custom extensions can rewrite paths or get callbacks for animation pointer resolving
 			// if ( path.includes( 'extensions/builtin_components' ) )
 			// 	path = path.replace( 'extensions/builtin_components ', 'userData/components' );
 
-			target.extensions[ KHR_ANIMATION_POINTER_NAME ].path = path;
+			target.extensions[ EXTENSIONS.KHR_ANIMATION_POINTER ].path = path;
 
 		}
 
-		if ( targetId === null ) {
+		if ( targetId === null || isNaN( targetId ) ) {
 
 			console.warn( 'Failed resolving animation node id: ' + targetId, target );
 			return;
@@ -3856,12 +3924,11 @@ class GLTFParser {
 			depPromise = this.getDependency( 'node', targetId );
 		else if ( type === TARGET_TYPE.material )
 			depPromise = this.getDependency( 'material', targetId );
-		else if ( type === TARGET_TYPE.light ) {
-
-			// TODO implement lights, needs a getDependency method for 'light'
-			// depPromise = this.parser.getDependency('light', targetId);
-
-		} else {
+		else if ( type === TARGET_TYPE.light )
+			depPromise = this.getDependency('light', targetId);	
+		else if ( type === TARGET_TYPE.camera )
+			depPromise = this.getDependency('camera', targetId);
+		else {
 
 			console.error( 'Unhandled type', type );
 
@@ -3881,7 +3948,6 @@ class GLTFParser {
 		const json = this.json;
 
 		const animationDef = json.animations[ animationIndex ];
-		const KHR_ANIMATION_POINTER_NAME = 'KHR_animation_pointer';
 
 		const pendingNodes = [];
 		const pendingInputAccessors = [];
@@ -3898,7 +3964,7 @@ class GLTFParser {
 			const input = animationDef.parameters !== undefined ? animationDef.parameters[ sampler.input ] : sampler.input;
 			const output = animationDef.parameters !== undefined ? animationDef.parameters[ sampler.output ] : sampler.output;
 
-			const useExtension = target.extensions && target.extensions[ KHR_ANIMATION_POINTER_NAME ];
+			const useExtension = target.extensions && target.extensions[ EXTENSIONS.KHR_ANIMATION_POINTER ];
 
 			let nodeDependency = undefined;
 			if ( useExtension )
@@ -3943,11 +4009,11 @@ class GLTFParser {
 				if ( node === undefined ) continue;
 
 				const ext = target.extensions;
-				let animationPointerPropertyPath = ext ? ext[ KHR_ANIMATION_POINTER_NAME ]?.path : null;
+				let animationPointerPropertyPath = ext ? ext[ EXTENSIONS.KHR_ANIMATION_POINTER ]?.path : null;
 				if ( animationPointerPropertyPath ) {
 
 					animationPointerPropertyPath = animationPointerPropertyPath.replaceAll( '/', '.' );
-					// replace material ID by UUID
+					// replace node/material/camera/light ID by UUID
 					const parts = animationPointerPropertyPath.split( '.' );
 					parts[ 2 ] = node.uuid;
 					animationPointerPropertyPath = parts.join( '.' );
@@ -4039,6 +4105,22 @@ class GLTFParser {
 					outputArray = scaled;
 
 				}
+
+				/*
+				if(animationPointerPropertyPath.endsWith('angle')) {
+
+					const scaled = new Float32Array( outputArray.length );
+
+					for ( let j = 0, jl = outputArray.length; j < jl; j ++ ) {
+
+						scaled[ j ] = outputArray[ j ] * scale;
+
+					}
+
+					outputArray = scaled;
+
+				}
+				*/
 
 				for ( let j = 0, jl = targetNames.length; j < jl; j ++ ) {
 
