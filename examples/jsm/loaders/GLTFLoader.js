@@ -3911,13 +3911,14 @@ class GLTFParser {
 			}
 
 			// TODO could be parsed better
-
 			switch ( type ) {
 
 				case TARGET_TYPE.material:
 					const pathIndex = ( '/materials/' + targetId.toString() + '/' ).length;
 					const pathStart = path.substring( 0, pathIndex );
 					targetProperty = path.substring( pathIndex );
+
+					// TODO implement all properties and/or find a better way to have a good mapping here
 					switch ( targetProperty ) {
 
 						case 'baseColorFactor':
@@ -3990,8 +3991,9 @@ class GLTFParser {
 
 			}
 
-			if ( path.includes( 'extensions/builtin_components' ) )
-				path = path.replace( 'extensions/builtin_components ', 'userData/components' );
+			// TODO figure out if/how custom extensions can rewrite paths or get callbacks for animation pointer resolving
+			// if ( path.includes( 'extensions/builtin_components' ) )
+			// 	path = path.replace( 'extensions/builtin_components ', 'userData/components' );
 
 			target.extensions[ KHR_ANIMATION_POINTER_NAME ].path = path;
 
@@ -4004,9 +4006,6 @@ class GLTFParser {
 
 		}
 
-		// console.log("resolved name", targetId, type, targetProperty)
-
-
 		let depPromise;
 
 		if ( type === TARGET_TYPE.node )
@@ -4015,6 +4014,7 @@ class GLTFParser {
 			depPromise = this.getDependency( 'material', targetId );
 		else if ( type === TARGET_TYPE.light ) {
 
+			// TODO implement lights, needs a getDependency method for 'light'
 			// depPromise = this.parser.getDependency('light', targetId);
 
 		} else {
@@ -4099,16 +4099,16 @@ class GLTFParser {
 				if ( node === undefined ) continue;
 
 				const ext = target.extensions;
-				let animatedPropertyPath = ext ? ext[ KHR_ANIMATION_POINTER_NAME ]?.path : null;
-				if ( animatedPropertyPath ) {
+				let animationPointerPropertyPath = ext ? ext[ KHR_ANIMATION_POINTER_NAME ]?.path : null;
+				if ( animationPointerPropertyPath ) {
 
-					animatedPropertyPath = animatedPropertyPath.replaceAll( '/', '.' );
+					animationPointerPropertyPath = animationPointerPropertyPath.replaceAll( '/', '.' );
 					// replace material ID by UUID
-					const parts = animatedPropertyPath.split( '.' );
+					const parts = animationPointerPropertyPath.split( '.' );
 					parts[ 2 ] = node.uuid;
-					animatedPropertyPath = parts.join( '.' );
+					animationPointerPropertyPath = parts.join( '.' );
 					if ( debug )
-						console.log( node, inputAccessor, outputAccessor, target, animatedPropertyPath );
+						console.log( node, inputAccessor, outputAccessor, target, animationPointerPropertyPath );
 
 				}
 
@@ -4199,7 +4199,7 @@ class GLTFParser {
 				for ( let j = 0, jl = targetNames.length; j < jl; j ++ ) {
 
 					const track = new TypedKeyframeTrack(
-						animatedPropertyPath ?? targetNames[ j ] + '.' + PATH_PROPERTIES[ target.path ],
+						animationPointerPropertyPath ?? targetNames[ j ] + '.' + PATH_PROPERTIES[ target.path ],
 						inputAccessor.array,
 						outputArray,
 						interpolation
