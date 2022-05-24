@@ -2098,7 +2098,7 @@ const PATH_PROPERTIES = {
 };
 
 // TODO move to extension
-const debug = true;
+const animationPointerDebug = false;
 
 const TARGET_TYPE = {
 	node: 'node',
@@ -2115,11 +2115,11 @@ PropertyBinding.findNode = ( node, path ) => {
 
 	if ( path.startsWith( '.materials.' ) ) {
 
-		if ( debug ) console.log( 'FIND', path );
+		if ( animationPointerDebug ) console.log( 'FIND', path );
 		const remainingPath = path.substring( '.materials.'.length ).substring( path.indexOf( '.' ) );
 		const nextIndex = remainingPath.indexOf( '.' );
 		const uuid = nextIndex < 0 ? remainingPath : remainingPath.substring( 0, nextIndex );
-		if ( debug ) console.log( remainingPath, uuid );
+		if ( animationPointerDebug ) console.log( remainingPath, uuid );
 		let res = null;
 		node.traverse( x => {
 
@@ -2127,7 +2127,7 @@ PropertyBinding.findNode = ( node, path ) => {
 			if ( x[ 'material' ]?.uuid === uuid ) {
 
 				res = x[ 'material' ];
-				if ( debug ) console.log( res, remainingPath );
+				if ( animationPointerDebug ) console.log( res, remainingPath );
 				if ( res !== null ) {
 
 					if ( remainingPath.endsWith( '.map' ) )
@@ -2160,14 +2160,14 @@ PropertyBinding.findNode = ( node, path ) => {
 				let key = val;
 				if ( index >= 0 ) key = index;
 				currentTarget = currentTarget[ key ];
-				if ( debug )
+				if ( animationPointerDebug )
 					console.log( currentTarget );
 
 			}
 
 		}
 
-		if ( debug )
+		if ( animationPointerDebug )
 			console.log( 'NODE', path, currentTarget );
 		return currentTarget;
 
@@ -2820,7 +2820,6 @@ class GLTFParser {
 				case 'light':
 					dependency = this._invokeOne( function ( ext ) {
 
-						console.log('creating light node attachment for', index)
 						return ext._loadLight && ext._loadLight( index );
 
 					} );
@@ -3887,7 +3886,7 @@ class GLTFParser {
 
 			const ext = target.extensions[ EXTENSIONS.KHR_ANIMATION_POINTER ];
 			let path = ext.path;
-			if ( debug )
+			if ( animationPointerDebug )
 				console.log( 'Original path: ' + path );
 
 			if ( ! path ) {
@@ -3905,14 +3904,14 @@ class GLTFParser {
 				type = TARGET_TYPE.camera;
 
 			targetId = this.tryResolveNodeId( path, type );
-			if ( targetId === null || isNaN ( targetId ) ) {
+			if ( targetId === null || isNaN( targetId ) ) {
 
 				console.warn( 'Failed resolving animation node id: ' + targetId, path );
 				return;
 
 			} else {
 
-				console.log( 'Resolved node ID for '+ type, targetId );
+				if ( animationPointerDebug ) console.log( 'Resolved node ID for ' + type, targetId );
 
 			}
 
@@ -3941,6 +3940,7 @@ class GLTFParser {
 							break;
 						case 'alphaCutoff':
 							targetProperty = 'alphaTest';
+							break;
 						case 'extensions/KHR_materials_emissive_strength/emissiveStrength':
 							targetProperty = 'emissiveIntensity';
 							break;
@@ -3960,7 +3960,7 @@ class GLTFParser {
 					}
 
 					path = pathStart + targetProperty;
-					console.log( pathStart, targetProperty, path );
+					if ( animationPointerDebug ) console.log( 'PROPERTY PATH', pathStart, targetProperty, path );
 					break;
 
 				case TARGET_TYPE.node:
@@ -3992,7 +3992,7 @@ class GLTFParser {
 
 				case TARGET_TYPE.light:
 					const pathIndexLight = ( '/extensions/KHR_lights_punctual/lights/' + targetId.toString() + '/' ).length;
-					const pathStartLight = path.substring( 0, pathIndexLight );
+					// const pathStartLight = path.substring( 0, pathIndexLight );
 					targetProperty = path.substring( pathIndexLight );
 
 					switch ( targetProperty ) {
@@ -4040,6 +4040,7 @@ class GLTFParser {
 
 					path = pathStartCamera + targetProperty;
 					break;
+
 			}
 
 			// TODO figure out if/how custom extensions can rewrite paths or get callbacks for animation pointer resolving
@@ -4064,14 +4065,11 @@ class GLTFParser {
 		else if ( type === TARGET_TYPE.material )
 			depPromise = this.getDependency( 'material', targetId );
 		else if ( type === TARGET_TYPE.light )
-			depPromise = this.getDependency('light', targetId);	
+			depPromise = this.getDependency( 'light', targetId );
 		else if ( type === TARGET_TYPE.camera )
-			depPromise = this.getDependency('camera', targetId);
-		else {
-
+			depPromise = this.getDependency( 'camera', targetId );
+		else
 			console.error( 'Unhandled type', type );
-
-		}
 
 		return depPromise;
 
@@ -4156,7 +4154,7 @@ class GLTFParser {
 					const parts = animationPointerPropertyPath.split( '.' );
 					parts[ 2 ] = node.uuid;
 					animationPointerPropertyPath = parts.join( '.' );
-					if ( debug )
+					if ( animationPointerDebug )
 						console.log( node, inputAccessor, outputAccessor, target, animationPointerPropertyPath );
 
 				}
@@ -4245,22 +4243,6 @@ class GLTFParser {
 
 				}
 
-				/*
-				if(animationPointerPropertyPath.endsWith('angle')) {
-
-					const scaled = new Float32Array( outputArray.length );
-
-					for ( let j = 0, jl = outputArray.length; j < jl; j ++ ) {
-
-						scaled[ j ] = outputArray[ j ] * scale;
-
-					}
-
-					outputArray = scaled;
-
-				}
-				*/
-
 				for ( let j = 0, jl = targetNames.length; j < jl; j ++ ) {
 
 					const track = new TypedKeyframeTrack(
@@ -4291,6 +4273,30 @@ class GLTFParser {
 					}
 
 					tracks.push( track );
+
+					// glTF has opacity animation as last component of baseColorFactor,
+					// so we need to split that up here and create a separate opacity track if that is animated.
+					if ( animationPointerPropertyPath && outputAccessor.itemSize === 4 &&
+						animationPointerPropertyPath.startsWith( '.materials.' ) && animationPointerPropertyPath.endsWith( '.color' ) ) {
+
+						const opacityArray = new Float32Array( outputArray.length / 4 );
+
+						for ( let j = 0, jl = outputArray.length / 4; j < jl; j += 1 ) {
+
+							opacityArray[ j ] = outputArray[ j * 4 + 3 ];
+
+						}
+
+						const opacityTrack = new TypedKeyframeTrack(
+							animationPointerPropertyPath.replace( '.color', '.opacity' ),
+							inputAccessor.array,
+							opacityArray,
+							interpolation
+						);
+
+						tracks.push( opacityTrack );
+
+					}
 
 				}
 
