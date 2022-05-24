@@ -41,7 +41,7 @@
 
 			import { RGBELoader } from './jsm/loaders/RGBELoader.js';
 
-			let camera, scene, renderer, controls, currentModel, ktx2Loader, dracoLoader, clock, mixer;
+			let camera, scene, renderer, controls, currentModel, ktx2Loader, dracoLoader, clock, mixer, helpers;
 
 			init();
 
@@ -55,6 +55,7 @@
 
 				scene = new THREE.Scene();
 				clock = new THREE.Clock();
+				helpers = new Array();
 
 				renderer = new THREE.WebGLRenderer( { antialias: true } );
 				renderer.setPixelRatio( window.devicePixelRatio );
@@ -119,11 +120,24 @@
 			function animate() {
 
 				requestAnimationFrame( animate );
-				
-				if( mixer !== undefined) {
+
+				if ( mixer !== undefined ) {
 
 					var delta = clock.getDelta();
-					mixer.update( delta )
+					mixer.update( delta );
+
+				}
+
+				if ( helpers.length > 0 ) {
+
+					for ( const helper of helpers ) {
+
+						if ( helper.type === 'CameraHelper' && helper.camera.updateProjectionMatrix )
+							helper.camera.updateProjectionMatrix();
+
+						helper.update();
+
+					}
 
 				}
 
@@ -164,6 +178,15 @@
 
 					} );
 
+					for ( const helper of helpers ) {
+
+						helper.removeFromParent();
+						helper.dispose();
+
+					}
+
+					helpers.length = 0;
+
 				}
 
 				currentModel = subscene;
@@ -179,15 +202,44 @@
 
 					}
 
-					if(child.isLight) {
-						
-						const spotLightHelper = new THREE.SpotLightHelper( child );
-						scene.add( spotLightHelper );
+					if ( child.isLight ) {
+
+						if ( child.type === 'SpotLight' ) {
+
+							const lightHelper = new THREE.SpotLightHelper( child );
+							scene.add( lightHelper );
+							helpers.push( lightHelper );
+
+						}
+
+						if ( child.type === 'DirectionalLight' ) {
+
+							const lightHelper = new THREE.DirectionalLightHelper( child );
+							scene.add( lightHelper );
+							helpers.push( lightHelper );
+
+						}
+
+						if ( child.type === 'PointLight' ) {
+
+							const lightHelper = new THREE.PointLightHelper( child );
+							scene.add( lightHelper );
+							helpers.push( lightHelper );
+
+						}
+
+					}
+
+					if ( child.isCamera ) {
+
+						const cameraHelper = new THREE.CameraHelper( child );
+						scene.add( cameraHelper );
+						helpers.push( cameraHelper );
+
 					}
 
 				} );
 
-				
 				if ( animations && animations.length > 0 ) {
 
 					mixer = new THREE.AnimationMixer( currentModel );
