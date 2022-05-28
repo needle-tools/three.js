@@ -2152,6 +2152,8 @@ PropertyBinding.findNode = ( node, path ) => {
 					else if ( remainingPath.endsWith( '.emissiveMap' ) )
 						res = res[ 'emissiveMap' ];
 
+					// TODO add other texture slots. Better would be a list of texture slots
+
 				}
 
 			}
@@ -3943,6 +3945,7 @@ class GLTFParser {
 					// TODO implement all properties and/or find a better way to have a good mapping here
 					switch ( targetProperty ) {
 
+						// Core Spec PBR Properties
 						case 'baseColorFactor':
 							targetProperty = 'color';
 							break;
@@ -3958,9 +3961,8 @@ class GLTFParser {
 						case 'alphaCutoff':
 							targetProperty = 'alphaTest';
 							break;
-						case 'extensions/KHR_materials_emissive_strength/emissiveStrength':
-							targetProperty = 'emissiveIntensity';
-							break;
+
+						// Core Spec + KHR_texture_transform
 						case 'baseColorTexture/extensions/KHR_texture_transform/scale':
 							targetProperty = 'map/repeat';
 							break;
@@ -3974,6 +3976,45 @@ class GLTFParser {
 							targetProperty = 'emissiveMap/offset';
 							break;
 
+						// KHR_materials_emissive_strength
+						case 'extensions/KHR_materials_emissive_strength/emissiveStrength':
+							targetProperty = 'emissiveIntensity';
+							break;
+						
+						// KHR_materials_transmission
+						case 'extensions/KHR_materials_transmission/transmissionFactor':
+							targetProperty = 'transmission';
+							break;
+
+						// KHR_materials_ior
+						case 'extensions/KHR_materials_ior/ior':
+							targetProperty = 'ior';
+							break;
+						
+						// KHR_materials_volume
+						case 'extensions/KHR_materials_volume/thicknessFactor':
+							targetProperty = 'thickness';
+							break;
+						case 'extensions/KHR_materials_volume/attenuationColor':
+							targetProperty = 'attenuationColor';
+							break;
+						case 'extensions/KHR_materials_volume/attenuationDistance':
+							targetProperty = 'attenuationDistance';
+							break;
+
+						// KHR_materials_iridescence
+						case 'extensions/KHR_materials_iridescence/iridescenceFactor':
+							targetProperty = 'iridescence';
+							break;
+						case 'extensions/KHR_materials_iridescence/iridescenceIor':
+							targetProperty = 'iridescenceIor';
+							break;
+						case 'extensions/KHR_materials_iridescence/iridescenceThicknessMinimum':
+							targetProperty = 'iridescenceThicknessRange[0]';
+							break;
+						case 'extensions/KHR_materials_iridescence/iridescenceThicknessMaximum':
+							targetProperty = 'iridescenceThicknessRange[1]';
+							break;
 					}
 
 					path = pathStart + targetProperty;
