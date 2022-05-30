@@ -1972,15 +1972,15 @@ PropertyBinding.findNode = ( node, path ) => {
 	if ( path.startsWith( '.materials.' ) ) {
 
 		if ( animationPointerDebug ) console.log( 'FIND', path );
+
 		const remainingPath = path.substring( '.materials.'.length ).substring( path.indexOf( '.' ) );
 		const nextIndex = remainingPath.indexOf( '.' );
 		const uuid = nextIndex < 0 ? remainingPath : remainingPath.substring( 0, nextIndex );
-		if ( animationPointerDebug ) console.log( remainingPath, uuid );
 		let res = null;
 		node.traverse( x => {
 
 			if ( res !== null || x.type !== 'Mesh' ) return;
-			if ( x[ 'material' ]?.uuid === uuid ) {
+			if ( x[ 'material' ]?.uuid === uuid || x[ 'material' ]?.name === uuid ) {
 
 				res = x[ 'material' ];
 				if ( animationPointerDebug ) console.log( res, remainingPath );
@@ -1991,13 +1991,15 @@ PropertyBinding.findNode = ( node, path ) => {
 					else if ( remainingPath.endsWith( '.emissiveMap' ) )
 						res = res[ 'emissiveMap' ];
 
-					// TODO add other texture slots. Better would be a list of texture slots
+					// TODO other texture slots only make sense if three.js actually supports them
+					// (currently only .map can have repeat/offset)
 
 				}
 
 			}
 
 		} );
+
 		return res;
 
 	} else if ( path.startsWith( '.nodes.' ) || path.startsWith( '.lights.' ) || path.startsWith( '.cameras.' ) ) {
@@ -2010,16 +2012,25 @@ PropertyBinding.findNode = ( node, path ) => {
 			const isUUID = val.length == 36;
 			if ( isUUID ) {
 
+				// access by UUID
 				currentTarget = node.getObjectByProperty( 'uuid', val );
 
 			} else if ( currentTarget && currentTarget[ val ] ) {
 
+				// access by index
 				const index = Number.parseInt( val );
 				let key = val;
 				if ( index >= 0 ) key = index;
 				currentTarget = currentTarget[ key ];
 				if ( animationPointerDebug )
 					console.log( currentTarget );
+
+			} else {
+
+				// access by node name
+				const foundNode = node.getObjectByName( val );
+				if ( foundNode )
+					currentTarget = foundNode;
 
 			}
 
@@ -3786,7 +3797,6 @@ class GLTFParser {
 					const pathStart = path.substring( 0, pathIndex );
 					targetProperty = path.substring( pathIndex );
 
-					// TODO implement all properties and/or find a better way to have a good mapping here
 					switch ( targetProperty ) {
 
 						// Core Spec PBR Properties
@@ -3813,6 +3823,8 @@ class GLTFParser {
 						case 'baseColorTexture/extensions/KHR_texture_transform/offset':
 							targetProperty = 'map/offset';
 							break;
+
+						// UV transforms for anything but map doesn't seem to currently be supported in three.js
 						case 'emissiveTexture/extensions/KHR_texture_transform/scale':
 							targetProperty = 'emissiveMap/repeat';
 							break;
@@ -3824,7 +3836,7 @@ class GLTFParser {
 						case 'extensions/KHR_materials_emissive_strength/emissiveStrength':
 							targetProperty = 'emissiveIntensity';
 							break;
-						
+
 						// KHR_materials_transmission
 						case 'extensions/KHR_materials_transmission/transmissionFactor':
 							targetProperty = 'transmission';
@@ -3834,7 +3846,7 @@ class GLTFParser {
 						case 'extensions/KHR_materials_ior/ior':
 							targetProperty = 'ior';
 							break;
-						
+
 						// KHR_materials_volume
 						case 'extensions/KHR_materials_volume/thicknessFactor':
 							targetProperty = 'thickness';
@@ -3851,7 +3863,7 @@ class GLTFParser {
 							targetProperty = 'iridescence';
 							break;
 						case 'extensions/KHR_materials_iridescence/iridescenceIor':
-							targetProperty = 'iridescenceIor';
+							targetProperty = 'iridescenceIOR';
 							break;
 						case 'extensions/KHR_materials_iridescence/iridescenceThicknessMinimum':
 							targetProperty = 'iridescenceThicknessRange[0]';
@@ -3859,6 +3871,7 @@ class GLTFParser {
 						case 'extensions/KHR_materials_iridescence/iridescenceThicknessMaximum':
 							targetProperty = 'iridescenceThicknessRange[1]';
 							break;
+
 					}
 
 					path = pathStart + targetProperty;
@@ -4054,7 +4067,7 @@ class GLTFParser {
 					animationPointerPropertyPath = animationPointerPropertyPath.replaceAll( '/', '.' );
 					// replace node/material/camera/light ID by UUID
 					const parts = animationPointerPropertyPath.split( '.' );
-					parts[ 2 ] = node.uuid;
+					parts[ 2 ] = node.name; // node.uuid;
 					animationPointerPropertyPath = parts.join( '.' );
 					if ( animationPointerDebug )
 						console.log( node, inputAccessor, outputAccessor, target, animationPointerPropertyPath );
