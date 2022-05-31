@@ -3894,13 +3894,13 @@ class GLTFParser {
 		let type = TARGET_TYPE.node;
 		let targetId = undefined;
 
-		const useExtension = target.extensions && target.extensions[ EXTENSIONS.KHR_ANIMATION_POINTER ];
+		const useExtension = target.extensions && target.extensions[ EXTENSIONS.KHR_ANIMATION_POINTER ] && target.path && target.path === 'pointer';
 		if ( useExtension ) {
 
 			const ext = target.extensions[ EXTENSIONS.KHR_ANIMATION_POINTER ];
-			let path = ext.path;
+			let path = ext.pointer;
 			if ( animationPointerDebug )
-				console.log( 'Original path: ' + path );
+				console.log( 'Original path: ' + path, target );
 
 			if ( ! path ) {
 
@@ -4101,7 +4101,7 @@ class GLTFParser {
 			// if ( path.includes( 'extensions/builtin_components' ) )
 			// 	path = path.replace( 'extensions/builtin_components ', 'userData/components' );
 
-			target.extensions[ EXTENSIONS.KHR_ANIMATION_POINTER ].path = path;
+			target.extensions[ EXTENSIONS.KHR_ANIMATION_POINTER ].pointer = path;
 
 		}
 
@@ -4200,7 +4200,7 @@ class GLTFParser {
 				if ( node === undefined ) continue;
 
 				const ext = target.extensions;
-				let animationPointerPropertyPath = ext ? ext[ EXTENSIONS.KHR_ANIMATION_POINTER ]?.path : null;
+				let animationPointerPropertyPath = ext ? ext[ EXTENSIONS.KHR_ANIMATION_POINTER ]?.pointer : null;
 				if ( animationPointerPropertyPath ) {
 
 					animationPointerPropertyPath = animationPointerPropertyPath.replaceAll( '/', '.' );
