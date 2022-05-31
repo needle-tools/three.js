@@ -791,8 +791,6 @@ class GLTFMaterialsClearcoatExtension {
 
 class GLTFAnimationPointerExtension {
 
-	animationPointerDebug = false;
-
 	ANIMATION_TARGET_TYPE = {
 		node: 'node',
 		material: 'material',
@@ -804,11 +802,15 @@ class GLTFAnimationPointerExtension {
 
 		this.parser = parser;
 		this.name = EXTENSIONS.KHR_ANIMATION_POINTER;
-		this._patchPropertyBindingFindNode();
 
 	}
 
+	_animationPointerDebug = false;
+	_havePatchedPropertyBindings = false;
 	_patchPropertyBindingFindNode() {
+
+		if ( this._havePatchedPropertyBindings ) return;
+		this._havePatchedPropertyBindings = true;
 
 		// HACK monkey patching findNode to ensure we can map to other types required by KHR_animation_pointer.
 		const find = PropertyBinding.findNode;
@@ -819,7 +821,7 @@ class GLTFAnimationPointerExtension {
 
 			if ( path.startsWith( '.materials.' ) ) {
 
-				if ( this.animationPointerDebug ) console.log( 'FIND', path );
+				if ( this._animationPointerDebug ) console.log( 'FIND', path );
 
 				const remainingPath = path.substring( '.materials.'.length ).substring( path.indexOf( '.' ) );
 				const nextIndex = remainingPath.indexOf( '.' );
@@ -831,7 +833,7 @@ class GLTFAnimationPointerExtension {
 					if ( x[ 'material' ]?.uuid === uuid || x[ 'material' ]?.name === uuid ) {
 
 						res = x[ 'material' ];
-						if ( this.animationPointerDebug ) console.log( res, remainingPath );
+						if ( this._animationPointerDebug ) console.log( res, remainingPath );
 						if ( res !== null ) {
 
 							if ( remainingPath.endsWith( '.map' ) )
@@ -870,7 +872,7 @@ class GLTFAnimationPointerExtension {
 						let key = val;
 						if ( index >= 0 ) key = index;
 						currentTarget = currentTarget[ key ];
-						if ( this.animationPointerDebug )
+						if ( this._animationPointerDebug )
 							console.log( currentTarget );
 
 					} else {
@@ -884,7 +886,7 @@ class GLTFAnimationPointerExtension {
 
 				}
 
-				if ( this.animationPointerDebug )
+				if ( this._animationPointerDebug )
 					console.log( 'NODE', path, currentTarget );
 				return currentTarget;
 
@@ -897,6 +899,9 @@ class GLTFAnimationPointerExtension {
 	}
 
 	loadAnimationTargetFromChannel( animationChannel ) {
+
+		if ( ! this._havePatchedPropertyBindings )
+			this._patchPropertyBindingFindNode();
 
 		const target = animationChannel.target;
 		const useExtension = target.extensions && target.extensions[ EXTENSIONS.KHR_ANIMATION_POINTER ] && target.path && target.path === 'pointer';
@@ -912,7 +917,7 @@ class GLTFAnimationPointerExtension {
 
 			const ext = target.extensions[ EXTENSIONS.KHR_ANIMATION_POINTER ];
 			let path = ext.pointer;
-			if ( this.animationPointerDebug )
+			if ( this._animationPointerDebug )
 				console.log( 'Original path: ' + path, target );
 
 			if ( ! path ) {
@@ -937,7 +942,7 @@ class GLTFAnimationPointerExtension {
 
 			} else {
 
-				if ( this.animationPointerDebug ) console.log( 'Resolved node ID for ' + type, targetId );
+				if ( this._animationPointerDebug ) console.log( 'Resolved node ID for ' + type, targetId );
 
 			}
 
@@ -1057,7 +1062,7 @@ class GLTFAnimationPointerExtension {
 					}
 
 					path = pathStart + targetProperty;
-					if ( this.animationPointerDebug ) console.log( 'PROPERTY PATH', pathStart, targetProperty, path );
+					if ( this._animationPointerDebug ) console.log( 'PROPERTY PATH', pathStart, targetProperty, path );
 					break;
 
 				case this.ANIMATION_TARGET_TYPE.node:
@@ -1193,9 +1198,9 @@ class GLTFAnimationPointerExtension {
 		animationPointerPropertyPath = animationPointerPropertyPath.replaceAll( '/', '.' );
 		// replace node/material/camera/light ID by UUID
 		const parts = animationPointerPropertyPath.split( '.' );
-		parts[ 2 ] = node.name; // node.uuid;
+		parts[ 2 ] = node.name ?? node.uuid;
 		animationPointerPropertyPath = parts.join( '.' );
-		if ( this.animationPointerDebug )
+		if ( this._animationPointerDebug )
 			console.log( node, inputAccessor, outputAccessor, target, animationPointerPropertyPath );
 
 		let TypedKeyframeTrack;
