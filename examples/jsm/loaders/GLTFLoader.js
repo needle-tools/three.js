@@ -966,13 +966,13 @@ class GLTFAnimationPointerExtension {
 					switch ( targetProperty ) {
 
 						// Core Spec PBR Properties
-						case 'baseColorFactor':
+						case 'pbrMetallicRoughness/baseColorFactor':
 							targetProperty = 'color';
 							break;
-						case 'roughnessFactor':
+						case 'pbrMetallicRoughness/roughnessFactor':
 							targetProperty = 'roughness';
 							break;
-						case 'metallicFactor':
+						case 'pbrMetallicRoughness/metallicFactor':
 							targetProperty = 'metalness';
 							break;
 						case 'emissiveFactor':
@@ -981,12 +981,18 @@ class GLTFAnimationPointerExtension {
 						case 'alphaCutoff':
 							targetProperty = 'alphaTest';
 							break;
+						case 'occlusionTexture/strength':
+							targetProperty = 'aoMapIntensity';
+							break;
+						case 'normalTexture/scale':
+							targetProperty = 'normalScale';
+							break;
 
 						// Core Spec + KHR_texture_transform
-						case 'baseColorTexture/extensions/KHR_texture_transform/scale':
+						case 'pbrMetallicRoughness/baseColorTexture/extensions/KHR_texture_transform/scale':
 							targetProperty = 'map/repeat';
 							break;
-						case 'baseColorTexture/extensions/KHR_texture_transform/offset':
+						case 'pbrMetallicRoughness/baseColorTexture/extensions/KHR_texture_transform/offset':
 							targetProperty = 'map/offset';
 							break;
 
@@ -1036,6 +1042,30 @@ class GLTFAnimationPointerExtension {
 							break;
 						case 'extensions/KHR_materials_iridescence/iridescenceThicknessMaximum':
 							targetProperty = 'iridescenceThicknessRange[1]';
+							break;
+
+						// KHR_materials_clearcoat
+						case 'extensions/KHR_materials_clearcoat/clearcoatFactor':
+							targetProperty = 'clearcoat';
+							break;
+						case 'extensions/KHR_materials_clearcoat/clearcoatRoughnessFactor':
+							targetProperty = 'clearcoatRoughness';
+							break;
+
+						// KHR_materials_sheen
+						case 'extensions/KHR_materials_sheen/sheenColorFactor':
+							targetProperty = 'sheenColor';
+							break;
+						case 'extensions/KHR_materials_sheen/sheenRoughnessFactor':
+							targetProperty = 'sheenRoughness';
+							break;
+
+						// KHR_materials_specular
+						case 'extensions/KHR_materials_specular/specularFactor':
+							targetProperty = 'specularIntensity';
+							break;
+						case 'extensions/KHR_materials_specular/specularColorFactor':
+							targetProperty = 'specularColor';
 							break;
 
 					}
@@ -1102,16 +1132,27 @@ class GLTFAnimationPointerExtension {
 
 					switch ( targetProperty ) {
 
-						case 'yfov':
+						case 'perspective/yfov':
 							targetProperty = 'fov';
 							break;
-						case 'znear':
+						case 'perspective/znear':
+						case 'orthographic/znear':
 							targetProperty = 'near';
 							break;
-						case 'zfar':
+						case 'perspective/zfar':
+						case 'orthographic/zfar':
 							targetProperty = 'far';
 							break;
-						case 'aspect':
+						case 'perspective/aspect':
+							targetProperty = 'aspect';
+							break;
+						// these two write to the same target property since three.js orthographic camera only supports 'zoom'.
+						// TODO should there be a warning for either of them? E.g. a warning for "xmag" so that "yfov" + "ymag" work by default?
+						case 'orthographic/xmag':
+							targetProperty = 'zoom';
+							break;
+						case 'orthographic/ymag':
+							targetProperty = 'zoom';
 							break;
 
 					}
