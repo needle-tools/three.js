@@ -121,7 +121,7 @@ class WebXRManager extends EventDispatcher {
 
 			const controllerIndex = controllerInputSources.indexOf( event.inputSource );
 
-			if(controllerIndex === -1) {
+			if ( controllerIndex === - 1 ) {
 
 				return;
 
@@ -148,13 +148,13 @@ class WebXRManager extends EventDispatcher {
 			session.removeEventListener( 'end', onSessionEnd );
 			session.removeEventListener( 'inputsourceschange', onInputSourcesChange );
 
-			for( let i = 0; i < controllers.length; i ++ ) {
+			for ( let i = 0; i < controllers.length; i ++ ) {
 
 				const inputSource = controllerInputSources[ i ];
 
-				if( !inputSource ) continue;
+				if ( ! inputSource ) continue;
 
-				controllers[i].disconnect( inputSource );
+				controllers[ i ].disconnect( inputSource );
 
 			}
 
@@ -358,7 +358,7 @@ class WebXRManager extends EventDispatcher {
 
 				const inputSource = event.removed[ i ];
 				const index = controllerInputSources.indexOf( inputSource );
-				
+
 				if ( index >= 0 ) {
 
 					controllerInputSources[ index ] = null;
@@ -373,7 +373,7 @@ class WebXRManager extends EventDispatcher {
 			for ( let i = 0; i < event.added.length; i ++ ) {
 
 				const inputSource = event.added[ i ];
-				
+
 				let controllerIndex = controllerInputSources.indexOf( inputSource );
 
 				if ( controllerIndex < 0 ) {
@@ -381,7 +381,7 @@ class WebXRManager extends EventDispatcher {
 					// Assign input source a controller that currently has no input source
 
 					for ( let i = 0; i < controllers.length; i ++ ) {
-						
+
 						if ( i >= controllerInputSources.length ) {
 
 							controllerInputSources.push( inputSource );
@@ -399,8 +399,7 @@ class WebXRManager extends EventDispatcher {
 					}
 
 					// If all controllers do currently receive input we ignore new ones
-
-					if( controllerIndex < 0 ) break;
+					if ( controllerIndex < 0 ) break;
 
 				}
 
@@ -697,7 +696,7 @@ class WebXRManager extends EventDispatcher {
 			for ( let i = 0; i < controllers.length; i ++ ) {
 
 				const inputSource = controllerInputSources[ i ];
-				const controller = controllers[ i ]
+				const controller = controllers[ i ];
 
 				if ( inputSource !== null && controller !== undefined ) {
 
