@@ -399,6 +399,7 @@ class WebXRManager extends EventDispatcher {
 					}
 
 					// If all controllers do currently receive input we ignore new ones
+
 					if ( controllerIndex < 0 ) break;
 
 				}
