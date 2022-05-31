@@ -2469,7 +2469,6 @@ const ATTRIBUTES = {
 };
 
 const PATH_PROPERTIES = {
-	position: 'position',
 	scale: 'scale',
 	translation: 'position',
 	rotation: 'quaternion',
