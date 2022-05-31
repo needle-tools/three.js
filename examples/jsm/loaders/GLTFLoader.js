@@ -804,11 +804,11 @@ class GLTFAnimationPointerExtension {
 
 		this.parser = parser;
 		this.name = EXTENSIONS.KHR_ANIMATION_POINTER;
-		this.patchPropertyBindingFindNode();
+		this._patchPropertyBindingFindNode();
 
 	}
 
-	patchPropertyBindingFindNode() {
+	_patchPropertyBindingFindNode() {
 
 		// HACK monkey patching findNode to ensure we can map to other types required by KHR_animation_pointer.
 		const find = PropertyBinding.findNode;
@@ -929,7 +929,7 @@ class GLTFAnimationPointerExtension {
 			else if ( path.startsWith( '/cameras/' ) )
 				type = this.ANIMATION_TARGET_TYPE.camera;
 
-			targetId = this.tryResolveNodeId( path, type );
+			targetId = this._tryResolveTargetId( path, type );
 			if ( targetId === null || isNaN( targetId ) ) {
 
 				console.warn( 'Failed resolving animation node id: ' + targetId, path );
@@ -1050,8 +1050,6 @@ class GLTFAnimationPointerExtension {
 							targetProperty = 'morphTargetInfluences';
 							break;
 
-						// TODO matrix
-
 					}
 
 					path = pathStartNode + targetProperty;
@@ -1059,7 +1057,6 @@ class GLTFAnimationPointerExtension {
 
 				case this.ANIMATION_TARGET_TYPE.light:
 					const pathIndexLight = ( '/extensions/KHR_lights_punctual/lights/' + targetId.toString() + '/' ).length;
-					// const pathStartLight = path.substring( 0, pathIndexLight );
 					targetProperty = path.substring( pathIndexLight );
 
 					switch ( targetProperty ) {
@@ -1069,7 +1066,7 @@ class GLTFAnimationPointerExtension {
 						case 'intensity':
 							break;
 						case 'spot/innerConeAngle':
-							// TODO need to set .penumbra, but requires calculations on every animation change (?)
+							// TODO would need to set .penumbra, but requires calculations on every animation change (?)
 							targetProperty = 'penumbra';
 							break;
 						case 'spot/outerConeAngle':
@@ -1128,13 +1125,13 @@ class GLTFAnimationPointerExtension {
 		let depPromise;
 
 		if ( type === this.ANIMATION_TARGET_TYPE.node )
-			depPromise = this.getDependency( 'node', targetId );
+			depPromise = this.parser.getDependency( 'node', targetId );
 		else if ( type === this.ANIMATION_TARGET_TYPE.material )
-			depPromise = this.getDependency( 'material', targetId );
+			depPromise = this.parser.getDependency( 'material', targetId );
 		else if ( type === this.ANIMATION_TARGET_TYPE.light )
-			depPromise = this.getDependency( 'light', targetId );
+			depPromise = this.parser.getDependency( 'light', targetId );
 		else if ( type === this.ANIMATION_TARGET_TYPE.camera )
-			depPromise = this.getDependency( 'camera', targetId );
+			depPromise = this.parser.getDependency( 'camera', targetId );
 		else
 			console.error( 'Unhandled type', type );
 
@@ -1191,22 +1188,11 @@ class GLTFAnimationPointerExtension {
 		// Override interpolation with custom factory method.
 		if ( interpolation === 'CUBICSPLINE' ) {
 
-			track.createInterpolant = function InterpolantFactoryMethodGLTFCubicSpline( result ) {
-
-				// A CUBICSPLINE keyframe in glTF has three output values for each input value,
-				// representing inTangent, splineVertex, and outTangent. As a result, track.getValueSize()
-				// must be divided by three to get the interpolant's sampleSize argument.
-
-				const interpolantType = ( this instanceof QuaternionKeyframeTrack ) ? GLTFCubicSplineQuaternionInterpolant : GLTFCubicSplineInterpolant;
-
-				return new interpolantType( this.times, this.values, this.getValueSize() / 3, result );
-
-			};
-
-			// Mark as CUBICSPLINE. `track.getInterpolation()` doesn't support custom interpolants.
-			track.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline = true;
+			createCubicSplineTrackInterpolant( track );
 
 		}
+
+		tracks.push( track );
 
 		// glTF has opacity animation as last component of baseColorFactor,
 		// so we need to split that up here and create a separate opacity track if that is animated.
@@ -1228,11 +1214,46 @@ class GLTFAnimationPointerExtension {
 				interpolation
 			);
 
+			// Override interpolation with custom factory method.
+			if ( interpolation === 'CUBICSPLINE' ) {
+
+				createCubicSplineTrackInterpolant( track );
+
+			}
+
 			tracks.push( opacityTrack );
 
 		}
 
 		return tracks;
+
+	}
+
+
+	_tryResolveTargetId( path, type ) {
+
+		let name = '';
+		if ( type === 'node' ) {
+
+			name = path.substring( '/nodes/'.length );
+
+		} else if ( type === 'material' ) {
+
+			name = path.substring( '/materials/'.length );
+
+		} else if ( type === 'light' ) {
+
+			name = path.substring( '/extensions/KHR_lights_punctual/lights/'.length );
+
+		} else if ( type === 'camera' ) {
+
+			name = path.substring( '/cameras/'.length );
+
+		}
+
+		name = name.substring( 0, name.indexOf( '/' ) );
+		const index = Number.parseInt( name );
+		return index;
 
 	}
 
@@ -4268,33 +4289,6 @@ class GLTFParser {
 
 	}
 
-	tryResolveNodeId( path, type ) {
-
-		let name = '';
-		if ( type === 'node' ) {
-
-			name = path.substring( '/nodes/'.length );
-
-		} else if ( type === 'material' ) {
-
-			name = path.substring( '/materials/'.length );
-
-		} else if ( type === 'light' ) {
-
-			name = path.substring( '/extensions/KHR_lights_punctual/lights/'.length );
-
-		} else if ( type === 'camera' ) {
-
-			name = path.substring( '/cameras/'.length );
-
-		}
-
-		name = name.substring( 0, name.indexOf( '/' ) );
-		const index = Number.parseInt( name );
-		return index;
-
-	}
-
 	/**
 	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#animations
 	 * @param {number} animationIndex
@@ -4303,6 +4297,7 @@ class GLTFParser {
 	loadAnimation( animationIndex ) {
 
 		const json = this.json;
+		const parser = this;
 
 		const animationDef = json.animations[ animationIndex ];
 
@@ -4320,7 +4315,7 @@ class GLTFParser {
 			const input = animationDef.parameters !== undefined ? animationDef.parameters[ sampler.input ] : sampler.input;
 			const output = animationDef.parameters !== undefined ? animationDef.parameters[ sampler.output ] : sampler.output;
 
-			const nodeDependency = this._invokeOne( function ( ext ) {
+			const nodeDependency = parser._invokeOne( function ( ext ) {
 
 				return ext.loadAnimationTargetFromChannel && ext.loadAnimationTargetFromChannel( channel );
 
@@ -4369,7 +4364,7 @@ class GLTFParser {
 
 				}
 
-				const createdTracks = this.parser._invokeOne( function ( ext ) {
+				const createdTracks = parser._invokeOne( function ( ext ) {
 
 					return ext.createAnimationTracks && ext.createAnimationTracks( node, inputAccessor, outputAccessor, sampler, target );
 
