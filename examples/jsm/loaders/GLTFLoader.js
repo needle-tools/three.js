@@ -895,13 +895,24 @@ class GLTFAnimationPointerExtension {
 						const foundNode = node.getObjectByName( val );
 						if ( foundNode )
 							currentTarget = foundNode;
-
 					}
+
+				}
+
+				if ( ! currentTarget ) {
+
+					const originalFindResult = find ( node, sections[ 2 ] );
+
+					if ( ! originalFindResult )
+						console.error("not found", path, node, node.name, sections);
+
+					return originalFindResult;
 
 				}
 
 				if ( this._animationPointerDebug )
 					console.log( 'NODE', path, currentTarget );
+
 				return currentTarget;
 
 			}
