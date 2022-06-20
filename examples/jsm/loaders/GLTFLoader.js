@@ -73,6 +73,7 @@ class GLTFLoader extends Loader {
 		this.dracoLoader = null;
 		this.ktx2Loader = null;
 		this.meshoptDecoder = null;
+		this.animationPointerResolver = null;
 
 		this.pluginCallbacks = [];
 
@@ -258,6 +259,13 @@ class GLTFLoader extends Loader {
 
 	}
 
+	setAnimationPointerResolver( animationPointerResolver ) {
+
+		this.animationPointerResolver = animationPointerResolver;
+		return this;
+
+	}
+
 	register( callback ) {
 
 		if ( this.pluginCallbacks.indexOf( callback ) === - 1 ) {
@@ -335,7 +343,8 @@ class GLTFLoader extends Loader {
 			requestHeader: this.requestHeader,
 			manager: this.manager,
 			ktx2Loader: this.ktx2Loader,
-			meshoptDecoder: this.meshoptDecoder
+			meshoptDecoder: this.meshoptDecoder,
+			animationPointerResolver: this.animationPointerResolver,
 
 		} );
 
@@ -1164,9 +1173,12 @@ class GLTFAnimationPointerExtension {
 
 			}
 
-			// TODO figure out if/how custom extensions can rewrite paths or get callbacks for animation pointer resolving
-			// if ( path.includes( 'extensions/builtin_components' ) )
-			// 	path = path.replace( 'extensions/builtin_components ', 'userData/components' );
+			const pointerResolver = this.parser.options.animationPointerResolver;
+			if ( pointerResolver && pointerResolver.resolvePath ) {
+
+				path = pointerResolver.resolvePath( path );
+
+			}
 
 			target.extensions[ EXTENSIONS.KHR_ANIMATION_POINTER ].pointer = path;
 
