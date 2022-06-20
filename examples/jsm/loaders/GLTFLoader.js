@@ -1165,8 +1165,8 @@ class GLTFAnimationPointerExtension {
 			}
 
 			// TODO figure out if/how custom extensions can rewrite paths or get callbacks for animation pointer resolving
-			// if ( path.includes( 'extensions/builtin_components' ) )
-			// 	path = path.replace( 'extensions/builtin_components ', 'userData/components' );
+			if ( path.includes( '/extensions/builtin_components/' ) )
+				path = path.replace( '/extensions/builtin_components/', '/userData/components/' );
 
 			target.extensions[ EXTENSIONS.KHR_ANIMATION_POINTER ].pointer = path;
 
