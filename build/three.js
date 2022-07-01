@@ -15416,7 +15416,7 @@
 	function WebGLRenderStates(extensions, capabilities) {
 		let renderStates = new WeakMap();
 
-		function get(scene, renderCallDepth = 0) {
+		function get(scene, renderCallDepth) {
 			let renderState;
 
 			if (renderStates.has(scene) === false) {
@@ -18429,6 +18429,7 @@
 				for (let i = 0; i < controllers.length; i++) {
 					const inputSource = controllerInputSources[i];
 					if (!inputSource) continue;
+					controllerInputSources[i] = null;
 					controllers[i].disconnect(inputSource);
 				}
 
@@ -35475,3 +35476,4 @@
 	Object.defineProperty(exports, '__esModule', { value: true });
 
 }));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoidGhyZWUuanMiLCJzb3VyY2VzIjpbXSwic291cmNlc0NvbnRlbnQiOltdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiIn0=

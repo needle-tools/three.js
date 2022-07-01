@@ -15414,7 +15414,7 @@ function WebGLRenderState(extensions, capabilities) {
 function WebGLRenderStates(extensions, capabilities) {
 	let renderStates = new WeakMap();
 
-	function get(scene, renderCallDepth = 0) {
+	function get(scene, renderCallDepth) {
 		let renderState;
 
 		if (renderStates.has(scene) === false) {
@@ -18427,6 +18427,7 @@ class WebXRManager extends EventDispatcher {
 			for (let i = 0; i < controllers.length; i++) {
 				const inputSource = controllerInputSources[i];
 				if (!inputSource) continue;
+				controllerInputSources[i] = null;
 				controllers[i].disconnect(inputSource);
 			}
 
@@ -35469,3 +35470,4 @@ exports.ZeroSlopeEnding = ZeroSlopeEnding;
 exports.ZeroStencilOp = ZeroStencilOp;
 exports._SRGBAFormat = _SRGBAFormat;
 exports.sRGBEncoding = sRGBEncoding;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoidGhyZWUuY2pzIiwic291cmNlcyI6W10sInNvdXJjZXNDb250ZW50IjpbXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiJ9
