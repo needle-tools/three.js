@@ -1245,7 +1245,14 @@ class GLTFAnimationPointerExtension {
 
 		const interpolation = sampler.interpolation !== undefined ? INTERPOLATION[ sampler.interpolation ] : InterpolateLinear;
 
-		const outputArray = getArrayFromAccessor( outputAccessor );
+		let outputArray = getArrayFromAccessor( outputAccessor );
+
+		// convert fov values from radians to degrees
+		if ( animationPointerPropertyPath.endsWith( '.fov' ) ) {
+			
+			outputArray = outputArray.map( value => value / Math.PI * 180 );
+
+		}
 
 		const track = new TypedKeyframeTrack(
 			animationPointerPropertyPath,
