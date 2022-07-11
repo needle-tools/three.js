@@ -1238,7 +1238,12 @@ class GLTFAnimationPointerExtension {
 				TypedKeyframeTrack = VectorKeyframeTrack;
 				break;
 			case 4:
-				TypedKeyframeTrack = ColorKeyframeTrack;
+
+				if ( animationPointerPropertyPath.endsWith( '.quaternion' ) )
+					TypedKeyframeTrack = QuaternionKeyframeTrack;
+				else
+					TypedKeyframeTrack = ColorKeyframeTrack;
+
 				break;
 
 		}
