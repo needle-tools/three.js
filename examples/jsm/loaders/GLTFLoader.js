@@ -595,6 +595,14 @@ class GLTFLightsExtension {
 
 	}
 
+	getDependency( type, index ) {	
+
+		if ( type !== 'light' ) return;
+
+		return this._loadLight( index );
+
+	}
+
 	createNodeAttachment( nodeIndex ) {
 
 		const self = this;
@@ -1205,6 +1213,12 @@ class GLTFAnimationPointerExtension {
 			console.error( 'Unhandled type', type );
 
 		return depPromise;
+
+	}
+
+	getDependency( type, index ) {
+
+
 
 	}
 
@@ -3357,16 +3371,20 @@ class GLTFParser {
 					dependency = this.loadCamera( index );
 					break;
 
-				case 'light':
+				default:
 					dependency = this._invokeOne( function ( ext ) {
 
-						return ext._loadLight && ext._loadLight( index );
+						return ext != this && ext.getDependency && ext.getDependency( type, index );
 
 					} );
-					break;
 
-				default:
-					throw new Error( 'Unknown type: ' + type );
+					if ( ! dependency ) {
+
+						throw new Error( 'Unknown type: ' + type );
+
+					}
+
+					break;
 
 			}
 
