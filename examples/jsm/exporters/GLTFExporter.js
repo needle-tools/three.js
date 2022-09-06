@@ -545,6 +545,12 @@ class GLTFWriter {
 
 		}
 
+		// Clean up in case we had to create a temporary renderer for blitting compressed textures.
+		if (this.temporaryRenderer) {
+
+			this.temporaryRenderer.dispose();
+
+		}
 
 	}
 
@@ -751,12 +757,19 @@ class GLTFWriter {
 		const temporaryScene = new Scene();
 		temporaryScene.add( fullscreenQuad );
 
-		const temporaryRenderer = new WebGLRenderer( { antialias: false } );
-		temporaryRenderer.setSize( Math.min(map.image.width, maxTextureSize), Math.min(map.image.height, maxTextureSize) );
-		temporaryRenderer.clear();
-		temporaryRenderer.render( temporaryScene, temporaryCam );
+		if (!this.temporaryRenderer) {
 
-		return new Texture( temporaryRenderer.domElement );
+			this.temporaryRenderer = new WebGLRenderer( { antialias: false } );
+
+		}
+
+		this.temporaryRenderer.setSize( Math.min(map.image.width, maxTextureSize), Math.min(map.image.height, maxTextureSize) );
+		this.temporaryRenderer.clear();
+		this.temporaryRenderer.render( temporaryScene, temporaryCam );
+
+		const readableTexture = new Texture( this.temporaryRenderer.domElement );
+		readableTexture.userData.mimeType = 'image/png';
+		return readableTexture;
 
 	}
 
@@ -787,6 +800,22 @@ class GLTFWriter {
 		}
 
 		console.warn( 'THREE.GLTFExporter: Merged metalnessMap and roughnessMap textures.' );
+
+		if ( typeof CompressedTexture !== 'undefined') {
+
+			if ( metalnessMap instanceof CompressedTexture ) {
+
+				metalnessMap = this.buildReadableTexture( metalnessMap );
+
+			}
+
+			if ( roughnessMap instanceof CompressedTexture ) {
+
+				roughnessMap = this.buildReadableTexture( roughnessMap );
+
+			}
+
+		}
 
 		const metalness = metalnessMap?.image;
 		const roughness = roughnessMap?.image;
@@ -1180,7 +1209,6 @@ class GLTFWriter {
 					console.error( 'GLTFExporter: Only RGBAFormat is supported.', image );
 
 				}
-
 				if ( image.width > options.maxTextureSize || image.height > options.maxTextureSize ) {
 
 					console.warn( 'GLTFExporter: Image size is bigger than maxTextureSize', image );
@@ -1311,7 +1339,6 @@ class GLTFWriter {
 		if ( typeof CompressedTexture !== 'undefined' && map instanceof CompressedTexture ) {
 
 			modifiedMap = this.buildReadableTexture( map, options.maxTextureSize );
-			modifiedMap.userData.mimeType = 'image/png';
 
 		}
 		
