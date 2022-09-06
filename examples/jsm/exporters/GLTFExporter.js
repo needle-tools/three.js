@@ -157,6 +157,7 @@ const WEBGL_CONSTANTS = {
 
 	BYTE: 0x1400,
 	UNSIGNED_BYTE: 0x1401,
+	SHORT: 0x1402,
 	UNSIGNED_SHORT: 0x1403,
 	FLOAT: 0x1406,
 	UNSIGNED_INT: 0x1405,
@@ -952,6 +953,10 @@ class GLTFWriter {
 
 					dataView.setInt8( offset, value );
 
+				} else if ( componentType === WEBGL_CONSTANTS.SHORT ) {
+
+					dataView.setInt16( offset, value );
+
 				}
 
 				offset += componentSize;
@@ -1073,6 +1078,10 @@ class GLTFWriter {
 		} else if ( attribute.array.constructor === Int8Array ) {
 
 			componentType = WEBGL_CONSTANTS.BYTE;
+
+		} else if ( attribute.array.constructor === Int16Array ) {
+
+			componentType = WEBGL_CONSTANTS.SHORT;
 
 		} else {
 
