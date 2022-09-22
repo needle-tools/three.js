@@ -1,6 +1,6 @@
 import { PlaneBufferGeometry, Texture, Uniform, PerspectiveCamera, Scene, Mesh, ShaderMaterial, WebGLRenderer, Matrix4, RepeatWrapping, MirroredRepeatWrapping, ClampToEdgeWrapping } from 'three';
 import * as fflate from 'three/examples/jsm/libs/fflate.module.js';
-import { generateUUID } from 'three/src/math/mathutils';
+import { generateUUID } from 'three/src/math/mathutils.js';
 
 
 class USDZDocument {
