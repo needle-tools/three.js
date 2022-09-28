@@ -1,5 +1,5 @@
 {
-  "name": "three",
+  "name": "@needle-tools/three",
   "version": "0.151.0",
   "description": "JavaScript 3D library",
   "type": "module",
@@ -118,5 +118,9 @@
       "build/three.module.js"
     ],
     "directories": {}
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   }
 }
