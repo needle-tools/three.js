@@ -84,8 +84,8 @@
 
 						// Workaround to get blurry backgrounds until https://github.com/mrdoob/three.js/pull/23712 lands
 						THREE.ShaderChunk.envmap_fragment = THREE.ShaderChunk.envmap_fragment.replace(
-							`vec4 envColor = textureCube( envMap, vec3( flipEnvMap * reflectVec.x, reflectVec.yz ) );`,
-							`vec4 envColor = textureCubeLodEXT( envMap, vec3( flipEnvMap * reflectVec.x, reflectVec.yz ), 0.6 * 8.0 );`
+							'vec4 envColor = textureCube( envMap, vec3( flipEnvMap * reflectVec.x, reflectVec.yz ) );',
+							'vec4 envColor = textureCubeLodEXT( envMap, vec3( flipEnvMap * reflectVec.x, reflectVec.yz ), 0.6 * 8.0 );'
 						);
 
 						animate();
@@ -119,11 +119,11 @@
 			function animate() {
 
 				requestAnimationFrame( animate );
-				
-				if( mixer !== undefined) {
+
+				if ( mixer !== undefined ) {
 
 					var delta = clock.getDelta();
-					mixer.update( delta )
+					mixer.update( delta );
 
 				}
 
@@ -181,7 +181,6 @@
 
 				} );
 
-				
 				if ( animations && animations.length > 0 ) {
 
 					mixer = new THREE.AnimationMixer( currentModel );
@@ -249,7 +248,7 @@
 
 					var reader = new FileReader();
 
-					reader.addEventListener( 'load', function ( event ) {
+					reader.addEventListener( 'load', function () {
 
 						const loader = new GLTFLoader();
 						loader.setKTX2Loader( ktx2Loader );
@@ -265,7 +264,7 @@
 
 					var reader = new FileReader();
 
-					reader.addEventListener( 'load', function ( event ) {
+					reader.addEventListener( 'load', function () {
 
 						const loader = new FBXLoader();
 						loader.load( reader.result, function ( object ) {
