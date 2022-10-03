@@ -254,7 +254,19 @@
 						loader.setKTX2Loader( ktx2Loader );
 						loader.setMeshoptDecoder( MeshoptDecoder );
 						loader.setDRACOLoader( dracoLoader );
-						loader.parse( reader.result, '', gltf => addToScene( gltf.scene, gltf.animations ) );
+						loader.parse( reader.result, '', gltf => {
+
+							const url = new URL( window.location.href );
+							if ( url.searchParams.get( 'debug' ) !== undefined ) {
+
+								console.log( gltf );
+								console.log( gltf.parser.json );
+
+							}
+
+							addToScene( gltf.scene, gltf.animations );
+
+						} );
 
 					} );
 
