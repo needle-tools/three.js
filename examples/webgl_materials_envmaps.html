@@ -32,6 +32,7 @@
 
 			import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+			import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
 
 			let controls, camera, scene, renderer;
 			let textureEquirec, textureCube;
@@ -53,25 +54,37 @@
 
 				// Textures
 
-				const loader = new THREE.CubeTextureLoader();
-				loader.setPath( 'textures/cube/Bridge2/' );
+				let a = 'https://cdn.glitch.global/effbbb2c-ada4-4cec-a5bc-b8017d49eff9/workshop_256.exr?v=1666692702391';
+				let b = 'https://dl.polyhaven.org/file/ph-assets/HDRIs/exr/1k/golf_course_sunrise_1k.exr';
+				
+				textureCube = new EXRLoader().load( a , (tex) => {
+					scene.environment = tex;
+					// scene.background = textureCube;
 
-				textureCube = loader.load( [ 'posx.jpg', 'negx.jpg', 'posy.jpg', 'negy.jpg', 'posz.jpg', 'negz.jpg' ] );
-				textureCube.encoding = THREE.sRGBEncoding;
-
-				const textureLoader = new THREE.TextureLoader();
-
-				textureEquirec = textureLoader.load( 'textures/2294472375_24a3b8ef46_o.jpg' );
-				textureEquirec.mapping = THREE.EquirectangularReflectionMapping;
-				textureEquirec.encoding = THREE.sRGBEncoding;
-
-				scene.background = textureCube;
+				});
+				textureCube.mapping = THREE.EquirectangularReflectionMapping;
+				// textureCube.encoding = THREE.sRGBEncoding;
 
 				//
 
 				const geometry = new THREE.IcosahedronGeometry( 400, 15 );
-				sphereMaterial = new THREE.MeshBasicMaterial( { envMap: textureCube } );
+				sphereMaterial = new THREE.MeshStandardMaterial( { roughness: 0, metalness: 1 } );
 				sphereMesh = new THREE.Mesh( geometry, sphereMaterial );
+				scene.add( sphereMesh );
+
+				setTimeout(() => {
+					textureEquirec = new EXRLoader().load( b, (tex) => {
+						tex.mapping = THREE.EquirectangularReflectionMapping;
+						sphereMaterial.envMap = tex;
+					});
+					
+				}, 1000)
+				
+				// textureEquirec.encoding = THREE.sRGBEncoding;
+
+				sphereMaterial = new THREE.MeshStandardMaterial(  { roughness: 0, metalness: 1} );
+				sphereMesh = new THREE.Mesh( geometry, sphereMaterial );
+				sphereMesh.position.x = 1000;
 				scene.add( sphereMesh );
 
 				//
