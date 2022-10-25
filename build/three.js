@@ -11785,6 +11785,15 @@
 
 			const cubeUVRenderTarget = _createRenderTarget(width, height, params);
 
+			const {
+				_lodMax
+			} = this;
+			({
+				sizeLods: this._sizeLods,
+				lodPlanes: this._lodPlanes,
+				sigmas: this._sigmas
+			} = _createPlanes(_lodMax));
+
 			if (this._pingPongRenderTarget === null || this._pingPongRenderTarget.width !== width) {
 				if (this._pingPongRenderTarget !== null) {
 					this._dispose();
@@ -15305,7 +15314,7 @@
 	function WebGLRenderStates(extensions, capabilities) {
 		let renderStates = new WeakMap();
 
-		function get(scene, renderCallDepth) {
+		function get(scene, renderCallDepth = 0) {
 			const renderStateArray = renderStates.get(scene);
 			let renderState;
 
@@ -36046,3 +36055,4 @@
 	Object.defineProperty(exports, '__esModule', { value: true });
 
 }));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoidGhyZWUuanMiLCJzb3VyY2VzIjpbXSwic291cmNlc0NvbnRlbnQiOltdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiIn0=

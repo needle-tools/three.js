@@ -11783,6 +11783,15 @@ class PMREMGenerator {
 
 		const cubeUVRenderTarget = _createRenderTarget(width, height, params);
 
+		const {
+			_lodMax
+		} = this;
+		({
+			sizeLods: this._sizeLods,
+			lodPlanes: this._lodPlanes,
+			sigmas: this._sigmas
+		} = _createPlanes(_lodMax));
+
 		if (this._pingPongRenderTarget === null || this._pingPongRenderTarget.width !== width) {
 			if (this._pingPongRenderTarget !== null) {
 				this._dispose();
@@ -15303,7 +15312,7 @@ function WebGLRenderState(extensions, capabilities) {
 function WebGLRenderStates(extensions, capabilities) {
 	let renderStates = new WeakMap();
 
-	function get(scene, renderCallDepth) {
+	function get(scene, renderCallDepth = 0) {
 		const renderStateArray = renderStates.get(scene);
 		let renderState;
 
@@ -36040,3 +36049,4 @@ exports.ZeroSlopeEnding = ZeroSlopeEnding;
 exports.ZeroStencilOp = ZeroStencilOp;
 exports._SRGBAFormat = _SRGBAFormat;
 exports.sRGBEncoding = sRGBEncoding;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoidGhyZWUuY2pzIiwic291cmNlcyI6W10sInNvdXJjZXNDb250ZW50IjpbXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiJ9
