@@ -783,9 +783,14 @@ function buildMesh( geometry ) {
             interpolation = "vertex"
         )
         point3f[] points = [${buildVector3Array( attributes.position, count )}]
-        float2[] primvars:st = [${buildVector2Array( attributes.uv, count )}] (
+        ${attributes.uv ? 
+		`float2[] primvars:st = [${buildVector2Array( attributes.uv, count )}] (
             interpolation = "vertex"
-        )
+        )` : '' }
+		${attributes.uv2 ? 
+        `float2[] primvars:st2 = [${buildVector2Array( attributes.uv2, count )}] (
+            interpolation = "vertex"
+        )` : '' }
         uniform token subdivisionScheme = "none"
     }
 `;
@@ -934,26 +939,31 @@ function buildMaterial( material, textures ) {
 		}
 
 		textures[ id ] = texture;
+		const uvReader = mapType == 'occlusion' ? 'uvReader_st2' : 'uvReader_st';
+
+		const needsTextureTransform = ( repeat.x != 1 || repeat.y != 1 || offset.x != 0 || offset.y != 0 );
+		const textureTransformInput = `</Materials/Material_${material.id}/${uvReader}.outputs:result>`;
+		const textureTransformOutput = `</Materials/Material_${material.id}/Transform2d_${mapType}.outputs:result>`;
 
 		return `
-        def Shader "Transform2d_${mapType}" (
+        ${needsTextureTransform ? `def Shader "Transform2d_${mapType}" (
             sdrMetadata = {
                 string role = "math"
             }
         )
         {
             uniform token info:id = "UsdTransform2d"
-            float2 inputs:in.connect = </Materials/Material_${material.id}/uvReader_st.outputs:result>
+            float2 inputs:in.connect = ${textureTransformInput}
             float2 inputs:scale = ${buildVector2( repeat )}
             float2 inputs:translation = ${buildVector2( offset )}
             float2 outputs:result
         }
-
-        def Shader "Texture_${texture.id}_${mapType}"
+		` : '' }
+		def Shader "Texture_${texture.id}_${mapType}"
         {
             uniform token info:id = "UsdUVTexture"
             asset inputs:file = @textures/Texture_${id}.${isRGBA ? 'png' : 'jpg'}@
-            float2 inputs:st.connect = </Materials/Material_${material.id}/Transform2d_${mapType}.outputs:result>
+            float2 inputs:st.connect = ${needsTextureTransform ? textureTransformOutput : textureTransformInput}
 			float4 inputs:scale = (${color ? color.r + ', ' + color.g + ', ' + color.b : '1, 1, 1'}, ${opacity ? opacity : '1'})
             token inputs:wrapS = "${wrapS}"
             token inputs:wrapT = "${wrapT}"
@@ -1083,11 +1093,20 @@ ${inputs.join( '\n' )}
 
         token outputs:surface.connect = </Materials/Material_${material.id}/PreviewSurface.outputs:surface>
         token inputs:frame:stPrimvarName = "st"
+		token inputs:frame:st2PrimvarName = "st2"
 
         def Shader "uvReader_st"
         {
             uniform token info:id = "UsdPrimvarReader_float2"
             token inputs:varname.connect = </Materials/Material_${material.id}.inputs:frame:stPrimvarName>
+            float2 inputs:fallback = (0.0, 0.0)
+            float2 outputs:result
+        }
+
+		def Shader "uvReader_st2"
+        {
+            uniform token info:id = "UsdPrimvarReader_float2"
+            token inputs:varname.connect = </Materials/Material_${material.id}.inputs:frame:st2PrimvarName>
             float2 inputs:fallback = (0.0, 0.0)
             float2 outputs:result
         }
