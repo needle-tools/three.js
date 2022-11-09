@@ -966,6 +966,8 @@ function buildMaterial( material, textures ) {
 
 	}
 
+	const effectiveOpacity = (material.transparent || material.alphaTest) ? material.opacity : 1;
+
 	if ( material.side === DoubleSide ) {
 
 		console.warn( 'THREE.USDZExporter: USDZ does not support double sided materials', material );
@@ -987,7 +989,7 @@ function buildMaterial( material, textures ) {
 
 		}
 
-		samplers.push( buildTexture( material.map, 'diffuse', material.color, material.opacity ) );
+		samplers.push( buildTexture( material.map, 'diffuse', material.color, effectiveOpacity ) );
 
 	} else {
 
@@ -1056,7 +1058,7 @@ function buildMaterial( material, textures ) {
 
 	} else {
 
-		inputs.push( `${pad}float inputs:opacity = ${material.opacity}` );
+		inputs.push( `${pad}float inputs:opacity = ${effectiveOpacity}` );
 
 	}
 
