@@ -1139,13 +1139,11 @@ ${inputs.join( '\n' )}
         }
 
         token outputs:surface.connect = </Materials/Material_${material.id}/PreviewSurface.outputs:surface>
-        token inputs:frame:stPrimvarName = "st"
-		token inputs:frame:st2PrimvarName = "st2"
 
         def Shader "uvReader_st"
         {
             uniform token info:id = "UsdPrimvarReader_float2"
-            token inputs:varname.connect = </Materials/Material_${material.id}.inputs:frame:stPrimvarName>
+            token inputs:varname = "st"
             float2 inputs:fallback = (0.0, 0.0)
             float2 outputs:result
         }
@@ -1153,7 +1151,7 @@ ${inputs.join( '\n' )}
 		def Shader "uvReader_st2"
         {
             uniform token info:id = "UsdPrimvarReader_float2"
-            token inputs:varname.connect = </Materials/Material_${material.id}.inputs:frame:st2PrimvarName>
+            token inputs:varname = "st2"
             float2 inputs:fallback = (0.0, 0.0)
             float2 outputs:result
         }
