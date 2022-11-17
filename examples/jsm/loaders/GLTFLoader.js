@@ -3807,7 +3807,7 @@ class GLTFParser {
 
 			}
 
-			if ( encoding !== undefined ) {
+			if ( encoding !== undefined && texture ) {
 
 				texture.encoding = encoding;
 
