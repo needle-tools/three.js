@@ -37,6 +37,7 @@ function decompress( texture, maxTextureSize, renderer ) {
 
             void main(){ 
                 gl_FragColor = vec4(vUv.xy, 0, 1);
+                
                 #ifdef IS_SRGB
                 gl_FragColor = conv_LinearTosRGB( texture2D( blitTexture, vUv) );
                 #else
@@ -47,6 +48,7 @@ function decompress( texture, maxTextureSize, renderer ) {
 
     fullscreenQuadMaterial.uniforms.blitTexture.value = texture;
     fullscreenQuadMaterial.defines.IS_SRGB = texture.encoding == sRGBEncoding;
+    fullscreenQuadMaterial.needsUpdate = true;
 
     if ( !fullscreenQuad ) {
 
@@ -74,8 +76,6 @@ function decompress( texture, maxTextureSize, renderer ) {
 
     const readableTexture = new Texture( renderer.domElement );
     readableTexture.userData.mimeType = 'image/png';
-    console.log(readableTexture, readableTexture.image)
-
     return readableTexture;
 
 }
