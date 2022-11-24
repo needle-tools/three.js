@@ -341,8 +341,9 @@ class USDZExporterContext {
 
 class USDZExporter {
 
-	async parse( scene, extensions ) {
+	async parse( scene, extensions, sceneAnchoringOptions = { ar: { anchoring: { type: 'plane' }, planeAnchoring: { alignment: 'vertical' } } } ) {
 
+		this.sceneAnchoringOptions = sceneAnchoringOptions;
 		const context = new USDZExporterContext( scene, this, extensions );
 		extensions = context.extensions;
 
@@ -368,7 +369,6 @@ class USDZExporter {
 		context.output += buildMaterials( materials, textures );
 
 		invokeAll( context, 'onAfterHierarchy' );
-
 
 		const header = context.document.buildHeader();
 		const final = header + '\n' + context.output;
@@ -512,11 +512,28 @@ function parseDocument( context ) {
 
 	writer.beginBlock( `def Xform "${context.document.name}"` );
 
+	writer.beginBlock( `def Scope "Scenes" (
+        kind = "sceneLibrary"
+    )`);
+
+	writer.beginBlock(`def Xform "Scene" (
+		customData = {
+			bool preliminary_collidesWithEnvironment = 0
+			string sceneName = "Scene"
+		}
+		sceneName = "Scene"
+	)`);
+
+	writer.appendLine(`token preliminary:anchoring:type = "${this.sceneAnchoringOptions.ar.anchoring.type}"`);
+	writer.appendLine(`token preliminary:planeAnchoring:alignment = "${this.sceneAnchoringOptions.ar.planeAnchoring.alignment}"`);
+
 	for ( const child of context.document.children ) {
 
 		buildXform( child, writer, context );
 
 	}
+
+	writer.closeBlock();
 
 	writer.closeBlock();
 
