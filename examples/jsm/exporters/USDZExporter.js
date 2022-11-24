@@ -141,13 +141,14 @@ export class USDZObject {
 
 	}
 
-	constructor( id, name, matrix, mesh, material ) {
+	constructor( id, name, matrix, mesh, material, camera ) {
 
 		this.uuid = id;
 		this.name = name;
 		this.matrix = matrix;
 		this.geometry = mesh;
 		this.material = material;
+		this.camera = camera;
 		this.parent = null;
 		this.children = [];
 		this._eventListeners = {};
@@ -445,6 +446,11 @@ function traverseVisible( object, parentModel, context ) {
 		const name = getObjectId( object );
 		model = new USDZObject( object.uuid, name, object.matrix, geometry, material );
 
+	} else if ( object.isCamera ) {
+
+		const name = getObjectId( object );
+		model = new USDZObject( object.uuid, name, object.matrix, undefined, undefined, object );
+
 	} else {
 
 		const name = getObjectId( object );
@@ -699,6 +705,7 @@ export function buildXform( model, writer, context ) {
 	const matrix = model.matrix;
 	const geometry = model.geometry;
 	const material = model.material;
+	const camera = model.camera;
 	const name = model.name;
 	const transform = buildMatrix( matrix );
 
@@ -712,6 +719,8 @@ export function buildXform( model, writer, context ) {
 
 	if ( geometry )
 		writer.beginBlock( `def Xform "${name}" (prepend references = @./geometries/Geometry_${geometry.id}.usd@</Geometry>)` );
+	else if ( camera )
+		writer.beginBlock( `def Camera "${name}"` );
 	else
 		writer.beginBlock( `def Xform "${name}"` );
 
@@ -719,6 +728,31 @@ export function buildXform( model, writer, context ) {
 		writer.appendLine( `rel material:binding = </Materials/Material_${material.id}>` );
 	writer.appendLine( `matrix4d xformOp:transform = ${transform}` );
 	writer.appendLine( 'uniform token[] xformOpOrder = ["xformOp:transform"]' );
+
+	if ( camera  ) {
+		
+		if ( camera.isOrthographicCamera ) {
+
+			writer.appendLine `
+float2 clippingRange = (${camera.near}, ${camera.far})
+float horizontalAperture = ${( Math.abs( camera.left ) + Math.abs( camera.right ) ) * 10}
+float verticalAperture = ${( Math.abs( camera.top ) + Math.abs( camera.bottom ) ) * 10}
+token projection = "orthographic"`;
+	
+		} else {
+	
+			writer.appendLine `
+float2 clippingRange = (${camera.near}, ${camera.far})
+float focalLength = ${camera.getFocalLength()}
+float focusDistance = ${camera.focus}
+float horizontalAperture = ${camera.getFilmWidth()}
+token projection = "perspective"
+float verticalAperture = ${camera.getFilmHeight()}`;
+
+		}
+
+	}
+
 	if ( model.onSerialize ) {
 
 		model.onSerialize( writer, context );
