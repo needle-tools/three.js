@@ -7,14 +7,13 @@ import {
 	Mesh, 
 	ShaderMaterial, 
 	WebGLRenderer, 
+	MathUtils,
 	Matrix4, 
 	RepeatWrapping, 
 	MirroredRepeatWrapping, 
 	DoubleSide
 } from 'three';
-import * as fflate from 'three/examples/jsm/libs/fflate.module.js';
-import { generateUUID } from 'three/src/math/mathutils.js';
-
+import * as fflate from 'three/addons/libs/fflate.module.js';
 
 class USDZDocument {
 
@@ -131,7 +130,7 @@ export class USDZObject {
 
 	static createEmptyParent( object ) {
 
-		const emptyParent = new USDZObject( generateUUID(), object.name + '_empty_' + ( this._id ++ ), object.matrix );
+		const emptyParent = new USDZObject( MathUtils.generateUUID(), object.name + '_empty_' + ( this._id ++ ), object.matrix );
 		const parent = object.parent;
 		parent.add( emptyParent );
 		emptyParent.add( object );
@@ -171,7 +170,7 @@ export class USDZObject {
 
 	clone() {
 
-		const clone = new USDZObject( generateUUID(), this.name, this.matrix, this.mesh, this.material );
+		const clone = new USDZObject( MathUtils.generateUUID(), this.name, this.matrix, this.mesh, this.material );
 		clone.isDynamic = this.isDynamic;
 		return clone;
 
@@ -341,7 +340,7 @@ class USDZExporterContext {
 
 class USDZExporter {
 
-	async parse( scene, extensions, sceneAnchoringOptions = { ar: { anchoring: { type: 'plane' }, planeAnchoring: { alignment: 'vertical' } } } ) {
+	async parse( scene, extensions, sceneAnchoringOptions = { ar: { anchoring: { type: 'plane' }, planeAnchoring: { alignment: 'horizontal' } } } ) {
 
 		this.sceneAnchoringOptions = sceneAnchoringOptions;
 		const context = new USDZExporterContext( scene, this, extensions );
@@ -511,21 +510,22 @@ function parseDocument( context ) {
 	const writer = new CodeWriter();
 
 	writer.beginBlock( `def Xform "${context.document.name}"` );
-
+	
 	writer.beginBlock( `def Scope "Scenes" (
-        kind = "sceneLibrary"
-    )`);
+			kind = "sceneLibrary"
+		)`);
 
 	writer.beginBlock(`def Xform "Scene" (
-		customData = {
-			bool preliminary_collidesWithEnvironment = 0
-			string sceneName = "Scene"
-		}
-		sceneName = "Scene"
-	)`);
+			customData = {
+				bool preliminary_collidesWithEnvironment = 0
+				string sceneName = "Scene"
+			}
+			sceneName = "Scene"
+		)`);
 
-	writer.appendLine(`token preliminary:anchoring:type = "${this.sceneAnchoringOptions.ar.anchoring.type}"`);
-	writer.appendLine(`token preliminary:planeAnchoring:alignment = "${this.sceneAnchoringOptions.ar.planeAnchoring.alignment}"`);
+	writer.appendLine(`token preliminary:anchoring:type = "${context.exporter.sceneAnchoringOptions.ar.anchoring.type}"`);
+	writer.appendLine(`token preliminary:planeAnchoring:alignment = "${context.exporter.sceneAnchoringOptions.ar.planeAnchoring.alignment}"`);
+	writer.appendLine();
 
 	for ( const child of context.document.children ) {
 
@@ -534,7 +534,7 @@ function parseDocument( context ) {
 	}
 
 	writer.closeBlock();
-
+	writer.closeBlock();
 	writer.closeBlock();
 
 	context.output += writer.toString();
@@ -726,8 +726,6 @@ export function buildXform( model, writer, context ) {
 	const name = model.name;
 	const transform = buildMatrix( matrix );
 
-	// console.log(model.name, model.getPath());
-
 	if ( matrix.determinant() < 0 ) {
 
 		console.warn( 'THREE.USDZExporter: USDZ does not support negative scales', path );
@@ -747,24 +745,22 @@ export function buildXform( model, writer, context ) {
 	writer.appendLine( 'uniform token[] xformOpOrder = ["xformOp:transform"]' );
 
 	if ( camera  ) {
-		
+		 
 		if ( camera.isOrthographicCamera ) {
 
-			writer.appendLine `
-float2 clippingRange = (${camera.near}, ${camera.far})
-float horizontalAperture = ${( Math.abs( camera.left ) + Math.abs( camera.right ) ) * 10}
-float verticalAperture = ${( Math.abs( camera.top ) + Math.abs( camera.bottom ) ) * 10}
-token projection = "orthographic"`;
+			writer.appendLine(`float2 clippingRange = (${camera.near}, ${camera.far})`);
+			writer.appendLine(`float horizontalAperture = ${(( Math.abs( camera.left ) + Math.abs( camera.right ) ) * 10).toPrecision( PRECISION )}`);
+			writer.appendLine(`float verticalAperture = ${(( Math.abs( camera.top ) + Math.abs( camera.bottom ) ) * 10).toPrecision( PRECISION )}`);
+			writer.appendLine(`token projection = "orthographic"`);
 	
 		} else {
 	
-			writer.appendLine `
-float2 clippingRange = (${camera.near}, ${camera.far})
-float focalLength = ${camera.getFocalLength()}
-float focusDistance = ${camera.focus}
-float horizontalAperture = ${camera.getFilmWidth()}
-token projection = "perspective"
-float verticalAperture = ${camera.getFilmHeight()}`;
+			writer.appendLine(`float2 clippingRange = (${camera.near.toPrecision( PRECISION )}, ${camera.far.toPrecision( PRECISION )})`);
+			writer.appendLine(`float focalLength = ${camera.getFocalLength().toPrecision( PRECISION )}`);
+			writer.appendLine(`float focusDistance = ${camera.focus.toPrecision( PRECISION )}`);
+			writer.appendLine(`float horizontalAperture = ${camera.getFilmWidth().toPrecision( PRECISION )}`);
+			writer.appendLine(`token projection = "perspective"`);
+			writer.appendLine(`float verticalAperture = ${camera.getFilmHeight().toPrecision( PRECISION )}`);
 
 		}
 
