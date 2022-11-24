@@ -20,16 +20,10 @@ import {
 	Scene,
 	Source,
 	sRGBEncoding,
-	Texture,
 	CompressedTexture,
-	PlaneGeometry,
-	ShaderMaterial,
-	Mesh,
-	PerspectiveCamera,
-	WebGLRenderer,
-	Uniform,
 	Vector3
 } from 'three';
+import { decompress } from './../utils/TextureUtils.js';
 
 class GLTFExporter {
 
@@ -545,13 +539,6 @@ class GLTFWriter {
 
 		}
 
-		// Clean up in case we had to create a temporary renderer for blitting compressed textures.
-		if (this.temporaryRenderer) {
-
-			this.temporaryRenderer.dispose();
-
-		}
-
 	}
 
 	/**
@@ -730,49 +717,6 @@ class GLTFWriter {
 
 	}
 
-	buildReadableTexture( map, maxTextureSize ) {
-
-		const fullscreenQuadGeometry = new PlaneGeometry( 2, 2, 1, 1 );
-		const fullscreenQuadMaterial = new ShaderMaterial( {
-			uniforms: { blitTexture: new Uniform( map ) },
-			vertexShader: `
-				varying vec2 vUv;
-				void main(){
-					vUv = uv;
-					gl_Position = vec4(position.xy * 1.0,0.,.999999);
-				}`,
-			fragmentShader: `
-				uniform sampler2D blitTexture; 
-				varying vec2 vUv;
-				void main(){ 
-					gl_FragColor = vec4(vUv.xy, 0, 1);
-					gl_FragColor = texture2D( blitTexture, vUv);
-				}`
-		} );
-
-		const fullscreenQuad = new Mesh( fullscreenQuadGeometry, fullscreenQuadMaterial );
-		fullscreenQuad.frustrumCulled = false;
-
-		const temporaryCam = new PerspectiveCamera();
-		const temporaryScene = new Scene();
-		temporaryScene.add( fullscreenQuad );
-
-		if (!this.temporaryRenderer) {
-
-			this.temporaryRenderer = new WebGLRenderer( { antialias: false } );
-
-		}
-
-		this.temporaryRenderer.setSize( Math.min(map.image.width, maxTextureSize), Math.min(map.image.height, maxTextureSize) );
-		this.temporaryRenderer.clear();
-		this.temporaryRenderer.render( temporaryScene, temporaryCam );
-
-		const readableTexture = new Texture( this.temporaryRenderer.domElement );
-		readableTexture.userData.mimeType = 'image/png';
-		return readableTexture;
-
-	}
-
 	buildMetalRoughTexture( metalnessMap, roughnessMap ) {
 
 		if ( metalnessMap === roughnessMap ) return metalnessMap;
@@ -801,17 +745,17 @@ class GLTFWriter {
 
 		console.warn( 'THREE.GLTFExporter: Merged metalnessMap and roughnessMap textures.' );
 
-		if ( typeof CompressedTexture !== 'undefined') {
+		if ( typeof CompressedTexture !== 'undefined' ) {
 
 			if ( metalnessMap instanceof CompressedTexture ) {
 
-				metalnessMap = this.buildReadableTexture( metalnessMap );
+				metalnessMap = decompress( metalnessMap );
 
 			}
 
 			if ( roughnessMap instanceof CompressedTexture ) {
 
-				roughnessMap = this.buildReadableTexture( roughnessMap );
+				roughnessMap = decompress( roughnessMap );
 
 			}
 
@@ -1209,6 +1153,7 @@ class GLTFWriter {
 					console.error( 'GLTFExporter: Only RGBAFormat is supported.', image );
 
 				}
+
 				if ( image.width > options.maxTextureSize || image.height > options.maxTextureSize ) {
 
 					console.warn( 'GLTFExporter: Image size is bigger than maxTextureSize', image );
@@ -1335,13 +1280,14 @@ class GLTFWriter {
 		let modifiedMap = map;
 
 		// make non-readable textures (e.g. CompressedTexture) readable by blitting them into a new texture
-		// TODO: how to detect that a texture isn't readable?
 		if ( typeof CompressedTexture !== 'undefined' && map instanceof CompressedTexture ) {
 
-			modifiedMap = this.buildReadableTexture( map, options.maxTextureSize );
+			modifiedMap = decompress( map, options.maxTextureSize );
+			// remove from cache, as the underlaying canvas is always the same between decompressed textures
+			cache.images.delete( modifiedMap.image );
 
 		}
-		
+
 		let mimeType = modifiedMap.userData.mimeType;
 
 		if ( mimeType === 'image/webp' ) mimeType = 'image/png';
