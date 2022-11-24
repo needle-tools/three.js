@@ -20,8 +20,10 @@ import {
 	Scene,
 	Source,
 	sRGBEncoding,
+	CompressedTexture,
 	Vector3
 } from 'three';
+import { decompress } from './../utils/TextureUtils.js';
 
 class GLTFExporter {
 
@@ -141,7 +143,9 @@ const WEBGL_CONSTANTS = {
 	TRIANGLE_STRIP: 0x0005,
 	TRIANGLE_FAN: 0x0006,
 
+	BYTE: 0x1400,
 	UNSIGNED_BYTE: 0x1401,
+	SHORT: 0x1402,
 	UNSIGNED_SHORT: 0x1403,
 	FLOAT: 0x1406,
 	UNSIGNED_INT: 0x1405,
@@ -535,7 +539,6 @@ class GLTFWriter {
 
 		}
 
-
 	}
 
 	/**
@@ -718,6 +721,8 @@ class GLTFWriter {
 
 		if ( metalnessMap === roughnessMap ) return metalnessMap;
 
+		// if ( occlusion === roughness && roughness === metalness ) return material.aoMap;
+
 		function getEncodingConversion( map ) {
 
 			if ( map.encoding === sRGBEncoding ) {
@@ -739,6 +744,22 @@ class GLTFWriter {
 		}
 
 		console.warn( 'THREE.GLTFExporter: Merged metalnessMap and roughnessMap textures.' );
+
+		if ( typeof CompressedTexture !== 'undefined' ) {
+
+			if ( metalnessMap instanceof CompressedTexture ) {
+
+				metalnessMap = decompress( metalnessMap );
+
+			}
+
+			if ( roughnessMap instanceof CompressedTexture ) {
+
+				roughnessMap = decompress( roughnessMap );
+
+			}
+
+		}
 
 		const metalness = metalnessMap?.image;
 		const roughness = roughnessMap?.image;
@@ -839,7 +860,7 @@ class GLTFWriter {
 
 		let componentSize;
 
-		if ( componentType === WEBGL_CONSTANTS.UNSIGNED_BYTE ) {
+		if ( componentType === WEBGL_CONSTANTS.UNSIGNED_BYTE || componentType === WEBGL_CONSTANTS.BYTE ) {
 
 			componentSize = 1;
 
@@ -893,6 +914,14 @@ class GLTFWriter {
 				} else if ( componentType === WEBGL_CONSTANTS.UNSIGNED_BYTE ) {
 
 					dataView.setUint8( offset, value );
+
+				} else if ( componentType === WEBGL_CONSTANTS.BYTE ) {
+
+					dataView.setInt8( offset, value );
+
+				} else if ( componentType === WEBGL_CONSTANTS.SHORT ) {
+
+					dataView.setInt16( offset, value );
 
 				}
 
@@ -1011,9 +1040,17 @@ class GLTFWriter {
 
 			componentType = WEBGL_CONSTANTS.UNSIGNED_BYTE;
 
+		} else if ( attribute.array.constructor === Int8Array ) {
+
+			componentType = WEBGL_CONSTANTS.BYTE;
+
+		} else if ( attribute.array.constructor === Int16Array ) {
+
+			componentType = WEBGL_CONSTANTS.SHORT;
+
 		} else {
 
-			throw new Error( 'THREE.GLTFExporter: Unsupported bufferAttribute component type.' );
+			throw new Error( 'THREE.GLTFExporter: Unsupported bufferAttribute component type: ' + attribute.array.constructor );
 
 		}
 
@@ -1107,7 +1144,34 @@ class GLTFWriter {
 
 			if ( image.width > options.maxTextureSize || image.height > options.maxTextureSize ) {
 
-				console.warn( 'GLTFExporter: Image size is bigger than maxTextureSize', image );
+				ctx.drawImage( image, 0, 0, canvas.width, canvas.height );
+
+			} else {
+
+				if ( format !== RGBAFormat ) {
+
+					console.error( 'GLTFExporter: Only RGBAFormat is supported.', image );
+
+				}
+
+				if ( image.width > options.maxTextureSize || image.height > options.maxTextureSize ) {
+
+					console.warn( 'GLTFExporter: Image size is bigger than maxTextureSize', image );
+
+				}
+
+				const data = new Uint8ClampedArray( image.height * image.width * 4 );
+
+				for ( let i = 0; i < data.length; i += 4 ) {
+
+					data[ i + 0 ] = image.data[ i + 0 ];
+					data[ i + 1 ] = image.data[ i + 1 ];
+					data[ i + 2 ] = image.data[ i + 2 ];
+					data[ i + 3 ] = image.data[ i + 3 ];
+
+				}
+
+				ctx.putImageData( new ImageData( data, image.width, image.height ), 0, 0 );
 
 			}
 
@@ -1203,6 +1267,8 @@ class GLTFWriter {
 	 */
 	processTexture( map ) {
 
+		const writer = this;
+		const options = writer.options;
 		const cache = this.cache;
 		const json = this.json;
 
@@ -1210,20 +1276,32 @@ class GLTFWriter {
 
 		if ( ! json.textures ) json.textures = [];
 
-		let mimeType = map.userData.mimeType;
+
+		let modifiedMap = map;
+
+		// make non-readable textures (e.g. CompressedTexture) readable by blitting them into a new texture
+		if ( typeof CompressedTexture !== 'undefined' && map instanceof CompressedTexture ) {
+
+			modifiedMap = decompress( map, options.maxTextureSize );
+			// remove from cache, as the underlaying canvas is always the same between decompressed textures
+			cache.images.delete( modifiedMap.image );
+
+		}
+
+		let mimeType = modifiedMap.userData.mimeType;
 
 		if ( mimeType === 'image/webp' ) mimeType = 'image/png';
 
 		const textureDef = {
 			sampler: this.processSampler( map ),
-			source: this.processImage( map.image, map.format, map.flipY, mimeType )
+			source: this.processImage( modifiedMap.image, modifiedMap.format, modifiedMap.flipY, mimeType )
 		};
 
 		if ( map.name ) textureDef.name = map.name;
 
 		this._invokeAll( function ( ext ) {
 
-			ext.writeTexture && ext.writeTexture( map, textureDef );
+			ext.writeTexture && ext.writeTexture( modifiedMap, textureDef );
 
 		} );
 
