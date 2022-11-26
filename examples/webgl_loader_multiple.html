@@ -11,7 +11,8 @@
 		<div id="info">
 			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - Multi-File Viewer (FBX and glTF)<br />
 			Drag-and-drop GLB or FBX model files with embedded textures<br />
-			<a href="https://hdrihaven.com/hdri/?h=quarry_01" target="_blank" rel="noopener">Quarry</a> by <a href="https://hdrihaven.com/" target="_blank" rel="noopener">HDRI Haven</a>
+			<a href="https://hdrihaven.com/hdri/?h=quarry_01" target="_blank" rel="noopener">Quarry</a> by <a href="https://hdrihaven.com/" target="_blank" rel="noopener">HDRI Haven</a><br />
+			<button id="download-gltf">Download glTF</button><button id="download-usdz">Download USDZ</button>
 		</div>
 
 		<!-- Import maps polyfill -->
@@ -38,10 +39,14 @@
 			import { MeshoptDecoder } from './jsm/libs/meshopt_decoder.module.js';
 
 			import { FBXLoader } from './jsm/loaders/FBXLoader.js';
-
+			import { USDZLoader } from './jsm/loaders/USDZLoader.js';
 			import { RGBELoader } from './jsm/loaders/RGBELoader.js';
 
+			import { USDZExporter } from './jsm/exporters/USDZExporter.js';
+			import { GLTFExporter } from './jsm/exporters/GLTFExporter.js';
+
 			let camera, scene, renderer, controls, currentModel, ktx2Loader, dracoLoader, clock, mixer;
+			let link;
 
 			init();
 
@@ -98,6 +103,88 @@
 
 				window.addEventListener( 'resize', onWindowResize );
 
+				// add button click events to download glTF and USDZ
+
+				link = document.createElement( 'a' );
+				link.style.display = 'none';
+				document.body.appendChild( link ); // Firefox workaround, see #6594
+
+				document.getElementById( 'download-gltf' ).addEventListener( 'click', function () {
+
+					const gltfExporter = new GLTFExporter();
+
+					const options = {
+						trs: true,
+						onlyVisible: true,
+						binary: true,
+					};
+
+					gltfExporter.parse(
+
+						scene,
+						function ( result ) {
+
+							if ( result instanceof ArrayBuffer ) {
+
+								saveArrayBuffer( result, 'scene.glb' );
+
+							} else {
+
+								const output = JSON.stringify( result, null, 2 );
+								console.log( output );
+								saveString( output, 'scene.gltf' );
+
+							}
+
+						},
+						function ( error ) {
+
+							console.log( 'An error happened during glTF export', error );
+
+						},
+						options
+					);
+
+				} );
+
+				document.getElementById( 'download-usdz' ).addEventListener( 'click', function () {
+
+					const usdzExporter = new USDZExporter();
+
+					usdzExporter.parse( scene ).then( function ( result ) {
+
+						saveArrayBuffer( result, 'scene.usdz' );
+
+					} ).catch( function ( error ) {
+
+						console.log( 'An error happened during USDZ export', error );
+
+					} );
+
+				} );
+
+			}
+
+			function saveArrayBuffer( buffer, filename ) {
+
+				save( new Blob( [ buffer ], { type: 'application/octet-stream' } ), filename );
+
+			}
+
+			function saveString( text, filename ) {
+
+				save( new Blob( [ text ], { type: 'text/plain' } ), filename );
+
+			}
+
+			function save( blob, filename ) {
+
+				link.href = URL.createObjectURL( blob );
+				link.download = filename;
+				link.click();
+
+				// URL.revokeObjectURL( url ); breaks Firefox...
+
 			}
 
 			function onWindowResize() {
@@ -114,11 +201,11 @@
 			function animate() {
 
 				requestAnimationFrame( animate );
-				
-				if( mixer !== undefined) {
+
+				if ( mixer !== undefined ) {
 
 					var delta = clock.getDelta();
-					mixer.update( delta )
+					mixer.update( delta );
 
 				}
 
@@ -176,7 +263,6 @@
 
 				} );
 
-				
 				if ( animations && animations.length > 0 ) {
 
 					mixer = new THREE.AnimationMixer( currentModel );
@@ -189,7 +275,6 @@
 					mixer = undefined;
 
 				}
-
 
 				fitCameraToObjects( camera, controls, [ currentModel ], 1.25 );
 
@@ -244,7 +329,7 @@
 
 					var reader = new FileReader();
 
-					reader.addEventListener( 'load', function ( event ) {
+					reader.addEventListener( 'load', function ( ) {
 
 						const loader = new GLTFLoader();
 						loader.setKTX2Loader( ktx2Loader );
@@ -260,12 +345,12 @@
 
 					var reader = new FileReader();
 
-					reader.addEventListener( 'load', function ( event ) {
+					reader.addEventListener( 'load', function ( ) {
 
 						const loader = new FBXLoader();
 						loader.load( reader.result, function ( object ) {
 
-							// attempt at migrating materials from the FBX (only supports Lambert / Phong) to MeshStandard (supports IBL)
+							// convert materials from the FBX (only supports Lambert / Phong) to MeshStandard (supports IBL)
 							object.traverse( function ( child ) {
 
 								if ( ! child.isMesh ) return;
@@ -274,17 +359,56 @@
 
 								child.material = new THREE.MeshStandardMaterial();
 
-								try {
+								if ( currentMaterial ) {
 
-									currentMaterial.constructor.prototype.copy.call( child.material, currentMaterial );
+									child.material.color.copy( currentMaterial.color );
+									child.material.emissive.copy( currentMaterial.emissive );
+									child.material.emissiveIntensity = currentMaterial.emissiveIntensity;
+									child.material.opacity = currentMaterial.opacity;
+									child.material.displacementScale = currentMaterial.displacementScale;
+									child.material.transparent = currentMaterial.transparent;
 
-								} catch {
+									child.material.bumpMap = currentMaterial.bumpMap;
+									child.material.aoMap = currentMaterial.aoMap;
+									child.material.map = currentMaterial.map;
+									child.material.displacementMap = currentMaterial.displacementMap;
+									child.material.emissiveMap = currentMaterial.emissiveMap;
+									child.material.normalMap = currentMaterial.normalMap;
+									child.material.envMap = currentMaterial.envMap;
+									child.material.alphaMap = currentMaterial.alphaMap;
 
-									child.material = currentMaterial;
+									child.material.metalness = currentMaterial.reflectivity;
+
+									if ( currentMaterial.shininess ) {
+
+										// from blender source code // https://github.com/blender/blender-addons/blob/5e66092bcbe0df6855b3fa814b4826add8b01360/io_scene_fbx/import_fbx.py#L1442
+										child.material.roughness = 1.0 - ( Math.sqrt( currentMaterial.shininess ) / 10.0 );
+
+									}
+
+									child.material.needsUpdate = true;
 
 								}
 
 							} );
+
+							addToScene( object, object.animations );
+
+						} );
+
+					} );
+
+					reader.readAsDataURL( file );
+
+				} else if ( extension == 'usdz' ) {
+
+					var reader = new FileReader();
+
+					reader.addEventListener( 'load', function ( ) {
+
+						const loader = new USDZLoader();
+
+						loader.load( reader.result, function ( object ) {
 
 							addToScene( object, object.animations );
 
