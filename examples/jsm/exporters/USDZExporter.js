@@ -13,7 +13,7 @@ import {
 	MirroredRepeatWrapping, 
 	DoubleSide
 } from 'three';
-import * as fflate from 'three/addons/libs/fflate.module.js';
+import * as fflate from '../libs/fflate.module.js';
 
 class USDZDocument {
 
