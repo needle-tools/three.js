@@ -64,47 +64,7 @@
 
 				const textureLoader = new THREE.TextureLoader();
 
-				textureLoader.load( 'textures/sprite0.png', createHUDSprites );
-				const mapB = textureLoader.load( 'textures/sprite1.png' );
-				mapC = textureLoader.load( 'textures/sprite2.png' );
-
-				group = new THREE.Group();
-
-				const materialC = new THREE.SpriteMaterial( { map: mapC, color: 0xffffff, fog: true } );
-				const materialB = new THREE.SpriteMaterial( { map: mapB, color: 0xffffff, fog: true } );
-
-				for ( let a = 0; a < amount; a ++ ) {
-
-					const x = Math.random() - 0.5;
-					const y = Math.random() - 0.5;
-					const z = Math.random() - 0.5;
-
-					let material;
-
-					if ( z < 0 ) {
-
-						material = materialB.clone();
-
-					} else {
-
-						material = materialC.clone();
-						material.color.setHSL( 0.5 * Math.random(), 0.75, 0.5 );
-						material.map.offset.set( - 0.5, - 0.5 );
-						material.map.repeat.set( 2, 2 );
-
-					}
-
-					const sprite = new THREE.Sprite( material );
-
-					sprite.position.set( x, y, z );
-					sprite.position.normalize();
-					sprite.position.multiplyScalar( radius );
-
-					group.add( sprite );
-
-				}
-
-				scene.add( group );
+				textureLoader.load( 'textures/pixel_sprite.png', createHUDSprites );
 
 				// renderer
 
@@ -115,38 +75,26 @@
 
 				document.body.appendChild( renderer.domElement );
 
-				//
-
 				window.addEventListener( 'resize', onWindowResize );
 
 			}
 
 			function createHUDSprites( texture ) {
 
+				texture.minFilter = THREE.NearestFilter;
+				texture.magFilter = THREE.NearestFilter;
+				
+				setInterval(() => {
+					texture.anisotropy = texture.anisotropy === 1 ? 4 : 1;
+					console.log("Anistropy:" + texture.anisotropy);
+					texture.needsUpdate = true;
+				}, 1000);
+
 				const material = new THREE.SpriteMaterial( { map: texture } );
 
-				const width = material.map.image.width;
-				const height = material.map.image.height;
-
-				spriteTL = new THREE.Sprite( material );
-				spriteTL.center.set( 0.0, 1.0 );
-				spriteTL.scale.set( width, height, 1 );
-				sceneOrtho.add( spriteTL );
-
-				spriteTR = new THREE.Sprite( material );
-				spriteTR.center.set( 1.0, 1.0 );
-				spriteTR.scale.set( width, height, 1 );
-				sceneOrtho.add( spriteTR );
-
-				spriteBL = new THREE.Sprite( material );
-				spriteBL.center.set( 0.0, 0.0 );
-				spriteBL.scale.set( width, height, 1 );
-				sceneOrtho.add( spriteBL );
-
-				spriteBR = new THREE.Sprite( material );
-				spriteBR.center.set( 1.0, 0.0 );
-				spriteBR.scale.set( width, height, 1 );
-				sceneOrtho.add( spriteBR );
+				const scale = 9;
+				const width = material.map.image.width * scale;
+				const height = material.map.image.height * scale;
 
 				spriteC = new THREE.Sprite( material );
 				spriteC.center.set( 0.5, 0.5 );
@@ -161,11 +109,6 @@
 
 				const width = window.innerWidth / 2;
 				const height = window.innerHeight / 2;
-
-				spriteTL.position.set( - width, height, 1 ); // top left
-				spriteTR.position.set( width, height, 1 ); // top right
-				spriteBL.position.set( - width, - height, 1 ); // bottom left
-				spriteBR.position.set( width, - height, 1 ); // bottom right
 				spriteC.position.set( 0, 0, 1 ); // center
 
 			}
@@ -200,37 +143,6 @@
 			function render() {
 
 				const time = Date.now() / 1000;
-
-				for ( let i = 0, l = group.children.length; i < l; i ++ ) {
-
-					const sprite = group.children[ i ];
-					const material = sprite.material;
-					const scale = Math.sin( time + sprite.position.x * 0.01 ) * 0.3 + 1.0;
-
-					let imageWidth = 1;
-					let imageHeight = 1;
-
-					if ( material.map && material.map.image && material.map.image.width ) {
-
-						imageWidth = material.map.image.width;
-						imageHeight = material.map.image.height;
-
-					}
-
-					sprite.material.rotation += 0.1 * ( i / l );
-					sprite.scale.set( scale * imageWidth, scale * imageHeight, 1.0 );
-
-					if ( material.map !== mapC ) {
-
-						material.opacity = Math.sin( time + sprite.position.x * 0.01 ) * 0.4 + 0.6;
-
-					}
-
-				}
-
-				group.rotation.x = time * 0.5;
-				group.rotation.y = time * 0.75;
-				group.rotation.z = time * 1.0;
 
 				renderer.clear();
 				renderer.render( scene, camera );
