@@ -252,14 +252,27 @@
 				scene.add( currentModel );
 
 				// enable shadows
-				currentModel.traverse( function ( child ) {
+				currentModel.traverse( function ( node ) {
 
-					if ( child.isMesh ) {
+					if ( ! node.isMesh ) return;
 
-						child.castShadow = true;
-						child.receiveShadow = true;
+					node.castShadow = true;
+					node.receiveShadow = true;
 
-					}
+					const materials = Array.isArray( node.material ) ? node.material : [ node.material ];
+					materials.forEach( ( material ) => {
+
+						for ( const key of Object.keys( material ) ) {
+
+							if ( material[ key ] && material[ key ].isTexture ) {
+
+								// example for how to do something per texture after loading.
+
+							}
+
+						}
+
+					} );
 
 				} );
 
