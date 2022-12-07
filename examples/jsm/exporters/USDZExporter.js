@@ -344,6 +344,10 @@ class USDZExporterContext {
 
 class USDZExporter {
 
+	constructor(){
+		this.debug = false;
+	}
+
 	async parse( scene, extensions, sceneAnchoringOptions = { ar: { anchoring: { type: 'plane' }, planeAnchoring: { alignment: 'horizontal' } } } ) {
 
 		this.sceneAnchoringOptions = sceneAnchoringOptions;
@@ -380,7 +384,8 @@ class USDZExporter {
 		this.lastUsda = final;
 
 		// full output file
-		console.log( final );
+		if(this.debug)
+			console.log( final );
 
 		files[ modelFileName ] = fflate.strToU8( final );
 		context.output = null;
