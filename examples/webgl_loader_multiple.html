@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>three.js webgl - Multi-File Viewer (FBX and glTF)</title>
+		<title>three.js - Multi-File Viewer (FBX, glTF, USDZ, OBJ)</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<link type="text/css" rel="stylesheet" href="main.css">
@@ -12,7 +12,8 @@
 			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - Multi-File Viewer (FBX and glTF)<br />
 			Drag-and-drop GLB or FBX model files with embedded textures<br />
 			<a href="https://hdrihaven.com/hdri/?h=quarry_01" target="_blank" rel="noopener">Quarry</a> by <a href="https://hdrihaven.com/" target="_blank" rel="noopener">HDRI Haven</a><br />
-			<button id="download-gltf">Download glTF</button><button id="download-usdz">Download USDZ</button>
+			<button id="download-gltf">Download glTF</button><button id="download-usdz">Download USDZ</button><button id="download-obj">Download OBJ</button>
+			<input id="file-input" name="file-input" type="file"/>
 		</div>
 
 		<!-- Import maps polyfill -->
@@ -41,9 +42,11 @@
 			import { FBXLoader } from './jsm/loaders/FBXLoader.js';
 			import { USDZLoader } from './jsm/loaders/USDZLoader.js';
 			import { RGBELoader } from './jsm/loaders/RGBELoader.js';
+			import { OBJLoader } from './jsm/loaders/OBJLoader.js';
 
 			import { USDZExporter } from './jsm/exporters/USDZExporter.js';
 			import { GLTFExporter } from './jsm/exporters/GLTFExporter.js';
+			import { OBJExporter } from './jsm/exporters/OBJExporter.js';
 
 			let camera, scene, renderer, controls, currentModel, ktx2Loader, dracoLoader, clock, mixer;
 			let link;
@@ -160,6 +163,16 @@
 						console.log( 'An error happened during USDZ export', error );
 
 					} );
+
+				} );
+
+				document.getElementById( 'download-obj' ).addEventListener( 'click', function () {
+
+					const objExporter = new OBJExporter();
+
+					const result = objExporter.parse( scene );
+
+					saveString( result, 'scene.obj' );
 
 				} );
 
@@ -431,7 +444,24 @@
 
 					reader.readAsDataURL( file );
 
-				}
+				} else if ( extension == 'obj' ) {
+
+					var reader = new FileReader();
+
+					reader.addEventListener( 'load', function ( ) {
+
+						const loader = new OBJLoader();
+						loader.load( reader.result, function ( object ) {
+
+							addToScene( object, object.animations );
+
+						} );
+
+					} );
+
+					reader.readAsDataURL( file );
+
+				} 
 
 			}
 
@@ -449,6 +479,14 @@
 					event.preventDefault();
 
 					loadFile( event.dataTransfer.files[ 0 ] );
+
+				} );
+
+				document.getElementById( 'file-input' ).addEventListener( 'change', function ( event ) {
+
+					event.preventDefault();
+
+					loadFile( event.target.files[ 0 ] );
 
 				} );
 
