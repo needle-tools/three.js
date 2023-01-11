@@ -3867,8 +3867,9 @@ class GLTFParser {
 		const pendingOutputAccessors = [];
 		const pendingSamplers = [];
 		const pendingTargets = [];
-
-		for ( let i = 0, il = animationDef.channels.length; i < il; i ++ ) {
+		let i = 0;
+		let il = animationDef.channels.length;
+		for ( i = 0, il = animationDef.channels.length; i < il; i ++ ) {
 
 			const channel = animationDef.channels[ i ];
 			const sampler = animationDef.samplers[ channel.sampler ];
@@ -3905,7 +3906,7 @@ class GLTFParser {
 
 			const tracks = [];
 
-			for ( let i = 0, il = nodes.length; i < il; i ++ ) {
+			for ( i = 0, il = nodes.length; i < il; i ++ ) {
 
 				const node = nodes[ i ];
 				const inputAccessor = inputAccessors[ i ];
