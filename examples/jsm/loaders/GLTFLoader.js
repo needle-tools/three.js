@@ -1240,6 +1240,9 @@ class GLTFAnimationPointerExtension {
 		if ( this._animationPointerDebug )
 			console.log( node, inputAccessor, outputAccessor, target, animationPointerPropertyPath );
 
+		const isMaterialColorTrack = animationPointerPropertyPath.startsWith( '.materials.' ) && animationPointerPropertyPath.endsWith( '.color' );
+
+
 		let TypedKeyframeTrack;
 
 		switch ( outputAccessor.itemSize ) {
@@ -1255,8 +1258,10 @@ class GLTFAnimationPointerExtension {
 
 				if ( animationPointerPropertyPath.endsWith( '.quaternion' ) )
 					TypedKeyframeTrack = QuaternionKeyframeTrack;
-				else
+				else if ( isMaterialColorTrack )
 					TypedKeyframeTrack = ColorKeyframeTrack;
+				else
+					TypedKeyframeTrack = VectorKeyframeTrack;
 
 				break;
 
@@ -1291,8 +1296,7 @@ class GLTFAnimationPointerExtension {
 
 		// glTF has opacity animation as last component of baseColorFactor,
 		// so we need to split that up here and create a separate opacity track if that is animated.
-		if ( animationPointerPropertyPath && outputAccessor.itemSize === 4 &&
-			animationPointerPropertyPath.startsWith( '.materials.' ) && animationPointerPropertyPath.endsWith( '.color' ) ) {
+		if ( animationPointerPropertyPath && outputAccessor.itemSize === 4 && isMaterialColorTrack ) {
 
 			const opacityArray = new Float32Array( outputArray.length / 4 );
 
