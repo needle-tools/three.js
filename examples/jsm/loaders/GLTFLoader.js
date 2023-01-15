@@ -154,7 +154,7 @@ class GLTFLoader extends Loader {
 			return new GLTFMeshGpuInstancing( parser );
 
 		} );
-		
+
 		this.register( function ( parser ) {
 
 			return new GLTFAnimationPointerExtension( parser );
@@ -601,7 +601,7 @@ class GLTFLightsExtension {
 
 	}
 
-	getDependency( type, index ) {	
+	getDependency( type, index ) {
 
 		if ( type !== 'light' ) return;
 
@@ -904,16 +904,17 @@ class GLTFAnimationPointerExtension {
 						const foundNode = node.getObjectByName( val );
 						if ( foundNode )
 							currentTarget = foundNode;
+
 					}
 
 				}
 
 				if ( ! currentTarget ) {
 
-					const originalFindResult = find ( node, sections[ 2 ] );
+					const originalFindResult = find( node, sections[ 2 ] );
 
 					if ( ! originalFindResult )
-						console.error("not found", path, node, node.name, sections);
+						console.warn( EXTENSIONS.KHR_ANIMATION_POINTER + ': Property binding not found', path, node, node.name, sections );
 
 					return originalFindResult;
 
@@ -1268,7 +1269,7 @@ class GLTFAnimationPointerExtension {
 
 		// convert fov values from radians to degrees
 		if ( animationPointerPropertyPath.endsWith( '.fov' ) ) {
-			
+
 			outputArray = outputArray.map( value => value / Math.PI * 180 );
 
 		}
@@ -2869,7 +2870,7 @@ class GLTFParser {
 
 		// Use an ImageBitmapLoader if imageBitmaps are supported. Moves much of the
 		// expensive work of uploading a texture to the GPU off the main thread.
-		
+
 		let isSafari = false;
 		let isFirefox = false;
 		let firefoxVersion = - 1;
