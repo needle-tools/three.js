@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.146.4] - 2023-01-18
+- fix: property binding should not fall back to root node on incorrect path names
+- change: OrbitControls disabling pointerCapture, causing mouse events to be captured
+
 ## [0.146.3] - 2023-01-12
 - change: define loadAnimation loop variables outside of if statement to avoid react-scripts bundling error
 
