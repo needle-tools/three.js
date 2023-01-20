@@ -5,7 +5,8 @@ import {
 	Spherical,
 	TOUCH,
 	Vector2,
-	Vector3
+	Vector3,
+	MathUtils
 } from 'three';
 
 // OrbitControls performs orbiting, dollying (zooming), and panning.
@@ -229,7 +230,9 @@ class OrbitControls extends EventDispatcher {
 				spherical.makeSafe();
 
 
-				spherical.radius *= scale;
+				currentScale = MathUtils.lerp(currentScale, scale, scope.dampingFactor);
+
+				spherical.radius *= currentScale;
 
 				// restrict radius to be between desired limits
 				spherical.radius = Math.max( scope.minDistance, Math.min( scope.maxDistance, spherical.radius ) );
@@ -346,6 +349,7 @@ class OrbitControls extends EventDispatcher {
 		const sphericalDelta = new Spherical();
 
 		let scale = 1;
+		let currentScale = 1;
 		const panOffset = new Vector3();
 		let zoomChanged = false;
 
