@@ -393,7 +393,6 @@ class USDZExporter {
 		for ( const id in textures ) {
 
 			let texture = textures[ id ];
-			const color = id.split( '_' )[ 1 ];
 			const isRGBA = texture.format === 1023;
 			if ( texture.isCompressedTexture ) {
 
@@ -401,10 +400,20 @@ class USDZExporter {
 
 			}
 
+			// TODO add readback options for textures that don't have texture.image
 			const canvas = await imageToCanvas( texture.image );
-			const blob = await new Promise( resolve => canvas.toBlob( resolve, isRGBA ? 'image/png' : 'image/jpeg', 1 ) );
 
-			files[ `textures/Texture_${id}.${isRGBA ? 'png' : 'jpg'}` ] = new Uint8Array( await blob.arrayBuffer() );
+			if ( canvas ) {
+
+				const blob = await new Promise( resolve => canvas.toBlob( resolve, isRGBA ? 'image/png' : 'image/jpeg', 1 ) );
+				files[ `textures/Texture_${id}.${isRGBA ? 'png' : 'jpg'}` ] = new Uint8Array( await blob.arrayBuffer() );
+
+			}
+			else {
+
+				console.warn( 'Can`t export texture: ', texture );
+
+			}
 
 		}
 
