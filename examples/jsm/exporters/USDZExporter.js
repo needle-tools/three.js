@@ -367,8 +367,6 @@ class USDZExporter {
 
 		context.output += buildMaterials( materials, textures );
 
-		invokeAll( context, 'onAfterHierarchy' );
-
 		const header = context.document.buildHeader();
 		const final = header + '\n' + context.output;
 
@@ -542,6 +540,8 @@ function parseDocument( context ) {
 
 	}
 
+	invokeAll( context, 'onAfterHierarchy', writer );
+
 	writer.closeBlock();
 	writer.closeBlock();
 	writer.closeBlock();
@@ -590,14 +590,14 @@ function addResources( object, context ) {
 
 }
 
-function invokeAll( context, name ) {
+function invokeAll( context, name, writer = null ) {
 
 	if ( context.extensions ) {
 
 		for ( const ext of context.extensions ) {
 
 			if ( typeof ext[ name ] === 'function' )
-				ext[ name ]( context );
+				ext[ name ]( context, writer );
 
 		}
 
