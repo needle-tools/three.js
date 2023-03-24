@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.146.6] - 2023-03-24
+- change USDZExporter: pass writer into onAfterHierarchy callback, move onAfterHierarchy callback after scene hierarchy write
+- fix USDZExporter: fix exception when trying to process render targets
+- fix WebXRManager: Correctly update the user camera when it has a parent with a non-identity transform.
+
 ## [0.146.5] - 2023-01-20
 - feat: add mipmap bias
 - change: default mipmap bias set to -0.5
