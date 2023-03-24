@@ -16612,6 +16612,7 @@
 				const top2 = topFov * far / far2 * near2;
 				const bottom2 = bottomFov * far / far2 * near2;
 				camera.projectionMatrix.makePerspective(left2, right2, top2, bottom2, near2, far2);
+				camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
 			}
 			function updateCamera(camera, parent) {
 				if (parent === null) {
@@ -16641,16 +16642,6 @@
 				for (let i = 0; i < cameras.length; i++) {
 					updateCamera(cameras[i], parent);
 				}
-				cameraVR.matrixWorld.decompose(cameraVR.position, cameraVR.quaternion, cameraVR.scale);
-
-				// update user camera and its children
-
-				camera.matrix.copy(cameraVR.matrix);
-				camera.matrix.decompose(camera.position, camera.quaternion, camera.scale);
-				const children = camera.children;
-				for (let i = 0, l = children.length; i < l; i++) {
-					children[i].updateMatrixWorld(true);
-				}
 
 				// update projection matrix for proper view frustum culling
 
@@ -16661,7 +16652,32 @@
 
 					cameraVR.projectionMatrix.copy(cameraL.projectionMatrix);
 				}
+
+				// update user camera and its children
+
+				updateUserCamera(camera, cameraVR, parent);
 			};
+			function updateUserCamera(camera, cameraVR, parent) {
+				if (parent === null) {
+					camera.matrix.copy(cameraVR.matrixWorld);
+				} else {
+					camera.matrix.copy(parent.matrixWorld);
+					camera.matrix.invert();
+					camera.matrix.multiply(cameraVR.matrixWorld);
+				}
+				camera.matrix.decompose(camera.position, camera.quaternion, camera.scale);
+				camera.updateMatrixWorld(true);
+				const children = camera.children;
+				for (let i = 0, l = children.length; i < l; i++) {
+					children[i].updateMatrixWorld(true);
+				}
+				camera.projectionMatrix.copy(cameraVR.projectionMatrix);
+				camera.projectionMatrixInverse.copy(cameraVR.projectionMatrixInverse);
+				if (camera.isPerspectiveCamera) {
+					camera.fov = RAD2DEG * 2 * Math.atan(1 / camera.projectionMatrix.elements[5]);
+					camera.zoom = 1;
+				}
+			}
 			this.getCamera = function () {
 				return cameraVR;
 			};
@@ -16732,10 +16748,13 @@
 							cameras[i] = camera;
 						}
 						camera.matrix.fromArray(view.transform.matrix);
+						camera.matrix.decompose(camera.position, camera.quaternion, camera.scale);
 						camera.projectionMatrix.fromArray(view.projectionMatrix);
+						camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
 						camera.viewport.set(viewport.x, viewport.y, viewport.width, viewport.height);
 						if (i === 0) {
 							cameraVR.matrix.copy(camera.matrix);
+							cameraVR.matrix.decompose(cameraVR.position, cameraVR.quaternion, cameraVR.scale);
 						}
 						if (cameraVRNeedsUpdate === true) {
 							cameraVR.cameras.push(camera);
@@ -32691,4 +32710,3 @@
 	Object.defineProperty(exports, '__esModule', { value: true });
 
 }));
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoidGhyZWUuanMiLCJzb3VyY2VzIjpbXSwic291cmNlc0NvbnRlbnQiOltdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiIn0=
