@@ -9,8 +9,8 @@
 
 	<body>
 		<div id="info">
-			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - Multi-File Viewer (FBX and glTF)<br />
-			Drag-and-drop GLB or FBX model files with embedded textures<br />
+			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - Multi-File Viewer (FBX, glTF, USDZ, OBJ)<br />
+			Drag-and-drop model files with embedded textures<br />
 			<a href="https://hdrihaven.com/hdri/?h=quarry_01" target="_blank" rel="noopener">Quarry</a> by <a href="https://hdrihaven.com/" target="_blank" rel="noopener">HDRI Haven</a><br />
 			<button id="download-gltf">Download glTF</button><button id="download-usdz">Download USDZ</button><button id="download-obj">Download OBJ</button>
 			<input id="file-input" name="file-input" type="file"/>
@@ -452,6 +452,14 @@
 
 						const loader = new OBJLoader();
 						loader.load( reader.result, function ( object ) {
+
+							object.traverse( function ( child ) {
+
+								if ( ! child.isMesh ) return;
+
+								child.material = new THREE.MeshStandardMaterial();
+
+							} );
 
 							addToScene( object, object.animations );
 
