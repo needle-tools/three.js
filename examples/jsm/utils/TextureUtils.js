@@ -15,7 +15,7 @@ let fullscreenQuadGeometry;
 let fullscreenQuadMaterial;
 let fullscreenQuad;
 
-export function decompress( texture, maxTextureSize, renderer ) {
+export function decompress( texture, maxTextureSize, renderer = null ) {
 
 	if ( ! fullscreenQuadGeometry ) fullscreenQuadGeometry = new PlaneGeometry( 2, 2, 1, 1 );
 	if ( ! fullscreenQuadMaterial ) fullscreenQuadMaterial = new ShaderMaterial( {
@@ -84,7 +84,7 @@ export function decompress( texture, maxTextureSize, renderer ) {
 
 	readableTexture.userData.mimeType = 'image/png';
 
-	if ( ! renderer && temporaryRenderer ) {
+	if ( temporaryRenderer ) {
 
 		temporaryRenderer.dispose();
 
