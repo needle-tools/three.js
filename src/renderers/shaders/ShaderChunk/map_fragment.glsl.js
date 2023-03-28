@@ -1,7 +1,11 @@
 export default /* glsl */`
 #ifdef USE_MAP
 
-	vec4 sampledDiffuseColor = texture2D( map, vUv );
+#ifdef USE_MIPMAP_BIAS
+        vec4 sampledDiffuseColor = texture2D( map, vUv, mipmapBias );
+#else
+		vec4 sampledDiffuseColor = texture2D( map, vUv, -0.5 );
+#endif
 
 	#ifdef DECODE_VIDEO_TEXTURE
 
