@@ -15,8 +15,9 @@ import {
 } from 'three';
 import * as fflate from '../libs/fflate.module.js';
 
-function makeNameSafe(str){
-	return str.replace(/[^a-zA-Z0-9_]/g, '');
+function makeNameSafe(str) {
+	// prepend "_" to fix cases where the name is just a number
+	return "_" + str.replace(/[^a-zA-Z0-9_]/g, '');
 }
 
 class USDZDocument {
