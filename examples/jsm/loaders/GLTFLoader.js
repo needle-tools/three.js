@@ -63,7 +63,6 @@ import {
 	SRGBColorSpace
 } from 'three';
 import { toTrianglesDrawMode } from '../utils/BufferGeometryUtils.js';
-import { GLTFAnimationPointerExtension } from './GLTFLoaderAnimationPointer.js';
 
 class GLTFLoader extends Loader {
 
@@ -164,12 +163,6 @@ class GLTFLoader extends Loader {
 		this.register( function ( parser ) {
 
 			return new GLTFMeshGpuInstancing( parser );
-
-		} );
-		
-		this.register( function ( parser ) {
-
-			return new GLTFAnimationPointerExtension( parser );
 
 		} );
 
