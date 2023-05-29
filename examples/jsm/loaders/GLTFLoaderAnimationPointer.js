@@ -27,6 +27,11 @@ const INTERPOLATION = {
 	STEP: InterpolateDiscrete
 };
 
+// HACK monkey patching findNode to ensure we can map to other types required by KHR_animation_pointer.
+const find = PropertyBinding.findNode;
+const _animationPointerDebug = false;
+const _havePatchedPropertyBindings = false;
+
 /**
  * Animation Pointer Extension
  *
@@ -38,8 +43,6 @@ class GLTFAnimationPointerExtension {
 
 		this.parser = parser;
 		this.name = KHR_ANIMATION_POINTER;
-		this._animationPointerDebug = false;
-		this._havePatchedPropertyBindings = false;
 		this.animationPointerResolver = null;
 	}
 
@@ -52,19 +55,16 @@ class GLTFAnimationPointerExtension {
 
 	_patchPropertyBindingFindNode() {
 
-		if ( this._havePatchedPropertyBindings ) return;
-		this._havePatchedPropertyBindings = true;
-
-		// HACK monkey patching findNode to ensure we can map to other types required by KHR_animation_pointer.
-		const find = PropertyBinding.findNode;
+		if ( _havePatchedPropertyBindings ) return;
+		_havePatchedPropertyBindings = true;
 
 		// "node" is the Animator component in our case
 		// "path" is the animated property path, just with translated material names.
-		PropertyBinding.findNode = ( node, path ) => {
+		PropertyBinding.findNode = function ( node, path ) {
 
 			if ( path.startsWith( '.materials.' ) ) {
 
-				if ( this._animationPointerDebug ) console.log( 'FIND', path );
+				if ( _animationPointerDebug ) console.log( 'FIND', path );
 
 				const remainingPath = path.substring( '.materials.'.length ).substring( path.indexOf( '.' ) );
 				const nextIndex = remainingPath.indexOf( '.' );
@@ -76,7 +76,7 @@ class GLTFAnimationPointerExtension {
 					if ( x[ 'material' ] && (x[ 'material' ].uuid === uuid || x[ 'material' ].name === uuid )) {
 
 						res = x[ 'material' ];
-						if ( this._animationPointerDebug ) console.log( res, remainingPath );
+						if ( _animationPointerDebug ) console.log( res, remainingPath );
 						if ( res !== null ) {
 
 							if ( remainingPath.endsWith( '.map' ) )
@@ -115,7 +115,7 @@ class GLTFAnimationPointerExtension {
 						let key = val;
 						if ( index >= 0 ) key = index;
 						currentTarget = currentTarget[ key ];
-						if ( this._animationPointerDebug )
+						if ( _animationPointerDebug )
 							console.log( currentTarget );
 
 					} else {
@@ -139,7 +139,7 @@ class GLTFAnimationPointerExtension {
 
 				}
 
-				if ( this._animationPointerDebug )
+				if ( _animationPointerDebug )
 					console.log( 'NODE', path, currentTarget );
 
 				return currentTarget;
@@ -180,7 +180,7 @@ class GLTFAnimationPointerExtension {
 
 			const ext = target.extensions[ KHR_ANIMATION_POINTER ];
 			let path = ext.pointer;
-			if ( this._animationPointerDebug )
+			if ( _animationPointerDebug )
 				console.log( 'Original path: ' + path, target );
 
 			if ( ! path ) {
@@ -205,7 +205,7 @@ class GLTFAnimationPointerExtension {
 
 			} else {
 
-				if ( this._animationPointerDebug ) console.log( 'Resolved node ID for ' + type, targetId );
+				if ( _animationPointerDebug ) console.log( 'Resolved node ID for ' + type, targetId );
 
 			}
 
@@ -325,7 +325,7 @@ class GLTFAnimationPointerExtension {
 					}
 
 					path = pathStart + targetProperty;
-					if ( this._animationPointerDebug ) console.log( 'PROPERTY PATH', pathStart, targetProperty, path );
+					if ( _animationPointerDebug ) console.log( 'PROPERTY PATH', pathStart, targetProperty, path );
 					break;
 
 				case ANIMATION_TARGET_TYPE.node:
@@ -466,7 +466,7 @@ class GLTFAnimationPointerExtension {
 		const parts = animationPointerPropertyPath.split( '.' );
 		parts[ 2 ] = (node.name !== undefined && node.name !== null) ? node.name : node.uuid;
 		animationPointerPropertyPath = parts.join( '.' );
-		if ( this._animationPointerDebug )
+		if ( _animationPointerDebug )
 			console.log( node, inputAccessor, outputAccessor, target, animationPointerPropertyPath );
 
 		let TypedKeyframeTrack;
