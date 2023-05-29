@@ -812,6 +812,11 @@ class GLTFMaterialsClearcoatExtension {
  * Draft Specification: https://github.com/ux3d/glTF/tree/extensions/KHR_animation_pointer/extensions/2.0/Khronos/KHR_animation_pointer
  */
 
+
+// HACK monkey patching findNode to ensure we can map to other types required by KHR_animation_pointer.
+const find = PropertyBinding.findNode;
+const _animationPointerDebug = false;
+
 class GLTFAnimationPointerExtension {
 
 	ANIMATION_TARGET_TYPE = {
@@ -828,23 +833,19 @@ class GLTFAnimationPointerExtension {
 
 	}
 
-	_animationPointerDebug = false;
 	_havePatchedPropertyBindings = false;
 	_patchPropertyBindingFindNode() {
 
 		if ( this._havePatchedPropertyBindings ) return;
 		this._havePatchedPropertyBindings = true;
 
-		// HACK monkey patching findNode to ensure we can map to other types required by KHR_animation_pointer.
-		const find = PropertyBinding.findNode;
-
 		// "node" is the Animator component in our case
 		// "path" is the animated property path, just with translated material names.
-		PropertyBinding.findNode = ( node, path ) => {
+		PropertyBinding.findNode = function ( node, path ) {
 
 			if ( path.startsWith( '.materials.' ) ) {
 
-				if ( this._animationPointerDebug ) console.log( 'FIND', path );
+				if ( _animationPointerDebug ) console.log( 'FIND', path );
 
 				const remainingPath = path.substring( '.materials.'.length ).substring( path.indexOf( '.' ) );
 				const nextIndex = remainingPath.indexOf( '.' );
@@ -856,7 +857,7 @@ class GLTFAnimationPointerExtension {
 					if ( x[ 'material' ]?.uuid === uuid || x[ 'material' ]?.name === uuid ) {
 
 						res = x[ 'material' ];
-						if ( this._animationPointerDebug ) console.log( res, remainingPath );
+						if ( _animationPointerDebug ) console.log( res, remainingPath );
 						if ( res !== null ) {
 
 							if ( remainingPath.endsWith( '.map' ) )
@@ -895,7 +896,7 @@ class GLTFAnimationPointerExtension {
 						let key = val;
 						if ( index >= 0 ) key = index;
 						currentTarget = currentTarget[ key ];
-						if ( this._animationPointerDebug )
+						if ( _animationPointerDebug )
 							console.log( currentTarget );
 
 					} else {
@@ -920,7 +921,7 @@ class GLTFAnimationPointerExtension {
 
 				}
 
-				if ( this._animationPointerDebug )
+				if ( _animationPointerDebug )
 					console.log( 'NODE', path, currentTarget );
 
 				return currentTarget;
