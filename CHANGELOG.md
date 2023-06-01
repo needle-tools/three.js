@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.146.10] - 2023-06-06
+- fix OrbitControls: turn off mouse wheel damping when enableDamping is off 
+
 ## [0.146.9] - 2023-05-29
 - fix GLTFLoader: memory leak caused by KHR_animation_pointer extension
 
