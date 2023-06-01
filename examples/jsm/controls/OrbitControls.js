@@ -229,9 +229,15 @@ class OrbitControls extends EventDispatcher {
 				spherical.phi = Math.max( scope.minPolarAngle, Math.min( scope.maxPolarAngle, spherical.phi ) );
 
 				spherical.makeSafe();
+				if ( scope.enableDamping ) { 
 
+					currentScale = MathUtils.lerp(currentScale, scale, scope.dampingFactor);
 
-				currentScale = MathUtils.lerp(currentScale, scale, scope.dampingFactor);
+				} else  { 
+
+					currentScale = scale;
+
+				}
 
 				spherical.radius *= currentScale;
 
