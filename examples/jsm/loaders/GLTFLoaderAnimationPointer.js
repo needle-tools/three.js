@@ -30,7 +30,7 @@ const INTERPOLATION = {
 // HACK monkey patching findNode to ensure we can map to other types required by KHR_animation_pointer.
 const find = PropertyBinding.findNode;
 const _animationPointerDebug = false;
-const _havePatchedPropertyBindings = false;
+let _havePatchedPropertyBindings = false;
 
 /**
  * Animation Pointer Extension
@@ -44,6 +44,7 @@ class GLTFAnimationPointerExtension {
 		this.parser = parser;
 		this.name = KHR_ANIMATION_POINTER;
 		this.animationPointerResolver = null;
+
 	}
 
 	setAnimationPointerResolver( animationPointerResolver ) {
@@ -157,7 +158,7 @@ class GLTFAnimationPointerExtension {
 
 		const target = animationChannel.target;
 		const name = target.node !== undefined ? target.node : target.id; // NOTE: target.id is deprecated.
-		return this.getDependency( 'node', name );
+		return this.parser.getDependency( 'node', name );
 
 	}
 
