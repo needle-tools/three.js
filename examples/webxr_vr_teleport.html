@@ -24,6 +24,15 @@
 				}
 			}
 		</script>
+		
+	<audio loop id="music" autoplay="auto" style="display: none">
+		<source src="sounds/376737_Skullbeatz___Bad_Cat_Maste.ogg" type="audio/ogg">
+		<source src="sounds/376737_Skullbeatz___Bad_Cat_Maste.mp3" type="audio/mpeg">
+	</audio>
+
+	<div id="overlay">
+		<button id="startButton">Play</button>
+	</div>
 
 		<script type="module">
 
@@ -31,7 +40,9 @@
 
 			import { BoxLineGeometry } from 'three/addons/geometries/BoxLineGeometry.js';
 			import { VRButton } from 'three/addons/webxr/VRButton.js';
+			import { ARButton } from 'three/addons/webxr/ARButton.js';
 			import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+			import { PositionalAudioHelper } from 'three/addons/helpers/PositionalAudioHelper.js';
 
 			let camera, scene, raycaster, renderer;
 			let controller1, controller2;
@@ -42,8 +53,13 @@
 			let INTERSECTION;
 			const tempMatrix = new THREE.Matrix4();
 
-			init();
-			animate();
+			const startButton = document.getElementById( 'startButton' );
+			startButton.addEventListener( 'click', () => {
+				init();
+				animate();
+				startButton.parentElement.style.display = 'none';
+			} );
+
 
 			function init() {
 
@@ -88,7 +104,29 @@
 				renderer.xr.enabled = true;
 
 				document.body.appendChild( renderer.domElement );
-				document.body.appendChild( VRButton.createButton( renderer ) );
+				const vrButton = VRButton.createButton( renderer );
+				vrButton.style.marginLeft = "-90px";
+				document.body.appendChild( vrButton );
+				const arButton = ARButton.createButton( renderer );
+				arButton.style.marginLeft = "90px";
+				document.body.appendChild( arButton );
+
+				
+				const listener = new THREE.AudioListener();
+				camera.add( listener );
+
+				const audioElement = document.getElementById( 'music' );
+				audioElement.play();
+
+				const positionalAudio = new THREE.PositionalAudio( listener );
+				positionalAudio.setMediaElementSource( audioElement );
+				positionalAudio.setRefDistance( 4 );
+				positionalAudio.setDirectionalCone( 180, 230, 0.1 );
+
+				const helper = new PositionalAudioHelper( positionalAudio, 1 );
+				positionalAudio.add( helper );
+
+				scene.add( positionalAudio );
 
 				// controllers
 
