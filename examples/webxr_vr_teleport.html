@@ -120,7 +120,7 @@
 
 				const positionalAudio = new THREE.PositionalAudio( listener );
 				positionalAudio.setMediaElementSource( audioElement );
-				positionalAudio.setRefDistance( 4 );
+				positionalAudio.setRefDistance( 1 );
 				positionalAudio.setDirectionalCone( 180, 230, 0.1 );
 
 				const helper = new PositionalAudioHelper( positionalAudio, 1 );
