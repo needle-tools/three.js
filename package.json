@@ -121,5 +121,9 @@
       "build/three.module.js"
     ],
     "directories": {}
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   }
 }
