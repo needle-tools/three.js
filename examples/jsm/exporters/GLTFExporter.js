@@ -1604,9 +1604,11 @@ class GLTFWriter {
 		}
 
 		// pbrMetallicRoughness.metallicRoughnessTexture
-		if ( material.metalnessMap || material.roughnessMap ) {
+		const metalnessMap = material.metalnessMap?.image ? material.metalnessMap : undefined;
+		const roughnessMap = material.roughnessMap?.image ? material.roughnessMap : undefined;
+		if ( metalnessMap || roughnessMap ) {
 
-			const metalRoughTexture = await this.buildMetalRoughTextureAsync( material.metalnessMap, material.roughnessMap );
+			const metalRoughTexture = await this.buildMetalRoughTextureAsync( metalnessMap, roughnessMap );
 
 			const metalRoughMapDef = {
 				index: await this.processTextureAsync( metalRoughTexture ),
@@ -1641,7 +1643,7 @@ class GLTFWriter {
 			}
 
 			// emissiveTexture
-			if ( material.emissiveMap ) {
+			if ( material.emissiveMap?.image ) {
 
 				const emissiveMapDef = {
 					index: await this.processTextureAsync( material.emissiveMap ),
@@ -1655,7 +1657,7 @@ class GLTFWriter {
 		}
 
 		// normalTexture
-		if ( material.normalMap ) {
+		if ( material.normalMap?.image ) {
 
 			const normalMapDef = {
 				index: await this.processTextureAsync( material.normalMap ),
@@ -1676,7 +1678,7 @@ class GLTFWriter {
 		}
 
 		// occlusionTexture
-		if ( material.aoMap ) {
+		if ( material.aoMap?.image ) {
 
 			const occlusionMapDef = {
 				index: await this.processTextureAsync( material.aoMap ),

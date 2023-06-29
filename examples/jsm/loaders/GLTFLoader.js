@@ -3343,6 +3343,7 @@ class GLTFParser {
 			texture.wrapS = WEBGL_WRAPPINGS[ sampler.wrapS ] || RepeatWrapping;
 			texture.wrapT = WEBGL_WRAPPINGS[ sampler.wrapT ] || RepeatWrapping;
 			texture.generateMipmaps = ! texture.isCompressedTexture && texture.minFilter !== NearestFilter && texture.minFilter !== LinearFilter;
+			texture.anisotropy = 4;
 
 			parser.associations.set( texture, { textures: textureIndex } );
 
@@ -4145,8 +4146,10 @@ class GLTFParser {
 		const pendingOutputAccessors = [];
 		const pendingSamplers = [];
 		const pendingTargets = [];
-
-		for ( let i = 0, il = animationDef.channels.length; i < il; i ++ ) {
+		// NEEDLE: This loop was refactored because of a bug in react-scripts producing broken JS.
+		let i = 0;
+		let il = animationDef.channels.length;
+		for ( i = 0, il = animationDef.channels.length; i < il; i ++ ) {
 
 			const channel = animationDef.channels[ i ];
 			const sampler = animationDef.samplers[ channel.sampler ];
@@ -4183,7 +4186,7 @@ class GLTFParser {
 
 			const tracks = [];
 
-			for ( let i = 0, il = nodes.length; i < il; i ++ ) {
+			for ( i = 0, il = nodes.length; i < il; i ++ ) {
 
 				const node = nodes[ i ];
 				const inputAccessor = inputAccessors[ i ];
