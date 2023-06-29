@@ -278,6 +278,10 @@ class PMREMGenerator {
 
 		const cubeUVRenderTarget = _createRenderTarget( width, height, params );
 
+		// NEEDLE: This was added to work around a caching bug in PMREMGenerator that lead to incorrect results.
+		const { _lodMax } = this;
+		( { sizeLods: this._sizeLods, lodPlanes: this._lodPlanes, sigmas: this._sigmas } = _createPlanes( _lodMax ) );
+
 		if ( this._pingPongRenderTarget === null || this._pingPongRenderTarget.width !== width || this._pingPongRenderTarget.height !== height ) {
 
 			if ( this._pingPongRenderTarget !== null ) {

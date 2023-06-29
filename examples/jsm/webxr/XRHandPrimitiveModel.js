@@ -39,6 +39,8 @@ class XRHandPrimitiveModel {
 		this.handMesh.castShadow = true;
 		this.handMesh.receiveShadow = true;
 		this.handModel.add( this.handMesh );
+		// NEEDLE: The hand mesh should by default inherit layers.
+		this.handMesh.layers.mask = this.handModel.layers.mask;
 
 		this.joints = [
 			'wrist',
