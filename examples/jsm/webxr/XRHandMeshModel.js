@@ -22,6 +22,8 @@ class XRHandMeshModel {
 
 			const object = gltf.scene.children[ 0 ];
 			this.handModel.add( object );
+			// NEEDLE: The hand mesh should by default inherit layers.
+			object.layers.mask = this.handModel.layers.mask;
 
 			const mesh = object.getObjectByProperty( 'type', 'SkinnedMesh' );
 			mesh.frustumCulled = false;

@@ -185,7 +185,7 @@ class OrbitControls extends EventDispatcher {
 
 			return function update( deltaTime = null ) {
 
-				const position = scope.object.position;
+				const position = scope.object.getWorldPosition( object.position );
 
 				offset.copy( position ).sub( scope.target );
 
@@ -242,8 +242,7 @@ class OrbitControls extends EventDispatcher {
 				spherical.phi = Math.max( scope.minPolarAngle, Math.min( scope.maxPolarAngle, spherical.phi ) );
 
 				spherical.makeSafe();
-
-
+				
 				// move target to panned location
 
 				if ( scope.enableDamping === true ) {
@@ -269,7 +268,18 @@ class OrbitControls extends EventDispatcher {
 
 				} else {
 
-					spherical.radius = clampDistance( spherical.radius * scale );
+					if ( scope.enableDamping ) {
+
+						currentScale = MathUtils.lerp(currentScale, scale, scope.dampingFactor);
+
+					}
+					else {
+
+						currentScale = scale;
+
+					}
+
+					spherical.radius = clampDistance( spherical.radius * currentScale );
 
 				}
 
@@ -279,6 +289,7 @@ class OrbitControls extends EventDispatcher {
 				offset.applyQuaternion( quatInverse );
 
 				position.copy( scope.target ).add( offset );
+				scope.object.parent ? scope.object.parent.worldToLocal( position ) : scope.object.position.copy( position )
 
 				scope.object.lookAt( scope.target );
 
@@ -462,6 +473,7 @@ class OrbitControls extends EventDispatcher {
 		const sphericalDelta = new Spherical();
 
 		let scale = 1;
+		let currentScale = 1;
 		const panOffset = new Vector3();
 
 		const rotateStart = new Vector2();
@@ -562,6 +574,7 @@ class OrbitControls extends EventDispatcher {
 		const pan = function () {
 
 			const offset = new Vector3();
+			const position = new Vector3();
 
 			return function pan( deltaX, deltaY ) {
 
@@ -570,7 +583,8 @@ class OrbitControls extends EventDispatcher {
 				if ( scope.object.isPerspectiveCamera ) {
 
 					// perspective
-					const position = scope.object.position;
+					// NEEDLE: Support for OrbitControls on cameras that are parented to other objects.
+					scope.object.getWorldPosition( position );
 					offset.copy( position ).sub( scope.target );
 					let targetDistance = offset.length();
 
@@ -578,14 +592,14 @@ class OrbitControls extends EventDispatcher {
 					targetDistance *= Math.tan( ( scope.object.fov / 2 ) * Math.PI / 180.0 );
 
 					// we use only clientHeight here so aspect ratio does not distort speed
-					panLeft( 2 * deltaX * targetDistance / element.clientHeight, scope.object.matrix );
-					panUp( 2 * deltaY * targetDistance / element.clientHeight, scope.object.matrix );
+					panLeft( 2 * deltaX * targetDistance / element.clientHeight, scope.object.matrixWorld );
+					panUp( 2 * deltaY * targetDistance / element.clientHeight, scope.object.matrixWorld );
 
 				} else if ( scope.object.isOrthographicCamera ) {
 
 					// orthographic
-					panLeft( deltaX * ( scope.object.right - scope.object.left ) / scope.object.zoom / element.clientWidth, scope.object.matrix );
-					panUp( deltaY * ( scope.object.top - scope.object.bottom ) / scope.object.zoom / element.clientHeight, scope.object.matrix );
+					panLeft( deltaX * ( scope.object.right - scope.object.left ) / scope.object.zoom / element.clientWidth, scope.object.matrixWorld );
+					panUp( deltaY * ( scope.object.top - scope.object.bottom ) / scope.object.zoom / element.clientHeight, scope.object.matrixWorld );
 
 				} else {
 
@@ -1004,7 +1018,8 @@ class OrbitControls extends EventDispatcher {
 
 			if ( pointers.length === 0 ) {
 
-				scope.domElement.setPointerCapture( event.pointerId );
+				// this causes pointer events to be captured
+				// scope.domElement.setPointerCapture( event.pointerId );
 
 				scope.domElement.addEventListener( 'pointermove', onPointerMove );
 				scope.domElement.addEventListener( 'pointerup', onPointerUp );
@@ -1051,7 +1066,7 @@ class OrbitControls extends EventDispatcher {
 
 				case 0:
 
-					scope.domElement.releasePointerCapture( event.pointerId );
+					// scope.domElement.releasePointerCapture( event.pointerId );
 
 					scope.domElement.removeEventListener( 'pointermove', onPointerMove );
 					scope.domElement.removeEventListener( 'pointerup', onPointerUp );
