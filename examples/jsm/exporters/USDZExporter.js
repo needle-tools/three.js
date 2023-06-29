@@ -558,7 +558,7 @@ function buildMaterial( material, textures, quickLookCompatible = false ) {
 
 	}
 
-	if ( material.map !== null ) {
+	if ( material.map?.image ) {
 
 		inputs.push( `${ pad }color3f inputs:diffuseColor.connect = </Materials/Material_${ material.id }/Texture_${ material.map.id }_diffuse.outputs:rgb>` );
 
@@ -581,7 +581,7 @@ function buildMaterial( material, textures, quickLookCompatible = false ) {
 
 	}
 
-	if ( material.emissiveMap !== null ) {
+	if ( material.emissiveMap?.image ) {
 
 		inputs.push( `${ pad }color3f inputs:emissiveColor.connect = </Materials/Material_${ material.id }/Texture_${ material.emissiveMap.id }_emissive.outputs:rgb>` );
 
@@ -593,7 +593,7 @@ function buildMaterial( material, textures, quickLookCompatible = false ) {
 
 	}
 
-	if ( material.normalMap !== null ) {
+	if ( material.normalMap?.image ) {
 
 		inputs.push( `${ pad }normal3f inputs:normal.connect = </Materials/Material_${ material.id }/Texture_${ material.normalMap.id }_normal.outputs:rgb>` );
 
@@ -601,7 +601,7 @@ function buildMaterial( material, textures, quickLookCompatible = false ) {
 
 	}
 
-	if ( material.aoMap !== null ) {
+	if ( material.aoMap?.image ) {
 
 		inputs.push( `${ pad }float inputs:occlusion.connect = </Materials/Material_${ material.id }/Texture_${ material.aoMap.id }_occlusion.outputs:r>` );
 
@@ -609,7 +609,7 @@ function buildMaterial( material, textures, quickLookCompatible = false ) {
 
 	}
 
-	if ( material.roughnessMap !== null ) {
+	if ( material.roughnessMap?.image && material.roughness === 1 ) {
 
 		inputs.push( `${ pad }float inputs:roughness.connect = </Materials/Material_${ material.id }/Texture_${ material.roughnessMap.id }_roughness.outputs:g>` );
 
@@ -621,7 +621,7 @@ function buildMaterial( material, textures, quickLookCompatible = false ) {
 
 	}
 
-	if ( material.metalnessMap !== null ) {
+	if ( material.metalnessMap?.image && material.metalness === 1 ) {
 
 		inputs.push( `${ pad }float inputs:metallic.connect = </Materials/Material_${ material.id }/Texture_${ material.metalnessMap.id }_metallic.outputs:b>` );
 
@@ -633,7 +633,7 @@ function buildMaterial( material, textures, quickLookCompatible = false ) {
 
 	}
 
-	if ( material.alphaMap !== null ) {
+	if ( material.alphaMap?.image ) {
 
 		inputs.push( `${pad}float inputs:opacity.connect = </Materials/Material_${material.id}/Texture_${material.alphaMap.id}_opacity.outputs:r>` );
 		inputs.push( `${pad}float inputs:opacityThreshold = 0.0001` );
