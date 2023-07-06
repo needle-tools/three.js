@@ -46846,7 +46846,7 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
 			// ensure there is a value node
 			if ( ! targetObject ) {
 
-				console.error( 'THREE.PropertyBinding: Trying to update node for track: ' + this.path + ' but it wasn\'t found.' );
+				console.warn( 'THREE.PropertyBinding: No target node found for track: ' + this.path + '.' );
 				return;
 
 			}
