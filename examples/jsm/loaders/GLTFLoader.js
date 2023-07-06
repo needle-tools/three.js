@@ -3090,6 +3090,7 @@ class GLTFParser {
 			texture.minFilter = WEBGL_FILTERS[ sampler.minFilter ] || LinearMipmapLinearFilter;
 			texture.wrapS = WEBGL_WRAPPINGS[ sampler.wrapS ] || RepeatWrapping;
 			texture.wrapT = WEBGL_WRAPPINGS[ sampler.wrapT ] || RepeatWrapping;
+			texture.anisotropy = 4;
 
 			parser.associations.set( texture, { textures: textureIndex } );
 
