@@ -78,6 +78,12 @@ class USDZExporter {
 
 			const texture = textures[ id ];
 
+			console.log (texture);
+			if (texture.source.data.hasArrayBuffer) {
+				files[ `textures/Texture_${ id }.png` ] = new Uint8Array( await texture.source.data.getArrayBuffer() );
+				continue;
+			}
+
 			const canvas = imageToCanvas( texture.image, texture.flipY );
 			const blob = await new Promise( resolve => canvas.toBlob( resolve, 'image/png', 1 ) );
 
@@ -123,7 +129,9 @@ function imageToCanvas( image, flipY ) {
 	if ( ( typeof HTMLImageElement !== 'undefined' && image instanceof HTMLImageElement ) ||
 		( typeof HTMLCanvasElement !== 'undefined' && image instanceof HTMLCanvasElement ) ||
 		( typeof OffscreenCanvas !== 'undefined' && image instanceof OffscreenCanvas ) ||
-		( typeof ImageBitmap !== 'undefined' && image instanceof ImageBitmap ) ) {
+		( typeof ImageBitmap !== 'undefined' && image instanceof ImageBitmap ) ||
+		( true )
+		) {
 
 		const scale = 1024 / Math.max( image.width, image.height );
 
@@ -148,7 +156,7 @@ function imageToCanvas( image, flipY ) {
 
 	} else {
 
-		throw new Error( 'THREE.USDZExporter: No valid image data found. Unable to process texture.' );
+		throw new Error( 'THREE.USDZExporter: No valid image data found. Unable to process texture : ' +  image );
 
 	}
 
@@ -521,7 +529,7 @@ function buildMaterial( material, textures, quickLookCompatible = false ) {
 
 	if ( material.side === THREE.DoubleSide ) {
 
-		console.warn( 'THREE.USDZExporter: USDZ does not support double sided materials', material );
+		console.warn( 'THREE.USDZExporter: USDZ does not support double sided materials:', material.name );
 
 	}
 

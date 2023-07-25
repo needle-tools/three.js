@@ -3164,6 +3164,7 @@ class GLTFParser {
 
 				}
 
+				console.log("Loading texture", sourceURI, loader)
 				loader.load( LoaderUtils.resolveURL( sourceURI, options.path ), onLoad, undefined, reject );
 
 			} );
@@ -3184,7 +3185,7 @@ class GLTFParser {
 
 		} ).catch( function ( error ) {
 
-			console.error( 'THREE.GLTFLoader: Couldn\'t load texture', sourceURI );
+			console.error( 'THREE.GLTFLoader: Couldn\'t load texture', sourceURI, error );
 			throw error;
 
 		} );

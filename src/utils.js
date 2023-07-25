@@ -1,3 +1,5 @@
+import { resolveObjectURL } from 'node:buffer';
+
 function arrayMin( array ) {
 
 	if ( array.length === 0 ) return Infinity;
@@ -62,8 +64,36 @@ function getTypedArray( type, buffer ) {
 
 }
 
+class MockImage extends EventTarget {
+
+	constructor( name ) {
+
+		super();
+		this.name = name;
+		this.hasArrayBuffer = true;
+	}
+
+	// setter for src url
+	set src( url ) {
+		this.url = url;
+		this.blob = resolveObjectURL(url);
+		this.dispatchEvent( new Event("load") );
+
+	}
+
+	async getArrayBuffer() {
+		console.log(this.url, this.blob);
+		const arrayBuffer = await this.blob.arrayBuffer();
+		return arrayBuffer;
+	}
+
+}
+
 function createElementNS( name ) {
 
+	if (typeof document === 'undefined') {
+		return new MockImage( name );
+	}
 	return document.createElementNS( 'http://www.w3.org/1999/xhtml', name );
 
 }
