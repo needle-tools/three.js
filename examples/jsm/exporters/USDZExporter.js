@@ -78,7 +78,8 @@ class USDZExporter {
 
 			const texture = textures[ id ];
 
-			console.log (texture);
+			// HACK using custom data type to pass through texture data.
+			// We should actually respect the texture file type here, besides not doing this at all.
 			if (texture.source.data.hasArrayBuffer) {
 				files[ `textures/Texture_${ id }.png` ] = new Uint8Array( await texture.source.data.getArrayBuffer() );
 				continue;

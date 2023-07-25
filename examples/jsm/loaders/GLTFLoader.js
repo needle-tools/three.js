@@ -3164,7 +3164,7 @@ class GLTFParser {
 
 				}
 
-				console.log("Loading texture", sourceURI, loader)
+				// console.log("Loading texture", sourceURI, loader)
 				loader.load( LoaderUtils.resolveURL( sourceURI, options.path ), onLoad, undefined, reject );
 
 			} );

@@ -64,6 +64,7 @@ function getTypedArray( type, buffer ) {
 
 }
 
+// HACK Mock data structure to hold image bytes to pass through to exporters
 class MockImage extends EventTarget {
 
 	constructor( name ) {
@@ -82,7 +83,7 @@ class MockImage extends EventTarget {
 	}
 
 	async getArrayBuffer() {
-		console.log(this.url, this.blob);
+		// console.log(this.url, this.blob);
 		const arrayBuffer = await this.blob.arrayBuffer();
 		return arrayBuffer;
 	}
