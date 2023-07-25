@@ -489,6 +489,11 @@ function buildMaterial( material, textures, quickLookCompatible = false ) {
 
 		}
 
+		const needsNormalScaleAndBias = mapType === 'normal';
+		const normalScaleValueString = material instanceof THREE.MeshStandardMaterial
+			? (material.normalScale ? material.normalScale.x * 2 : 2).toFixed( PRECISION )
+			: "2";
+
 		return `
 		def Shader "PrimvarReader_${ mapType }"
 		{
@@ -515,6 +520,10 @@ function buildMaterial( material, textures, quickLookCompatible = false ) {
 			float2 inputs:st.connect = </Materials/Material_${ material.id }/Transform2d_${ mapType }.outputs:result>
 			${ color !== undefined ? 'float4 inputs:scale = ' + buildColor4( color ) : '' }
 			token inputs:sourceColorSpace = "${ texture.colorSpace === THREE.NoColorSpace ? 'raw' : 'sRGB' }"
+			${needsNormalScaleAndBias ? `
+			float4 inputs:scale = (${normalScaleValueString}, ${normalScaleValueString}, ${normalScaleValueString}, 1)
+			float4 inputs:bias = (-1, -1, -1, 0)
+			` : `` }
 			token inputs:wrapS = "${ WRAPPINGS[ texture.wrapS ] }"
 			token inputs:wrapT = "${ WRAPPINGS[ texture.wrapT ] }"
 			float outputs:r
