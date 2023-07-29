@@ -72,8 +72,8 @@ class GLTFAnimationPointerExtension {
 				const uuid = nextIndex < 0 ? remainingPath : remainingPath.substring( 0, nextIndex );
 				let res = null;
 				node.traverse( x => {
-
-					if ( res !== null || x.type !== 'Mesh' ) return;
+					
+					if ( res !== null || (x.type !== 'Mesh' && x.type !== 'SkinnedMesh') ) return;
 					if ( x[ 'material' ] && (x[ 'material' ].uuid === uuid || x[ 'material' ].name === uuid )) {
 
 						res = x[ 'material' ];
