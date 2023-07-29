@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.154.2] - 2023-07-29
+- fix GLTFLoader loadAnimation refactor (#26477)
+- fix KHR_animation_pointer not working with SkinnedMesh
+
 ## [0.154.0] - 2023-07-10
 - update to 154
 
