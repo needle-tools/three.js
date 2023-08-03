@@ -472,6 +472,7 @@ class GLTFAnimationPointerExtension {
 
 		// specially handle the morphTargetInfluences property for multi-material meshes
 		// in which case the target object is a Group and the children are the actual targets
+		// see NE-3311
 		if ( parts[ 3 ] === "morphTargetInfluences" ) {
 
 			if( node.type === "Group" ) {
