@@ -7,6 +7,7 @@ import {
 	PropertyBinding,
 	QuaternionKeyframeTrack,
 	VectorKeyframeTrack,
+	SkinnedMesh
 } from 'three';
 
 // DUPLICATED from GLTFLoader.js
@@ -465,89 +466,123 @@ class GLTFAnimationPointerExtension {
 		animationPointerPropertyPath = animationPointerPropertyPath.replaceAll( '/', '.' );
 		// replace node/material/camera/light ID by UUID
 		const parts = animationPointerPropertyPath.split( '.' );
-		parts[ 2 ] = (node.name !== undefined && node.name !== null) ? node.name : node.uuid;
-		animationPointerPropertyPath = parts.join( '.' );
-		if ( _animationPointerDebug )
-			console.log( node, inputAccessor, outputAccessor, target, animationPointerPropertyPath );
+		const hasName = node.name !== undefined && node.name !== null;
+		var nodeTargetName = hasName ? node.name : node.uuid;
+		parts[ 2 ] = nodeTargetName;
 
-		let TypedKeyframeTrack;
+		// specially handle the morphTargetInfluences property for multi-material meshes
+		// in which case the target object is a Group and the children are the actual targets
+		if ( parts[ 3 ] === "morphTargetInfluences" ) {
 
-		switch ( outputAccessor.itemSize ) {
+			if( node.type === "Group" ) {
 
-			case 1:
-				TypedKeyframeTrack = NumberKeyframeTrack;
-				break;
-			case 2:
-			case 3:
-				TypedKeyframeTrack = VectorKeyframeTrack;
-				break;
-			case 4:
+				if ( _animationPointerDebug )
+					console.log( "Detected multi-material skinnedMesh export", animationPointerPropertyPath, node );
 
-				if ( animationPointerPropertyPath.endsWith( '.quaternion' ) )
-					TypedKeyframeTrack = QuaternionKeyframeTrack;
-				else
-					TypedKeyframeTrack = ColorKeyframeTrack;
+				// We assume the children are skinned meshes
+				for ( const ch of node.children ) {
+					if( ch instanceof SkinnedMesh && ch.morphTargetInfluences ) {
+						parts[ 3 ] = ch.name;
+						parts[ 4 ] = "morphTargetInfluences";
+						__createTrack( this.parser );
+					}
+				}
 
-				break;
-
-		}
-
-		const interpolation = sampler.interpolation !== undefined ? INTERPOLATION[ sampler.interpolation ] : InterpolateLinear;
-
-		let outputArray = this.parser._getArrayFromAccessor( outputAccessor );
-
-		// convert fov values from radians to degrees
-		if ( animationPointerPropertyPath.endsWith( '.fov' ) ) {
-			
-			outputArray = outputArray.map( value => value / Math.PI * 180 );
+				return tracks;
+			}
 
 		}
 
-		const track = new TypedKeyframeTrack(
-			animationPointerPropertyPath,
-			inputAccessor.array,
-			outputArray,
-			interpolation
-		);
+		// default
+		__createTrack(this.parser);
+		
+		/** Create a new track using the current parts array */
+		function __createTrack( parser ) {
 
-		// Override interpolation with custom factory method.
-		if ( interpolation === 'CUBICSPLINE' ) {
+			animationPointerPropertyPath = parts.join( '.' );
 
-			this.parser._createCubicSplineTrackInterpolant( track );
+			if ( _animationPointerDebug )
+				console.log( node, inputAccessor, outputAccessor, target, animationPointerPropertyPath );
 
-		}
+			let TypedKeyframeTrack;
 
-		tracks.push( track );
+			switch ( outputAccessor.itemSize ) {
 
-		// glTF has opacity animation as last component of baseColorFactor,
-		// so we need to split that up here and create a separate opacity track if that is animated.
-		if ( animationPointerPropertyPath && outputAccessor.itemSize === 4 &&
-			animationPointerPropertyPath.startsWith( '.materials.' ) && animationPointerPropertyPath.endsWith( '.color' ) ) {
+				case 1:
+					TypedKeyframeTrack = NumberKeyframeTrack;
+					break;
+				case 2:
+				case 3:
+					TypedKeyframeTrack = VectorKeyframeTrack;
+					break;
+				case 4:
 
-			const opacityArray = new Float32Array( outputArray.length / 4 );
+					if ( animationPointerPropertyPath.endsWith( '.quaternion' ) )
+						TypedKeyframeTrack = QuaternionKeyframeTrack;
+					else
+						TypedKeyframeTrack = ColorKeyframeTrack;
 
-			for ( let j = 0, jl = outputArray.length / 4; j < jl; j += 1 ) {
-
-				opacityArray[ j ] = outputArray[ j * 4 + 3 ];
+					break;
 
 			}
 
-			const opacityTrack = new TypedKeyframeTrack(
-				animationPointerPropertyPath.replace( '.color', '.opacity' ),
+			const interpolation = sampler.interpolation !== undefined ? INTERPOLATION[ sampler.interpolation ] : InterpolateLinear;
+
+			let outputArray = parser._getArrayFromAccessor( outputAccessor );
+
+			// convert fov values from radians to degrees
+			if ( animationPointerPropertyPath.endsWith( '.fov' ) ) {
+				
+				outputArray = outputArray.map( value => value / Math.PI * 180 );
+
+			}
+
+			const track = new TypedKeyframeTrack(
+				animationPointerPropertyPath,
 				inputAccessor.array,
-				opacityArray,
+				outputArray,
 				interpolation
 			);
 
 			// Override interpolation with custom factory method.
 			if ( interpolation === 'CUBICSPLINE' ) {
 
-				this.parser._createCubicSplineTrackInterpolant( track );
+				parser._createCubicSplineTrackInterpolant( track );
 
 			}
 
-			tracks.push( opacityTrack );
+			tracks.push( track );
 
+			// glTF has opacity animation as last component of baseColorFactor,
+			// so we need to split that up here and create a separate opacity track if that is animated.
+			if ( animationPointerPropertyPath && outputAccessor.itemSize === 4 &&
+				animationPointerPropertyPath.startsWith( '.materials.' ) && animationPointerPropertyPath.endsWith( '.color' ) ) {
+
+				const opacityArray = new Float32Array( outputArray.length / 4 );
+
+				for ( let j = 0, jl = outputArray.length / 4; j < jl; j += 1 ) {
+
+					opacityArray[ j ] = outputArray[ j * 4 + 3 ];
+
+				}
+
+				const opacityTrack = new TypedKeyframeTrack(
+					animationPointerPropertyPath.replace( '.color', '.opacity' ),
+					inputAccessor.array,
+					opacityArray,
+					interpolation
+				);
+
+				// Override interpolation with custom factory method.
+				if ( interpolation === 'CUBICSPLINE' ) {
+
+					parser._createCubicSplineTrackInterpolant( track );
+
+				}
+
+				tracks.push( opacityTrack );
+
+			}
 		}
 
 		return tracks;
