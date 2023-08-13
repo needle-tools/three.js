@@ -435,7 +435,7 @@ function buildMaterial( material, textures, quickLookCompatible = false ) {
 	const inputs = [];
 	const samplers = [];
 
-	function buildTexture( texture, mapType, color ) {
+	function buildTexture( texture, mapType, color, opacity ) {
 
 		const id = texture.source.id + '_' + texture.flipY;
 
@@ -481,43 +481,56 @@ function buildMaterial( material, textures, quickLookCompatible = false ) {
 
 		}
 
+		const needsTextureTransform = ( repeat.x != 1 || repeat.y != 1 || offset.x != 0 || offset.y != 0 || rotation != 0 );
+		const textureTransformInput = `</Materials/Material_${material.id}/${'uvReader_' + uv}.outputs:result>`;
+		const textureTransformOutput = `</Materials/Material_${material.id}/Transform2d_${mapType}.outputs:result>`;
+
+		const needsTextureScale = mapType !== 'normal' && (color && (color.r !== 1 || color.g !== 1 || color.b !== 1 || opacity !== 1)) || false;
+		const needsNormalScaleAndBias = mapType === 'normal';
+		const normalScale = material.isMeshStandardMaterial ? (material.normalScale ? material.normalScale.x * 2 : 2) : 2;
+		const normalScaleValueString = normalScale.toFixed( PRECISION );
+		const normalBiasString = (-1 * (normalScale / 2)).toFixed( PRECISION );
+
 		return `
-		def Shader "PrimvarReader_${ mapType }"
-		{
-			uniform token info:id = "UsdPrimvarReader_float2"
-			float2 inputs:fallback = (0.0, 0.0)
-			token inputs:varname = "${ uv }"
-			float2 outputs:result
-		}
-
-		def Shader "Transform2d_${ mapType }"
-		{
-			uniform token info:id = "UsdTransform2d"
-			token inputs:in.connect = </Materials/Material_${ material.id }/PrimvarReader_${ mapType }.outputs:result>
-			float inputs:rotation = ${ ( rotation * ( 180 / Math.PI ) ).toFixed( PRECISION ) }
-			float2 inputs:scale = ${ buildVector2( repeat ) }
-			float2 inputs:translation = ${ buildVector2( offset ) }
-			float2 outputs:result
-		}
-
-		def Shader "Texture_${ texture.id }_${ mapType }"
-		{
-			uniform token info:id = "UsdUVTexture"
-			asset inputs:file = @textures/Texture_${ id }.png@
-			float2 inputs:st.connect = </Materials/Material_${ material.id }/Transform2d_${ mapType }.outputs:result>
-			${ color !== undefined ? 'float4 inputs:scale = ' + buildColor4( color ) : '' }
-			token inputs:sourceColorSpace = "${ texture.colorSpace === THREE.NoColorSpace ? 'raw' : 'sRGB' }"
+        ${needsTextureTransform ? `def Shader "Transform2d_${mapType}" (
+            sdrMetadata = {
+                string role = "math"
+            }
+        )
+        {
+            uniform token info:id = "UsdTransform2d"
+            float2 inputs:in.connect = ${textureTransformInput}
+            float2 inputs:scale = ${buildVector2( repeat )}
+            float2 inputs:translation = ${buildVector2( offset )}
+			float inputs:rotation = ${(rotation / Math.PI * 180).toFixed( PRECISION )}
+            float2 outputs:result
+        }
+		` : '' }
+		def Shader "Texture_${texture.id}_${mapType}"
+        {
+            uniform token info:id = "UsdUVTexture"
+            asset inputs:file = @textures/Texture_${id}.png@
+			token inputs:sourceColorSpace = "${ texture.colorSpace === 'srgb' ? 'sRGB' : 'raw' }"
+            float2 inputs:st.connect = ${needsTextureTransform ? textureTransformOutput : textureTransformInput}
+			${needsTextureScale ? `
+			float4 inputs:scale = (${color ? color.r + ', ' + color.g + ', ' + color.b : '1, 1, 1'}, ${opacity ? opacity : '1'})
+			` : `` }
+			${needsNormalScaleAndBias ? `
+			float4 inputs:scale = (${normalScaleValueString}, ${normalScaleValueString}, ${normalScaleValueString}, 1)
+			float4 inputs:bias = (${normalBiasString}, ${normalBiasString}, ${normalBiasString}, 0)
+			` : `` }
 			token inputs:wrapS = "${ WRAPPINGS[ texture.wrapS ] }"
 			token inputs:wrapT = "${ WRAPPINGS[ texture.wrapT ] }"
-			float outputs:r
-			float outputs:g
-			float outputs:b
-			float3 outputs:rgb
-			${ material.transparent || material.alphaTest > 0.0 ? 'float outputs:a' : '' }
-		}`;
+            float outputs:r
+            float outputs:g
+            float outputs:b
+            float3 outputs:rgb
+            ${material.transparent || material.alphaTest > 0.0 ? 'float outputs:a' : ''}
+        }`;
 
 	}
 
+	const effectiveOpacity = ( material.transparent || material.alphaTest ) ? material.opacity : 1;
 
 	if ( material.side === THREE.DoubleSide ) {
 
@@ -540,7 +553,7 @@ function buildMaterial( material, textures, quickLookCompatible = false ) {
 
 		}
 
-		samplers.push( buildTexture( material.map, 'diffuse', material.color ) );
+		samplers.push( buildTexture( material.map, 'diffuse', material.color, effectiveOpacity ) );
 
 	} else {
 
@@ -633,6 +646,22 @@ ${ inputs.join( '\n' ) }
 		}
 
 		token outputs:surface.connect = </Materials/Material_${ material.id }/PreviewSurface.outputs:surface>
+
+        def Shader "uvReader_st"
+        {
+            uniform token info:id = "UsdPrimvarReader_float2"
+            token inputs:varname = "st"
+            float2 inputs:fallback = (0.0, 0.0)
+            float2 outputs:result
+        }
+
+		def Shader "uvReader_st2"
+        {
+            uniform token info:id = "UsdPrimvarReader_float2"
+            token inputs:varname = "st2"
+            float2 inputs:fallback = (0.0, 0.0)
+            float2 outputs:result
+        }
 
 ${ samplers.join( '\n' ) }
 
