@@ -1,6 +1,7 @@
 import { ArrayCamera } from '../../cameras/ArrayCamera.js';
 import { EventDispatcher } from '../../core/EventDispatcher.js';
 import { PerspectiveCamera } from '../../cameras/PerspectiveCamera.js';
+import { Texture } from '../../textures/Texture.js';
 import { Vector2 } from '../../math/Vector2.js';
 import { Vector3 } from '../../math/Vector3.js';
 import { Vector4 } from '../../math/Vector4.js';
@@ -9,7 +10,38 @@ import { WebGLAnimation } from '../webgl/WebGLAnimation.js';
 import { WebGLRenderTarget } from '../WebGLRenderTarget.js';
 import { WebXRController } from './WebXRController.js';
 import { DepthTexture } from '../../textures/DepthTexture.js';
+import { ShaderMaterial } from '../../materials/ShaderMaterial.js';
+import { PlaneGeometry } from '../../geometries/PlaneGeometry.js';
+import { Mesh } from '../../objects/Mesh.js';
+import { Scene } from '../../scenes/Scene.js';
 import { DepthFormat, DepthStencilFormat, RGBAFormat, UnsignedByteType, UnsignedIntType, UnsignedInt248Type } from '../../constants.js';
+
+const _occlusion_vertex = `
+void main() {
+
+	gl_Position = vec4(position, 1.0);
+
+}`;
+
+const _occlusion_fragment = `
+uniform sampler2DArray depthColor;
+uniform float depthWidth;
+uniform float depthHeight;
+
+void main() {
+
+	int arrayIndex = 0;
+	vec2 depthUv;
+	if (gl_FragCoord.x>=depthWidth) {
+		arrayIndex = 1;
+		depthUv = vec2((gl_FragCoord.x-depthWidth)/depthWidth, gl_FragCoord.y/depthHeight);
+	} else {
+		depthUv = vec2(gl_FragCoord.x/depthWidth, gl_FragCoord.y/depthHeight);
+	}
+
+	gl_FragDepthEXT = texture(depthColor, vec3(depthUv.x, depthUv.y, arrayIndex)).r;
+
+}`;
 
 class WebXRManager extends EventDispatcher {
 
@@ -33,7 +65,14 @@ class WebXRManager extends EventDispatcher {
 		let glBinding = null;
 		let glProjLayer = null;
 		let glBaseLayer = null;
+		let _depthTexture = null;
+		let _nearOverride = 0;
+		let _farOverride = 0;
 		let xrFrame = null;
+
+		let _occlusionDepthTexture = null;
+		let _occlusionScene = null;
+
 		const attributes = gl.getContextAttributes();
 		let initialRenderTarget = null;
 		let newRenderTarget = null;
@@ -163,6 +202,9 @@ class WebXRManager extends EventDispatcher {
 
 			_currentDepthNear = null;
 			_currentDepthFar = null;
+			_depthTexture = null;
+			_occlusionDepthTexture = null;
+			_occlusionScene = null;
 
 			// restore framebuffer/rendering state
 
@@ -522,6 +564,13 @@ class WebXRManager extends EventDispatcher {
 
 			if ( session === null ) return;
 
+			if ( _depthTexture ) {
+
+				camera.near = _nearOverride;
+				camera.far = _farOverride;
+
+			}
+
 			cameraXR.near = cameraR.near = cameraL.near = camera.near;
 			cameraXR.far = cameraR.far = cameraL.far = camera.far;
 
@@ -536,6 +585,14 @@ class WebXRManager extends EventDispatcher {
 
 				_currentDepthNear = cameraXR.near;
 				_currentDepthFar = cameraXR.far;
+				cameraL.near = _nearOverride;
+				cameraL.far = _farOverride;
+				cameraR.near = _nearOverride;
+				cameraR.far = _farOverride;
+
+				cameraL.updateProjectionMatrix();
+				cameraR.updateProjectionMatrix();
+				camera.updateProjectionMatrix();
 
 			}
 
@@ -638,6 +695,12 @@ class WebXRManager extends EventDispatcher {
 
 		};
 
+		this.hasOcclusion = function ( ) {
+
+			return _occlusionDepthTexture !== null;
+
+		};
+
 		// Animation Loop
 
 		let onAnimationFrameCallback = null;
@@ -730,6 +793,34 @@ class WebXRManager extends EventDispatcher {
 
 				}
 
+				let depthData = null;
+				if ( session.enabledFeatures && session.enabledFeatures.includes( 'depth-sensing' ) ) {
+
+					depthData = glBinding.getDepthInformation( views[ 0 ] );
+
+				}
+
+				if ( depthData && depthData.isValid && depthData.texture ) {
+
+					if ( _occlusionDepthTexture === null ) {
+
+						_depthTexture = depthData.texture;
+
+						_occlusionDepthTexture = new Texture();
+						const texProps = renderer.properties.get( _occlusionDepthTexture );
+						texProps.__webglTexture = _depthTexture;
+
+						if ( ( depthData.depthNear != session.renderState.depthNear ) || ( depthData.depthFar != session.renderState.depthFar ) ) {
+
+							_nearOverride = depthData.depthNear;
+							_farOverride = depthData.depthFar;
+
+						}
+
+					}
+
+				}
+
 			}
 
 			//
@@ -744,6 +835,33 @@ class WebXRManager extends EventDispatcher {
 					controller.update( inputSource, frame, customReferenceSpace || referenceSpace );
 
 				}
+
+			}
+
+			if ( _occlusionDepthTexture ) {
+
+				if ( ! _occlusionScene ) {
+
+					const viewport = cameraXR.cameras[ 0 ].viewport;
+					const occlusionMaterial = new ShaderMaterial( {
+						vertexShader: _occlusion_vertex,
+						fragmentShader: _occlusion_fragment,
+						uniforms: {
+							depthColor: { value: _occlusionDepthTexture },
+							depthWidth: { value: viewport.z },
+							depthHeight: { value: viewport.w }
+						}
+					} );
+
+					occlusionMaterial.extensions.fragDepth = true;
+
+					_occlusionScene = new Scene();
+					_occlusionScene.add( new Mesh( new PlaneGeometry( 20, 20 ), occlusionMaterial ) );
+					_occlusionScene.isScene = false;
+
+				}
+
+				renderer.render( _occlusionScene, cameraXR );
 
 			}
 
