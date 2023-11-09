@@ -44,7 +44,7 @@ function WebGLPrograms( renderer, cubemaps, cubeuvmaps, extensions, capabilities
 
 	}
 
-	function getParameters( material, lights, shadows, scene, object ) {
+	function getParameters( material, lights, shadows, scene, object, occlusion ) {
 
 		const fog = scene.fog;
 		const geometry = object.geometry;
@@ -162,6 +162,8 @@ function WebGLPrograms( renderer, cubemaps, cubeuvmaps, extensions, capabilities
 		const HAS_ATTRIBUTE_UV2 = !! geometry.attributes.uv2;
 		const HAS_ATTRIBUTE_UV3 = !! geometry.attributes.uv3;
 
+		const HAS_OCCLUSION = !! occlusion;
+
 		let toneMapping = NoToneMapping;
 
 		if ( material.toneMapped ) {
@@ -254,6 +256,8 @@ function WebGLPrograms( renderer, cubemaps, cubeuvmaps, extensions, capabilities
 
 			combine: material.combine,
 
+			occlusion: HAS_OCCLUSION,
+
 			//
 
 			mapUv: HAS_MAP && getChannel( material.map.channel ),
@@ -302,6 +306,8 @@ function WebGLPrograms( renderer, cubemaps, cubeuvmaps, extensions, capabilities
 			fog: !! fog,
 			useFog: material.fog === true,
 			fogExp2: ( !! fog && fog.isFogExp2 ),
+
+			useOcclusion: material.occlusion === true,
 
 			flatShading: material.flatShading === true,
 
@@ -407,6 +413,7 @@ function WebGLPrograms( renderer, cubemaps, cubeuvmaps, extensions, capabilities
 		}
 
 		array.push( parameters.customProgramCacheKey );
+		array.push( parameters.occlusion );
 
 		return array.join();
 
