@@ -441,7 +441,7 @@ class OrbitControls extends EventDispatcher {
 			scope.domElement.removeEventListener( 'wheel', onMouseWheel );
 
 			scope.domElement.removeEventListener( 'pointermove', onPointerMove );
-			scope.domElement.removeEventListener( 'pointerup', onPointerUp );
+			window.removeEventListener( 'pointerup', onPointerUp );
 
 			const document = scope.domElement.getRootNode(); // offscreen canvas compatibility
 
@@ -1033,7 +1033,7 @@ class OrbitControls extends EventDispatcher {
 				// scope.domElement.setPointerCapture( event.pointerId );
 
 				scope.domElement.addEventListener( 'pointermove', onPointerMove );
-				scope.domElement.addEventListener( 'pointerup', onPointerUp );
+				window.addEventListener( 'pointerup', onPointerUp );
 
 			}
 
