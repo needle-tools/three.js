@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.160.3] - 2024-02-06
+- fix: OrbitControls `pointerup` event not received in some cases
+
 ## [0.154.3] - 2023-08-03
 - add: KHR_animation_pointer support to resolve morphTargets on Group (multi-material skinned mesh with blendshapes)
 
