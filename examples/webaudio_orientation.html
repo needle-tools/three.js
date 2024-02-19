@@ -37,6 +37,8 @@
 		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 		import { PositionalAudioHelper } from 'three/addons/helpers/PositionalAudioHelper.js';
 		import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+		import { VRButton } from 'three/addons/webxr/VRButton.js';
+
 
 		let scene, camera, renderer;
 
@@ -151,7 +153,10 @@
 			renderer.setPixelRatio( window.devicePixelRatio );
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			renderer.shadowMap.enabled = true;
+			// renderer.xr.addEventListener( 'sessionstart', () => baseReferenceSpace = renderer.xr.getReferenceSpace() );
+			renderer.xr.enabled = true;
 			container.appendChild( renderer.domElement );
+			container.appendChild( VRButton.createButton( renderer ) );
 
 			//
 
