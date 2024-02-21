@@ -534,8 +534,8 @@ class WebXRManager extends EventDispatcher {
 
 			if ( depthSensing.texture !== null ) {
 
-				camera.near = depthSensing.depthNear;
-				camera.far = depthSensing.depthFar;
+				if ( depthSensing.depthNear > 0 ) camera.near = depthSensing.depthNear;
+				if ( depthSensing.depthFar > 0 ) camera.far = depthSensing.depthFar;
 
 			}
 
