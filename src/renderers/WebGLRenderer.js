@@ -11,6 +11,8 @@ import {
 	LinearMipmapLinearFilter,
 	SRGBColorSpace,
 	LinearSRGBColorSpace,
+	sRGBEncoding,
+	LinearEncoding,
 	RGBAIntegerFormat,
 	RGIntegerFormat,
 	RedIntegerFormat,
@@ -2576,6 +2578,20 @@ class WebGLRenderer {
 		const gl = this.getContext();
 		gl.drawingBufferColorSpace = colorSpace === DisplayP3ColorSpace ? 'display-p3' : 'srgb';
 		gl.unpackColorSpace = ColorManagement.workingColorSpace === LinearDisplayP3ColorSpace ? 'display-p3' : 'srgb';
+
+	}
+
+	get outputEncoding() { // @deprecated, r152
+
+		console.warn( 'THREE.WebGLRenderer: Property .outputEncoding has been removed. Use .outputColorSpace instead.' );
+		return this.outputColorSpace === SRGBColorSpace ? sRGBEncoding : LinearEncoding;
+
+	}
+
+	set outputEncoding( encoding ) { // @deprecated, r152
+
+		console.warn( 'THREE.WebGLRenderer: Property .outputEncoding has been removed. Use .outputColorSpace instead.' );
+		this.outputColorSpace = encoding === sRGBEncoding ? SRGBColorSpace : LinearSRGBColorSpace;
 
 	}
 
