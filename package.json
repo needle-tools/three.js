@@ -1,5 +1,5 @@
 {
-  "name": "three",
+  "name": "@needle-tools/three",
   "version": "0.167.1",
   "description": "JavaScript 3D library",
   "type": "module",
