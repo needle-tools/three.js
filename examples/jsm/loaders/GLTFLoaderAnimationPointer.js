@@ -22,8 +22,9 @@ const KHR_ANIMATION_POINTER = 'KHR_animation_pointer';
 
 // DUPLICATED from GLTFLoader.js
 const INTERPOLATION = {
-	CUBICSPLINE: undefined, // We use a custom interpolant (GLTFCubicSplineInterpolation) for CUBICSPLINE tracks. Each
-							// keyframe track will be initialized with a default interpolation type, then modified.
+	// We use a custom interpolant (GLTFCubicSplineInterpolation) for CUBICSPLINE tracks. Each
+	// keyframe track will be initialized with a default interpolation type, then modified.
+	CUBICSPLINE: undefined,
 	LINEAR: InterpolateLinear,
 	STEP: InterpolateDiscrete
 };
@@ -73,9 +74,9 @@ class GLTFAnimationPointerExtension {
 				const uuid = nextIndex < 0 ? remainingPath : remainingPath.substring( 0, nextIndex );
 				let res = null;
 				node.traverse( x => {
-					
-					if ( res !== null || (x.type !== 'Mesh' && x.type !== 'SkinnedMesh') ) return;
-					if ( x[ 'material' ] && (x[ 'material' ].uuid === uuid || x[ 'material' ].name === uuid )) {
+
+					if ( res !== null || ( x.type !== 'Mesh' && x.type !== 'SkinnedMesh' ) ) return;
+					if ( x[ 'material' ] && ( x[ 'material' ].uuid === uuid || x[ 'material' ].name === uuid ) ) {
 
 						res = x[ 'material' ];
 						if ( _animationPointerDebug ) console.log( res, remainingPath );
@@ -124,8 +125,10 @@ class GLTFAnimationPointerExtension {
 
 						// access by node name
 						const foundNode = node.getObjectByName( val );
+
 						if ( foundNode )
 							currentTarget = foundNode;
+
 					}
 
 				}
@@ -473,30 +476,35 @@ class GLTFAnimationPointerExtension {
 		// specially handle the morphTargetInfluences property for multi-material meshes
 		// in which case the target object is a Group and the children are the actual targets
 		// see NE-3311
-		if ( parts[ 3 ] === "morphTargetInfluences" ) {
+		if ( parts[ 3 ] === 'morphTargetInfluences' ) {
 
-			if( node.type === "Group" ) {
+			if ( node.type === 'Group' ) {
 
 				if ( _animationPointerDebug )
-					console.log( "Detected multi-material skinnedMesh export", animationPointerPropertyPath, node );
+					console.log( 'Detected multi-material skinnedMesh export', animationPointerPropertyPath, node );
 
 				// We assume the children are skinned meshes
 				for ( const ch of node.children ) {
-					if( ch instanceof SkinnedMesh && ch.morphTargetInfluences ) {
+
+					if ( ch instanceof SkinnedMesh && ch.morphTargetInfluences ) {
+
 						parts[ 3 ] = ch.name;
-						parts[ 4 ] = "morphTargetInfluences";
+						parts[ 4 ] = 'morphTargetInfluences';
 						__createTrack( this.parser );
+
 					}
+
 				}
 
 				return tracks;
+
 			}
 
 		}
 
 		// default
-		__createTrack(this.parser);
-		
+		__createTrack( this.parser );
+
 		/** Create a new track using the current parts array */
 		function __createTrack( parser ) {
 
@@ -533,7 +541,7 @@ class GLTFAnimationPointerExtension {
 
 			// convert fov values from radians to degrees
 			if ( animationPointerPropertyPath.endsWith( '.fov' ) ) {
-				
+
 				outputArray = outputArray.map( value => value / Math.PI * 180 );
 
 			}
@@ -584,6 +592,7 @@ class GLTFAnimationPointerExtension {
 				tracks.push( opacityTrack );
 
 			}
+
 		}
 
 		return tracks;
