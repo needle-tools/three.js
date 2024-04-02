@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.162.2] - 2024-04-02
+- add: BatchedMesh addUpdateRanges (#27981)
+- fix: BatchedMesh error caused by InterleavedBuffers, don't keep srcAttribute type and directly create BufferAttribute, omit usage (#27978)
+
 ## [0.162.1] - 2024-03-05
 - fix: restore pointer capture on OrbitControls
 - fix: audio.pause causing exceptions when internal buffer has been released elsewhere
