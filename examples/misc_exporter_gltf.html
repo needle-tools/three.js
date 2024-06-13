@@ -268,6 +268,7 @@
 				// ---------------------------------------------------------------------
 				// Hierarchy
 				// ---------------------------------------------------------------------
+
 				const mapWood = new THREE.TextureLoader().load( 'textures/hardwood2_diffuse.jpg' );
 				material = new THREE.MeshStandardMaterial( { map: mapWood, side: THREE.DoubleSide } );
 
@@ -470,15 +471,24 @@
 				container.appendChild( renderer.domElement );
 
 
-				const renderTexture = new THREE.WebGLRenderTarget(256, 256);
 				setTimeout(()=>{
+					const renderTexture = new THREE.WebGLRenderTarget(256, 256);
+					// not necessary but let's render the scene once
 					renderer.setRenderTarget( renderTexture );
 					renderer.render( scene1, camera );
 					renderer.setRenderTarget( null );
-					const cube = new THREE.Mesh( new THREE.BoxGeometry( 200, 200, 200 ), new THREE.MeshBasicMaterial( { color: 0xffffff, map: renderTexture.texture } ) );				
+					
+					// HACK to get the pixels from the render texture for export
+					// adding this to the GLTFExporter would be possible if the exporter had a reference to the renderer
+					const buffer = new Uint8Array(256 * 256 * 4);
+					const data = renderer.readRenderTargetPixels(renderTexture, 0, 0, 256, 256, buffer);
+					const newTexture = new THREE.DataTexture(buffer, 256, 256);
+					newTexture.needsUpdate = true;
+
+					// add the render texture to an object in the scene
+					const cube = new THREE.Mesh( new THREE.BoxGeometry( 200, 200, 200 ), new THREE.MeshBasicMaterial( { color: 0xffffff, map: newTexture } ) );				
 					scene1.add( cube );
-				}, 50)
-				console.log("HELLO", renderTexture);	
+				}, 10)
 
 				//
 
