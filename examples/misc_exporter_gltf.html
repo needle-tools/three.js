@@ -469,6 +469,17 @@
 
 				container.appendChild( renderer.domElement );
 
+
+				const renderTexture = new THREE.WebGLRenderTarget(256, 256);
+				setTimeout(()=>{
+					renderer.setRenderTarget( renderTexture );
+					renderer.render( scene1, camera );
+					renderer.setRenderTarget( null );
+					const cube = new THREE.Mesh( new THREE.BoxGeometry( 200, 200, 200 ), new THREE.MeshBasicMaterial( { color: 0xffffff, map: renderTexture.texture } ) );				
+					scene1.add( cube );
+				}, 50)
+				console.log("HELLO", renderTexture);	
+
 				//
 
 				window.addEventListener( 'resize', onWindowResize );
