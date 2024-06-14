@@ -217,19 +217,23 @@ class PropertyBinding {
 		// search into node subtree.
 		if ( root.children ) {
 
-			const searchNodeSubtree = function ( children ) {
+			const searchNodeSubtree = function ( children, checkByUserDataName ) {
 
 				for ( let i = 0; i < children.length; i ++ ) {
 
 					const childNode = children[ i ];
 
-					if ( childNode.name === nodeName || childNode.uuid === nodeName ) {
+					if ( ! checkByUserDataName && ( childNode.name === nodeName || childNode.uuid === nodeName ) ) {
+
+						return childNode;
+
+					} else if ( checkByUserDataName && childNode.userData && childNode.userData.name === nodeName ) {
 
 						return childNode;
 
 					}
 
-					const result = searchNodeSubtree( childNode.children );
+					const result = searchNodeSubtree( childNode.children, checkByUserDataName );
 
 					if ( result ) return result;
 
@@ -244,6 +248,18 @@ class PropertyBinding {
 			if ( subTreeNode ) {
 
 				return subTreeNode;
+
+			} else {
+
+				// Search again by userData.name, as set by GLTFLoader.
+				// We don't want to do that in a single pass to avoid incorrect matches.
+				const subTreeNode = searchNodeSubtree( root.children, true );
+
+				if ( subTreeNode ) {
+
+					return subTreeNode;
+
+				}
 
 			}
 
