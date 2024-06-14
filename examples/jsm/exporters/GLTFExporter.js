@@ -1416,6 +1416,18 @@ class GLTFWriter {
 
 		if ( cache.textures.has( map ) ) return cache.textures.get( map );
 
+		const beforeWriteArgs = { keep: true, newTexture: null };
+	
+		this._invokeAll( function ( ext ) {
+
+			ext.beforeWriteTexture && ext.beforeWriteTexture( map, beforeWriteArgs );
+
+		} );
+
+		if ( beforeWriteArgs.keep === false ) return null;
+
+		if ( beforeWriteArgs.newTexture != null ) map = beforeWriteArgs.newTexture;
+
 		if ( ! json.textures ) json.textures = [];
 
 		// make non-readable textures (e.g. CompressedTexture) readable by blitting them into a new texture
@@ -1632,6 +1644,20 @@ class GLTFWriter {
 	 * @return {Integer|null} Index of the processed mesh in the "meshes" array
 	 */
 	processMesh( mesh ) {
+
+		const beforeWriteArgs = { keep: true }
+
+		this._invokeAll( function ( ext ) {
+
+			ext.beforeWriteMesh && ext.beforeWriteMesh( mesh, beforeWriteArgs );
+
+		} );
+
+		if ( beforeWriteArgs.keep != true ) { 
+			
+			return null;
+
+		}
 
 		const cache = this.cache;
 		const json = this.json;
@@ -2231,6 +2257,20 @@ class GLTFWriter {
 	 * @return {Integer} Index of the node in the nodes list
 	 */
 	processNode( object ) {
+
+		const beforeWriteArgs = { keep: true }
+
+		this._invokeAll( function ( ext ) {
+
+			ext.beforeWriteNode && ext.beforeWriteNode( object, beforeWriteArgs );
+
+		} );
+
+		if ( beforeWriteArgs.keep != true ) { 
+			
+			return null;
+
+		}
 
 		const json = this.json;
 		const options = this.options;
