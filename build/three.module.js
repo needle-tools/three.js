@@ -13939,9 +13939,9 @@ var logdepthbuf_pars_vertex = "#ifdef USE_LOGDEPTHBUF\n\tvarying float vFragDept
 
 var logdepthbuf_vertex = "#ifdef USE_LOGDEPTHBUF\n\tvFragDepth = 1.0 + gl_Position.w;\n\tvIsPerspective = float( isPerspectiveMatrix( projectionMatrix ) );\n#endif";
 
-var map_fragment = "#ifdef USE_MAP\n\tvec4 sampledDiffuseColor = texture2D( map, vMapUv );\n\t#ifdef DECODE_VIDEO_TEXTURE\n\t\tsampledDiffuseColor = vec4( mix( pow( sampledDiffuseColor.rgb * 0.9478672986 + vec3( 0.0521327014 ), vec3( 2.4 ) ), sampledDiffuseColor.rgb * 0.0773993808, vec3( lessThanEqual( sampledDiffuseColor.rgb, vec3( 0.04045 ) ) ) ), sampledDiffuseColor.w );\n\t\n\t#endif\n\tdiffuseColor *= sampledDiffuseColor;\n#endif";
+var map_fragment = "#ifdef USE_MAP\n#ifdef USE_MIPMAP_BIAS\n    vec4 sampledDiffuseColor = texture2D( map, vMapUv, mipmapBias );\n#else\n\tvec4 sampledDiffuseColor = texture2D( map, vMapUv );\n#endif\n\t#ifdef DECODE_VIDEO_TEXTURE\n\t\tsampledDiffuseColor = vec4( mix( pow( sampledDiffuseColor.rgb * 0.9478672986 + vec3( 0.0521327014 ), vec3( 2.4 ) ), sampledDiffuseColor.rgb * 0.0773993808, vec3( lessThanEqual( sampledDiffuseColor.rgb, vec3( 0.04045 ) ) ) ), sampledDiffuseColor.w );\n\t\n\t#endif\n\tdiffuseColor *= sampledDiffuseColor;\n#endif";
 
-var map_pars_fragment = "#ifdef USE_MAP\n\tuniform sampler2D map;\n#endif";
+var map_pars_fragment = "#ifdef USE_MAP\n\tuniform sampler2D map;\n        \n#ifdef USE_MIPMAP_BIAS\n    uniform float mipmapBias;\n#endif\n#endif";
 
 var map_particle_fragment = "#if defined( USE_MAP ) || defined( USE_ALPHAMAP )\n\t#if defined( USE_POINTS_UV )\n\t\tvec2 uv = vUv;\n\t#else\n\t\tvec2 uv = ( uvTransform * vec3( gl_PointCoord.x, 1.0 - gl_PointCoord.y, 1 ) ).xy;\n\t#endif\n#endif\n#ifdef USE_MAP\n\tdiffuseColor *= texture2D( map, uv );\n#endif\n#ifdef USE_ALPHAMAP\n\tdiffuseColor.a *= texture2D( alphaMap, uv ).g;\n#endif";
 
@@ -16558,6 +16558,10 @@ class PMREMGenerator {
 
 		const cubeUVRenderTarget = _createRenderTarget( width, height, params );
 
+		// NEEDLE: This was added to work around a caching bug in PMREMGenerator that lead to incorrect results.
+		const { _lodMax } = this;
+		( { sizeLods: this._sizeLods, lodPlanes: this._lodPlanes, sigmas: this._sigmas } = _createPlanes( _lodMax ) );
+
 		if ( this._pingPongRenderTarget === null || this._pingPongRenderTarget.width !== width || this._pingPongRenderTarget.height !== height ) {
 
 			if ( this._pingPongRenderTarget !== null ) {
@@ -17241,7 +17245,9 @@ function WebGLCubeUVMaps( renderer ) {
 
 						if ( ( isEquirectMap && image && image.height > 0 ) || ( isCubeMap && image && isCubeTextureComplete( image ) ) ) {
 
-							if ( pmremGenerator === null ) pmremGenerator = new PMREMGenerator( renderer );
+							// NEEDLE: The caching here was removed because of a bug where wrong results were returned for subsequent PMREMGenerator usage;
+							// the root cause is still unclear.
+							pmremGenerator = new PMREMGenerator( renderer );
 
 							renderTarget = isEquirectMap ? pmremGenerator.fromEquirectangular( texture ) : pmremGenerator.fromCubemap( texture );
 							renderTarget.texture.pmremVersion = texture.pmremVersion;
@@ -27379,8 +27385,8 @@ class WebXRManager extends EventDispatcher {
 
 			if ( depthSensing.texture !== null ) {
 
-				camera.near = depthSensing.depthNear;
-				camera.far = depthSensing.depthFar;
+				if ( depthSensing.depthNear > 0 ) camera.near = depthSensing.depthNear;
+				if ( depthSensing.depthFar > 0 ) camera.far = depthSensing.depthFar;
 
 			}
 
@@ -47997,6 +48003,9 @@ class AudioListener extends Object3D {
 
 		this.matrixWorld.decompose( _position$1, _quaternion$1, _scale$1 );
 
+		if ( ! Number.isFinite( _position$1.x ) || ! Number.isFinite( _position$1.y ) || ! Number.isFinite( _position$1.z ) )
+			return;
+
 		_orientation$1.set( 0, 0, - 1 ).applyQuaternion( _quaternion$1 );
 
 		if ( listener.positionX ) {
@@ -48169,7 +48178,7 @@ class Audio extends Object3D {
 
 				// ensure _progress does not exceed duration with looped audios
 
-				this._progress = this._progress % ( this.duration || this.buffer.duration );
+				this._progress = this._progress % ( this.duration || ( this.buffer ? this.buffer.duration : Number.MAX_VALUE ) );
 
 			}
 
@@ -49136,19 +49145,23 @@ class PropertyBinding {
 		// search into node subtree.
 		if ( root.children ) {
 
-			const searchNodeSubtree = function ( children ) {
+			const searchNodeSubtree = function ( children, checkByUserDataName ) {
 
 				for ( let i = 0; i < children.length; i ++ ) {
 
 					const childNode = children[ i ];
 
-					if ( childNode.name === nodeName || childNode.uuid === nodeName ) {
+					if ( ! checkByUserDataName && ( childNode.name === nodeName || childNode.uuid === nodeName ) ) {
+
+						return childNode;
+
+					} else if ( checkByUserDataName && childNode.userData && childNode.userData.name === nodeName ) {
 
 						return childNode;
 
 					}
 
-					const result = searchNodeSubtree( childNode.children );
+					const result = searchNodeSubtree( childNode.children, checkByUserDataName );
 
 					if ( result ) return result;
 
@@ -49163,6 +49176,18 @@ class PropertyBinding {
 			if ( subTreeNode ) {
 
 				return subTreeNode;
+
+			} else {
+
+				// Search again by userData.name, as set by GLTFLoader.
+				// We don't want to do that in a single pass to avoid incorrect matches.
+				const subTreeNode = searchNodeSubtree( root.children, true );
+
+				if ( subTreeNode ) {
+
+					return subTreeNode;
+
+				}
 
 			}
 
@@ -53898,7 +53923,7 @@ if ( typeof window !== 'undefined' ) {
 
 	if ( window.__THREE__ ) {
 
-		console.warn( 'WARNING: Multiple instances of Three.js being imported.' );
+		console.warn( 'WARNING: Multiple instances of Three.js being imported. Existing: ' + window.__THREE__ + ', new: ' + REVISION );
 
 	} else {
 
