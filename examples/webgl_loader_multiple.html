@@ -33,6 +33,7 @@
 			import * as THREE from 'three';
 
 			import { OrbitControls } from './jsm/controls/OrbitControls.js';
+			import { DefaultLoadingManager } from 'three';
 			
 			import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
 			import { KTX2Loader } from './jsm/loaders/KTX2Loader.js';
@@ -69,7 +70,6 @@
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				renderer.toneMapping = THREE.ACESFilmicToneMapping;
 				renderer.toneMappingExposure = 1;
-				renderer.outputEncoding = THREE.sRGBEncoding;
 				container.appendChild( renderer.domElement );
 
 				ktx2Loader = new KTX2Loader()
@@ -383,6 +383,9 @@
 
 								const currentMaterial = child.material;
 
+								// TODO currently not supported here: multi materials
+								if ( Array.isArray( currentMaterial ) ) return;
+
 								child.material = new THREE.MeshStandardMaterial();
 
 								if ( currentMaterial ) {
@@ -482,11 +485,146 @@
 
 				} );
 
-				document.addEventListener( 'drop', function ( event ) {
+				/** @type {File[]} */
+				let files = [];
+
+				const getMainFile = (fileList) => {
+					// find first file of type .gltf, .glb, .fbx, .usdz, .obj
+					const extensions = ['gltf', 'glb', 'fbx', 'usdz', 'obj'];
+					for (let i = 0; i < fileList.length; i++) {
+						const file = fileList[i];
+						const extension = file.name.split('.').pop().toLowerCase();
+						if (extensions.includes(extension)) {
+							return file;
+						}
+					}
+					return null;
+				}
+
+				/**
+				 * @param {DataTransfer} datatransfer 
+				 * @returns {Promise<import('../types').FileWithPath[]>} files
+				 */
+				async function getAllFiles(datatransfer) {
+					/**
+					 * @type {import('../types').FileWithPath[]}
+					 */
+					const arr = [];
+					const items = [];
+					if (datatransfer instanceof DataTransfer) {
+						for (let i = 0; i < datatransfer.items.length; i++) {
+							items.push(datatransfer.items[i]);
+						}
+					}
+
+					const promises = [];
+					for (let i = 0; i < items.length; i++) {
+						const item = items[i].webkitGetAsEntry();
+						if (item) {
+							const prom = getAllFilesFromDirectory(item, arr);
+							promises.push(prom);
+						}
+					}
+					await Promise.all(promises);
+					return arr;
+				}
+
+				/**
+				 * @param {FileSystemEntry | FileSystemDirectoryEntry} fileOrDirectory
+				 * @param {import('../types').FileWithPath[]} target
+				 * @returns {Promise<void>}
+				 */
+				async function getAllFilesFromDirectory(fileOrDirectory, target, path = "") {
+
+				if (fileOrDirectory.isFile) {
+					/** @ts-ignore @type {FileSystemFileEntry} */
+					const fe = fileOrDirectory;
+					const file = await getFile(fe, path);
+					if (file) target.push(file);
+					return;
+				}
+
+				/** @ts-ignore @type {FileSystemDirectoryEntry} */
+				const directory = fileOrDirectory;
+				path += directory.name + "/";
+				const reader = directory.createReader();
+				return new Promise((resolve, reject) => {
+					reader.readEntries(async (entries) => {
+						for (const entry of entries) {
+							if (entry.isFile) {
+								/** @ts-ignore @type {FileSystemFileEntry} */
+								const fe = entry;
+								const file = await getFile(fe, path);
+								if (file) target.push(file);
+							}
+							else if (entry.isDirectory) {
+								/** @ts-ignore @type {FileSystemDirectoryEntry} */
+								const directoryEntry = entry;
+								await getAllFilesFromDirectory(directoryEntry, target, path);
+							}
+							else {
+								console.error("Unknown entry type", entry);
+							}
+						};
+						resolve();
+					}, err => {
+						console.error(err);
+						reject(err);
+					});
+				});
+
+				/**
+				 * @param {File} file
+				 * @param {string | null} dir
+				 * @returns {import('../types').FileWithPath}
+				 */
+				function toFileWithPath(file, dir = null) {
+					const myFile = /** @type {import('../types').FileWithPath} */ (file);
+					if (dir == null) {
+						dir = file.webkitRelativePath || "";
+					}
+					myFile.path = dir + file.name;
+					return myFile;
+				}
+
+				/**
+				 * @param {FileSystemFileEntry} fe
+				 * @param {string} dir
+				 * @returns {Promise<import('../types').FileWithPath>}
+				 */
+				function getFile(fe, dir = "") {
+					return new Promise((resolve, reject) => {
+						fe.file(file => {
+							resolve(toFileWithPath(file, dir));
+						}, err => {
+							console.error(err);
+							reject(err);
+						});
+					});
+				}
+
+				}
+
+				document.addEventListener( 'drop', async function ( event ) {
 
 					event.preventDefault();
 
-					loadFile( event.dataTransfer.files[ 0 ] );
+					files = await getAllFiles(event.dataTransfer);
+
+					DefaultLoadingManager.setURLModifier(url => {
+						if (url.startsWith("blob:")) {
+							const file = files.find(file => url.includes(file.name));
+							if (file) {
+								return URL.createObjectURL(file);
+							}
+						}
+						return url;
+					});
+
+					const main = getMainFile(files);
+					console.log("Dropped files: ", files, main);
+
+					loadFile( main );
 
 				} );
 
