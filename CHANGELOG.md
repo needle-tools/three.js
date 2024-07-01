@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.166.1] – 2024-07-01
+- update to 166
+- feat: log which three.js versions collide on the window object when multiple versions are imported
+- feat: ability to retarget animations loaded with GLTFLoader (search by original object name as well in PropertyBinding)
+
 ## [0.162.3] - 2024-05-06
 - feat: GLTFExporter: add OffscreenCanvas to list of supported image types
 
