@@ -2871,6 +2871,16 @@ class AnimationParser {
 		let times;
 		let values;
 
+		if ( curves.x === undefined || curves.y === undefined || curves.z === undefined ) {
+
+			console.warn( 'THREE.FBXLoader: Missing rotation curves ' +
+				( curves.x === undefined ? 'x ' : '' ) + ( curves.y === undefined ? 'y ' : '' ) + ( curves.z === undefined ? 'z ' : '' ) +
+				' for animation of ' + modelName + '. This is currently not supported.' );
+
+			return undefined;
+
+		}
+
 		if ( curves.x !== undefined && curves.y !== undefined && curves.z !== undefined ) {
 
 			const result = this.interpolateRotations( curves.x, curves.y, curves.z, eulerOrder );
@@ -2908,7 +2918,7 @@ class AnimationParser {
 
 		const quaternionValues = [];
 
-		if ( ! values || ! times ) return new QuaternionKeyframeTrack( modelName + '.quaternion', [ 0 ], [ 0 ] );
+		if ( ! values || ! times ) return undefined;
 
 		for ( let i = 0; i < values.length; i += 3 ) {
 
