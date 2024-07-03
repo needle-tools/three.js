@@ -688,6 +688,6 @@ Texture.DEFAULT_MAPPING = UVMapping;
  * @type {number}
  * @default 1
  */
-Texture.DEFAULT_ANISOTROPY = 1;
+Texture.DEFAULT_ANISOTROPY = 4;
 
 export { Texture };
