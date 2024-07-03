@@ -800,13 +800,14 @@ Texture.DEFAULT_IMAGE = null;
  */
 Texture.DEFAULT_MAPPING = UVMapping;
 
+
 /**
  * The default anisotropy value for all textures.
  *
  * @static
  * @type {number}
- * @default 1
+ * @default 4
  */
-Texture.DEFAULT_ANISOTROPY = 1;
+Texture.DEFAULT_ANISOTROPY = 4;
 
 export { Texture };
