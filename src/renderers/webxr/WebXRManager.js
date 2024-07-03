@@ -229,7 +229,7 @@ class WebXRManager extends EventDispatcher {
 
 				controllerInputSources[ i ] = null;
 
-				controllers[ i ].disconnect( inputSource );
+				if ( controllers[ i ] ) controllers[ i ].disconnect( inputSource );
 
 			}
 
