@@ -860,9 +860,9 @@ class FBXTreeParser {
 			const modelNode = modelNodes[ model.ID ];
 			scope.setLookAtProperties( model, modelNode );
 
-			const parentConnections = connections.get( model.ID ).parents;
+			const parentConnections = connections.get( model.ID )?.parents;
 
-			parentConnections.forEach( function ( connection ) {
+			parentConnections?.forEach( function ( connection ) {
 
 				const parent = modelMap.get( connection.ID );
 				if ( parent !== undefined ) parent.add( model );
@@ -977,7 +977,7 @@ class FBXTreeParser {
 
 		let bone = null;
 
-		relationships.parents.forEach( function ( parent ) {
+		relationships?.parents.forEach( function ( parent ) {
 
 			for ( const ID in skeletons ) {
 
