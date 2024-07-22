@@ -74,6 +74,8 @@ class WebXRManager extends EventDispatcher {
 
 		this.isPresenting = false;
 
+		this.controllerAutoUpdate = true;
+
 		this.getController = function ( index ) {
 
 			let controller = controllers[ index ];
@@ -795,15 +797,19 @@ class WebXRManager extends EventDispatcher {
 
 			//
 
-			for ( let i = 0; i < controllers.length; i ++ ) {
+			if ( scope.controllerAutoUpdate ) {
 
-				const inputSource = controllerInputSources[ i ];
-				const controller = controllers[ i ];
+				for ( let i = 0; i < controllers.length; i ++ ) {
 
-				if ( inputSource !== null && controller !== undefined ) {
-
-					controller.update( inputSource, frame, customReferenceSpace || referenceSpace );
-
+					const inputSource = controllerInputSources[ i ];
+					const controller = controllers[ i ];
+	
+					if ( inputSource !== null && controller !== undefined ) {
+						
+						controller.update( inputSource, frame, customReferenceSpace || referenceSpace );
+	
+					}
+	
 				}
 
 			}
