@@ -106,6 +106,8 @@ class WebXRManager extends EventDispatcher {
 		 */
 		this.isPresenting = false;
 
+		this.controllerAutoUpdate = true;
+
 		/**
 		 * Returns a group representing the `target ray` space of the XR controller.
 		 * Use this space for visualizing 3D objects that support the user in pointing
@@ -983,15 +985,19 @@ class WebXRManager extends EventDispatcher {
 
 			//
 
-			for ( let i = 0; i < controllers.length; i ++ ) {
+			if ( scope.controllerAutoUpdate ) {
 
-				const inputSource = controllerInputSources[ i ];
-				const controller = controllers[ i ];
+				for ( let i = 0; i < controllers.length; i ++ ) {
 
-				if ( inputSource !== null && controller !== undefined ) {
-
-					controller.update( inputSource, frame, customReferenceSpace || referenceSpace );
-
+					const inputSource = controllerInputSources[ i ];
+					const controller = controllers[ i ];
+	
+					if ( inputSource !== null && controller !== undefined ) {
+						
+						controller.update( inputSource, frame, customReferenceSpace || referenceSpace );
+	
+					}
+	
 				}
 
 			}
