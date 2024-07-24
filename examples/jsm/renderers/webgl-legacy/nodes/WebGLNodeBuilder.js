@@ -778,6 +778,8 @@ ${this.shader[ getShaderStageProperty( shaderStage ) ]}
 
 		nodeFrame.object = this.object;
 		nodeFrame.renderer = this.renderer;
+		nodeFrame.material = this.material;
+		nodeFrame.scene = this.scene;
 
 		for ( const node of this.updateNodes ) {
 

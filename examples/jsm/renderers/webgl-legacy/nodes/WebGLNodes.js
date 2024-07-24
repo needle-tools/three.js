@@ -1,5 +1,6 @@
 import { WebGLNodeBuilder } from './WebGLNodeBuilder.js';
-import { NodeFrame } from '../../../nodes/Nodes.js';
+// import { NodeFrame } from '../../../nodes/Nodes.js';
+import NodeFrame from '../../../nodes/core/NodeFrame.js';
 
 import { Material } from 'three';
 
@@ -12,7 +13,19 @@ Material.prototype.onBuild = function ( object, parameters, renderer ) {
 
 	if ( material.isNodeMaterial === true ) {
 
-		builders.set( material, new WebGLNodeBuilder( object, renderer, parameters, material ).build() );
+		let newBuilder;
+		try {
+
+			newBuilder = new WebGLNodeBuilder( object, renderer, parameters, material ).build();
+			builders.set( material, newBuilder );
+
+		} catch ( e ) {
+
+			console.error( 'Material.prototype.onBuild: ', e );
+
+		}
+
+		// console.log( 'Material.prototype.onBuild: new builder', this, newBuilder );
 
 	}
 
@@ -22,12 +35,17 @@ Material.prototype.onBeforeRender = function ( renderer, scene, camera, geometry
 
 	const nodeBuilder = builders.get( this );
 
+	// if ( this.isNodeMaterial )
+	//	console.log( 'Material.prototype.onBeforeRender', this, nodeBuilder );
+
 	if ( nodeBuilder !== undefined ) {
 
 		nodeFrame.material = this;
 		nodeFrame.camera = camera;
 		nodeFrame.object = object;
 		nodeFrame.renderer = renderer;
+		nodeFrame.scene = scene;
+		nodeFrame.geometry = geometry;
 
 		const updateNodes = nodeBuilder.updateNodes;
 
