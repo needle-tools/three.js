@@ -2276,7 +2276,7 @@ class Texture extends EventDispatcher {
 
 Texture.DEFAULT_IMAGE = null;
 Texture.DEFAULT_MAPPING = UVMapping;
-Texture.DEFAULT_ANISOTROPY = 1;
+Texture.DEFAULT_ANISOTROPY = 4;
 
 class Vector4 {
 
@@ -9186,6 +9186,10 @@ class Material extends EventDispatcher {
 
 	}
 
+	onBuild( /* shaderobject, renderer */ ) {}
+
+	onBeforeRender( /* renderer, scene, camera, geometry, object, group */ ) {}
+
 	onBeforeCompile( /* shaderobject, renderer */ ) {}
 
 	customProgramCacheKey() {
@@ -9601,19 +9605,6 @@ class Material extends EventDispatcher {
 		if ( value === true ) this.version ++;
 
 	}
-
-	onBuild( /* shaderobject, renderer */ ) {
-
-		console.warn( 'Material: onBuild() has been removed.' ); // @deprecated, r166
-
-	}
-
-	onBeforeRender( /* renderer, scene, camera, geometry, object, group */ ) {
-
-		console.warn( 'Material: onBeforeRender() has been removed.' ); // @deprecated, r166
-
-	}
-
 
 }
 
@@ -26827,6 +26818,8 @@ class WebXRManager extends EventDispatcher {
 
 		this.isPresenting = false;
 
+		this.controllerAutoUpdate = true;
+
 		this.getController = function ( index ) {
 
 			let controller = controllers[ index ];
@@ -26914,7 +26907,7 @@ class WebXRManager extends EventDispatcher {
 
 				controllerInputSources[ i ] = null;
 
-				controllers[ i ].disconnect( inputSource );
+				if ( controllers[ i ] ) controllers[ i ].disconnect( inputSource );
 
 			}
 
@@ -27541,15 +27534,19 @@ class WebXRManager extends EventDispatcher {
 
 			//
 
-			for ( let i = 0; i < controllers.length; i ++ ) {
+			if ( scope.controllerAutoUpdate ) {
 
-				const inputSource = controllerInputSources[ i ];
-				const controller = controllers[ i ];
+				for ( let i = 0; i < controllers.length; i ++ ) {
 
-				if ( inputSource !== null && controller !== undefined ) {
-
-					controller.update( inputSource, frame, customReferenceSpace || referenceSpace );
-
+					const inputSource = controllerInputSources[ i ];
+					const controller = controllers[ i ];
+	
+					if ( inputSource !== null && controller !== undefined ) {
+						
+						controller.update( inputSource, frame, customReferenceSpace || referenceSpace );
+	
+					}
+	
 				}
 
 			}
@@ -30099,6 +30096,8 @@ class WebGLRenderer {
 			object.modelViewMatrix.multiplyMatrices( camera.matrixWorldInverse, object.matrixWorld );
 			object.normalMatrix.getNormalMatrix( object.modelViewMatrix );
 
+			material.onBeforeRender( _this, scene, camera, geometry, object, group );
+
 			if ( material.transparent === true && material.side === DoubleSide && material.forceSinglePass === false ) {
 
 				material.side = BackSide;
@@ -30172,6 +30171,8 @@ class WebGLRenderer {
 			} else {
 
 				parameters.uniforms = programCache.getUniforms( material );
+
+				material.onBuild( object, parameters, _this );
 
 				material.onBeforeCompile( parameters, _this );
 
@@ -53721,9 +53722,21 @@ if ( typeof __THREE_DEVTOOLS__ !== 'undefined' ) {
 
 if ( typeof window !== 'undefined' ) {
 
+	try {
+
+		if ( import.meta ) {
+
+			if ( ! window.__THREE__IMPORTS__) window.__THREE__IMPORTS__ = [];
+			window.__THREE__IMPORTS__.push( { url: import.meta.url, revision: REVISION } );
+
+		}
+
+	} catch { }
+
 	if ( window.__THREE__ ) {
 
 		console.warn( 'WARNING: Multiple instances of Three.js being imported. Existing: ' + window.__THREE__ + ', new: ' + REVISION );
+		console.warn( window.__THREE__IMPORTS__ );
 
 	} else {
 
