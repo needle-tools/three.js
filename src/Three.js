@@ -172,9 +172,21 @@ if ( typeof __THREE_DEVTOOLS__ !== 'undefined' ) {
 
 if ( typeof window !== 'undefined' ) {
 
+	try {
+
+		if ( import.meta ) {
+
+			if ( ! window.__THREE__IMPORTS__) window.__THREE__IMPORTS__ = [];
+			window.__THREE__IMPORTS__.push( { url: import.meta.url, revision: REVISION } );
+
+		}
+
+	} catch { }
+
 	if ( window.__THREE__ ) {
 
 		console.warn( 'WARNING: Multiple instances of Three.js being imported. Existing: ' + window.__THREE__ + ', new: ' + REVISION );
+		console.warn( window.__THREE__IMPORTS__ );
 
 	} else {
 
