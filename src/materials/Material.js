@@ -502,6 +502,10 @@ class Material extends EventDispatcher {
 
 	}
 
+	onBuild( /* shaderobject, renderer */ ) {}
+
+	// onBeforeRender and onBeforeCompile only supported in WebGLRenderer
+
 	/**
 	 * An optional callback that is executed immediately before the material is used to render a 3D object.
 	 *
