@@ -2213,6 +2213,8 @@ class WebGLRenderer {
 
 				}
 
+				material.onBuild( object, parameters, _this );
+
 				material.onBeforeCompile( parameters, _this );
 
 				program = programCache.acquireProgram( parameters, programCacheKey );
