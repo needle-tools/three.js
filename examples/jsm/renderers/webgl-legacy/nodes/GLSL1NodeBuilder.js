@@ -1,4 +1,4 @@
-import { MathNode, GLSLNodeParser, NodeBuilder } from '../../../nodes/Nodes.js';
+import { MathNode, GLSLNodeParser, NodeBuilder } from 'three';
 
 const glslMethods = {
 	[ MathNode.ATAN2 ]: 'atan'
