@@ -163,7 +163,7 @@ class WebXRManager extends EventDispatcher {
 
 				controllerInputSources[ i ] = null;
 
-				controllers[ i ].disconnect( inputSource );
+				controllers[ i ]?.disconnect( inputSource );
 
 			}
 
@@ -395,7 +395,7 @@ class WebXRManager extends EventDispatcher {
 				if ( index >= 0 ) {
 
 					controllerInputSources[ index ] = null;
-					controllers[ index ].disconnect( inputSource );
+					controllers[ index ]?.disconnect( inputSource );
 
 				}
 
