@@ -307,7 +307,9 @@ class MaterialXNode {
 
 		} else if ( this.nodeName !== null || this.interfaceName !== null ) {
 
-			referencePath = this.getNodeGraph().nodePath + '/' + ( this.nodeName || this.interfaceName );
+			const graph = this.getNodeGraph();
+			const path = graph ? graph.nodePath + '/' : '';
+			referencePath = path + ( this.nodeName || this.interfaceName );
 
 		}
 
