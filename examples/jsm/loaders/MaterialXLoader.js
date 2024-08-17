@@ -23,6 +23,8 @@ import {
 	mx_unifiednoise2d, mx_unifiednoise3d
 } from 'three/tsl';
 
+import 'three/examples/jsm/renderers/webgl-legacy/nodes/WebGLNodes.js';
+
 const colorSpaceLib = {
 	mx_srgb_texture_to_lin_rec709
 };
