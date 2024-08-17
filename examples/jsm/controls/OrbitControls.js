@@ -26,6 +26,7 @@ const _plane = new Plane();
 const _TILT_LIMIT = Math.cos( 70 * MathUtils.DEG2RAD );
 
 const _v = new Vector3();
+const _p = new Vector3();
 const _twoPI = 2 * Math.PI;
 
 const _STATE = {
@@ -137,6 +138,7 @@ class OrbitControls extends Controls {
 		this._sphericalDelta = new Spherical();
 
 		this._scale = 1;
+		this._currentScale = 1;
 		this._panOffset = new Vector3();
 
 		this._rotateStart = new Vector2();
@@ -291,7 +293,7 @@ class OrbitControls extends Controls {
 
 	update( deltaTime = null ) {
 
-		const position = this.object.position;
+		const position = this.object.getWorldPosition( this.object.position );
 
 		_v.copy( position ).sub( this.target );
 
@@ -376,6 +378,17 @@ class OrbitControls extends Controls {
 
 		} else {
 
+			if ( this.enableDamping ) {
+
+				this._currentScale = MathUtils.lerp( this._currentScale, this._scale, this.dampingFactor );
+
+			} else {
+
+				this._currentScale = this._scale;
+
+			}
+
+			this._spherical.radius = this._clampDistance( this._spherical.radius * this._currentScale );
 			const prevRadius = this._spherical.radius;
 			this._spherical.radius = this._clampDistance( this._spherical.radius * this._scale );
 			zoomChanged = prevRadius != this._spherical.radius;
@@ -388,6 +401,7 @@ class OrbitControls extends Controls {
 		_v.applyQuaternion( this._quatInverse );
 
 		position.copy( this.target ).add( _v );
+		this.object.parent ? this.object.parent.worldToLocal( position ) : this.object.position.copy( position );
 
 		this.object.lookAt( this.target );
 
@@ -499,6 +513,7 @@ class OrbitControls extends Controls {
 		}
 
 		this._scale = 1;
+		this._currentScale = 1;
 		this._performCursorZoom = false;
 
 		// update condition is:
@@ -593,7 +608,9 @@ class OrbitControls extends Controls {
 		if ( this.object.isPerspectiveCamera ) {
 
 			// perspective
+			// NEEDLE: Support for OrbitControls on cameras that are parented to other objects.
 			const position = this.object.position;
+			this.object.getWorldPosition( position );
 			_v.copy( position ).sub( this.target );
 			let targetDistance = _v.length();
 
@@ -601,14 +618,14 @@ class OrbitControls extends Controls {
 			targetDistance *= Math.tan( ( this.object.fov / 2 ) * Math.PI / 180.0 );
 
 			// we use only clientHeight here so aspect ratio does not distort speed
-			this._panLeft( 2 * deltaX * targetDistance / element.clientHeight, this.object.matrix );
-			this._panUp( 2 * deltaY * targetDistance / element.clientHeight, this.object.matrix );
+			this._panLeft( 2 * deltaX * targetDistance / element.clientHeight, this.object.matrixWorld );
+			this._panUp( 2 * deltaY * targetDistance / element.clientHeight, this.object.matrixWorld );
 
 		} else if ( this.object.isOrthographicCamera ) {
 
 			// orthographic
-			this._panLeft( deltaX * ( this.object.right - this.object.left ) / this.object.zoom / element.clientWidth, this.object.matrix );
-			this._panUp( deltaY * ( this.object.top - this.object.bottom ) / this.object.zoom / element.clientHeight, this.object.matrix );
+			this._panLeft( deltaX * ( this.object.right - this.object.left ) / this.object.zoom / element.clientWidth, this.object.matrixWorld );
+			this._panUp( deltaY * ( this.object.top - this.object.bottom ) / this.object.zoom / element.clientHeight, this.object.matrixWorld );
 
 		} else {
 
@@ -1122,7 +1139,7 @@ function onPointerDown( event ) {
 		this.domElement.setPointerCapture( event.pointerId );
 
 		this.domElement.addEventListener( 'pointermove', this._onPointerMove );
-		this.domElement.addEventListener( 'pointerup', this._onPointerUp );
+		window.addEventListener( 'pointerup', this._onPointerUp );
 
 	}
 
@@ -1173,7 +1190,7 @@ function onPointerUp( event ) {
 			this.domElement.releasePointerCapture( event.pointerId );
 
 			this.domElement.removeEventListener( 'pointermove', this._onPointerMove );
-			this.domElement.removeEventListener( 'pointerup', this._onPointerUp );
+			window.removeEventListener( 'pointerup', this._onPointerUp );
 
 			this.dispatchEvent( _endEvent );
 
