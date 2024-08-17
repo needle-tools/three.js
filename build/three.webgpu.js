@@ -48948,6 +48948,14 @@ class NodeBuilder {
 
 	getUniformFromNode( node, type, shaderStage = this.shaderStage, name = null ) {
 
+		if ( name === 'in' ) {
+
+			console.warn( 'NodeBuilder: "in" is a reserved word, using "inValue" instead.', node, name 	);
+			node.name = 'inValue';
+			name = node.name;
+
+		}
+
 		const nodeData = this.getDataFromNode( node, shaderStage, this.globalCache );
 
 		let nodeUniform = nodeData.uniform;
