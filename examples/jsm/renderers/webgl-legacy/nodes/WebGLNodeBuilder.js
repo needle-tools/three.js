@@ -51,6 +51,8 @@ class WebGLNodeBuilder extends NodeBuilder {
 
 		this._sortSlotsToFlow();
 
+		this.useComparisonMethod = true;
+
 	}
 
 	getMethod( method ) {
