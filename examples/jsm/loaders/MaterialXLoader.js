@@ -15,7 +15,9 @@ import {
 	mx_srgb_texture_to_lin_rec709,
 	saturation,
 	timerLocal, frameId
-} from 'three/tsl';
+} from 'three';
+
+import 'three/examples/jsm/renderers/webgl-legacy/nodes/WebGLNodes.js';
 
 const colorSpaceLib = {
 	mx_srgb_texture_to_lin_rec709

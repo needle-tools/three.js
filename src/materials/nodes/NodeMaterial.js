@@ -223,7 +223,7 @@ class NodeMaterial extends Material {
 
 		if ( depthNode === null ) {
 
-			const mrt = renderer.getMRT();
+			const mrt = 'getMRT' in renderer && renderer.getMRT();
 
 			if ( mrt && mrt.has( 'depth' ) ) {
 
