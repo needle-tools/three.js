@@ -1,8 +1,7 @@
-import { WebGLNodeBuilder } from './WebGLNodeBuilder.js';
-import { NodeFrame, Material } from 'three';
+import { nodeFrame, WebGLNodeBuilder } from './WebGLNodeBuilder.js';
+import { Material } from 'three';
 
 const builders = new WeakMap();
-export const nodeFrame = new NodeFrame();
 
 Material.prototype.onBuild = function ( object, parameters, renderer ) {
 

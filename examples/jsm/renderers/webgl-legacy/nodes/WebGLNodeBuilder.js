@@ -4,6 +4,7 @@ import { PerspectiveCamera, ShaderChunk, ShaderLib, UniformsUtils, UniformsLib }
 
 const nodeFrame = new NodeFrame();
 nodeFrame.camera = new PerspectiveCamera();
+export { nodeFrame };
 
 const nodeShaderLib = {
 	LineBasicNodeMaterial: ShaderLib.basic,
