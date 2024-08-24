@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.162.8] - 2024-08-22
+- fix: PMREMGenerator usage in XR
+
 ## [0.162.7] - 2024-08-01
 - fix: WebXRManager nullcheck in controller disconnect call
 
