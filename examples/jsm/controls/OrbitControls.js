@@ -280,9 +280,8 @@ class OrbitControls extends EventDispatcher {
 
 					}
 
-					spherical.radius = clampDistance( spherical.radius * currentScale );
 					const prevRadius = spherical.radius;
-					spherical.radius = clampDistance( spherical.radius * scale );
+					spherical.radius = clampDistance( spherical.radius * currentScale );
 					zoomChanged = prevRadius != spherical.radius;
 
 				}
