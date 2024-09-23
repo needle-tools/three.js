@@ -2307,6 +2307,8 @@ class GeometryParser {
 	// Parse Vertex Colors from FBXTree.Objects.Geometry.LayerElementColor if it exists
 	parseVertexColors( ColorNode ) {
 
+		if ( !ColorNode.Colors ) return undefined;
+
 		const mappingType = ColorNode.MappingInformationType;
 		const referenceType = ColorNode.ReferenceInformationType;
 		const buffer = ColorNode.Colors.a;
