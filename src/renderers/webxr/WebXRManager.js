@@ -399,7 +399,7 @@ class WebXRManager extends EventDispatcher {
 				if ( index >= 0 ) {
 
 					controllerInputSources[ index ] = null;
-					controllers[ index ]?.disconnect( inputSource );
+					if ( controllers[ index ] ) controllers[ index ].disconnect( inputSource );
 
 				}
 
@@ -803,13 +803,13 @@ class WebXRManager extends EventDispatcher {
 
 					const inputSource = controllerInputSources[ i ];
 					const controller = controllers[ i ];
-	
+
 					if ( inputSource !== null && controller !== undefined ) {
-						
+
 						controller.update( inputSource, frame, customReferenceSpace || referenceSpace );
-	
+
 					}
-	
+
 				}
 
 			}

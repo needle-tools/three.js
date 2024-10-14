@@ -400,7 +400,7 @@ class MaterialXNode {
 
 		} else if ( this.hasReference ) {
 
-			if ( this.element === 'output' && this.output && out === null  ) {
+			if ( this.element === 'output' && this.output && out === null ) {
 
 				out = this.output;
 
