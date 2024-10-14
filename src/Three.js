@@ -161,7 +161,14 @@ export { WebGLUtils } from './renderers/webgl/WebGLUtils.js';
 export { createCanvasElement } from './utils.js';
 export * from './constants.js';
 export * from './Three.Legacy.js';
+
+export * from './materials/nodes/NodeMaterials.js';
+export { default as NodeLoader } from './loaders/nodes/NodeLoader.js';
+export { default as NodeObjectLoader } from './loaders/nodes/NodeObjectLoader.js';
+export { default as NodeMaterialLoader } from './loaders/nodes/NodeMaterialLoader.js';
 export * from './nodes/Nodes.js';
+export * from './nodes/TSL.js';
+export { default as BasicNodeLibrary } from './renderers/webgpu/nodes/BasicNodeLibrary.js';
 
 if ( typeof __THREE_DEVTOOLS__ !== 'undefined' ) {
 
