@@ -388,9 +388,8 @@ class OrbitControls extends Controls {
 
 			}
 
-			this._spherical.radius = this._clampDistance( this._spherical.radius * this._currentScale );
 			const prevRadius = this._spherical.radius;
-			this._spherical.radius = this._clampDistance( this._spherical.radius * this._scale );
+			this._spherical.radius = this._clampDistance( this._spherical.radius * this._currentScale );
 			zoomChanged = prevRadius != this._spherical.radius;
 
 		}
