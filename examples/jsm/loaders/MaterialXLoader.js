@@ -391,6 +391,7 @@ class MaterialXNode {
 		const texture = loader.load( uri );
 		texture.wrapS = texture.wrapT = RepeatWrapping;
 		texture.flipY = false;
+		texture.name = uri;
 
 		return texture;
 
