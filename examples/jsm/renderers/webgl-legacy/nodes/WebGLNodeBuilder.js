@@ -1,4 +1,4 @@
-import { defaultShaderStages, NodeFrame, MathNode, GLSLNodeParser, NodeBuilder, normalView } from 'three';
+import { defaultShaderStages, NodeFrame, GLSLNodeParser, NodeBuilder, normalView } from 'three';
 import SlotNode from './SlotNode.js';
 import { PerspectiveCamera, ShaderChunk, ShaderLib, UniformsUtils, UniformsLib } from 'three';
 
@@ -16,7 +16,7 @@ const nodeShaderLib = {
 };
 
 const glslMethods = {
-	[ MathNode.ATAN2 ]: 'atan'
+	[ 'atan2' ]: 'atan'
 };
 
 const precisionLib = {
