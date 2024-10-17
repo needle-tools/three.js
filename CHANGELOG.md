@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.169.1] – 2024-10-17
+- update to 169
+
 ## [0.166.1] – 2024-07-01
 - update to 166
 - feat: log which three.js versions collide on the window object when multiple versions are imported

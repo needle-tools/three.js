@@ -80610,10 +80610,10 @@ if ( typeof window !== 'undefined' ) {
 
 	try {
 
-		if ( ({ url: (typeof document === 'undefined' ? require('u' + 'rl').pathToFileURL(__filename).href : (_documentCurrentScript && _documentCurrentScript.src || new URL('three.cjs', document.baseURI).href)) }) ) {
+		if ( ({ url: (typeof document === 'undefined' ? require('u' + 'rl').pathToFileURL(__filename).href : (_documentCurrentScript && _documentCurrentScript.tagName.toUpperCase() === 'SCRIPT' && _documentCurrentScript.src || new URL('three.cjs', document.baseURI).href)) }) ) {
 
 			if ( ! window.__THREE__IMPORTS__) window.__THREE__IMPORTS__ = [];
-			window.__THREE__IMPORTS__.push( { url: (typeof document === 'undefined' ? require('u' + 'rl').pathToFileURL(__filename).href : (_documentCurrentScript && _documentCurrentScript.src || new URL('three.cjs', document.baseURI).href)), revision: REVISION } );
+			window.__THREE__IMPORTS__.push( { url: (typeof document === 'undefined' ? require('u' + 'rl').pathToFileURL(__filename).href : (_documentCurrentScript && _documentCurrentScript.tagName.toUpperCase() === 'SCRIPT' && _documentCurrentScript.src || new URL('three.cjs', document.baseURI).href)), revision: REVISION } );
 
 		}
 
