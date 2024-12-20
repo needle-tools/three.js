@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.162.3] - 2024-05-06
 - feat: GLTFExporter: add OffscreenCanvas to list of supported image types
 
+## [0.162.12] - 2024-12-20
+- fix: OBJLoader `blob:` URL fix
+
+## [0.162.11] - 2024-12-20
+- feat: OBJLoader `load` function now automatically loads mtl files
+
 ## [0.162.2] - 2024-04-02
 - add: BatchedMesh addUpdateRanges (#27981)
 - fix: BatchedMesh error caused by InterleavedBuffers, don't keep srcAttribute type and directly create BufferAttribute, omit usage (#27978)
