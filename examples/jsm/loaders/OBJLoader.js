@@ -459,12 +459,17 @@ class OBJLoader extends Loader {
 			try {
 
 				const state = scope.parse( text, true );
+				
 
 				for ( let i = 0, l = state.materialLibraries.length; i < l; i ++ ) {
 
 					const mtlfile = state.materialLibraries[ i ];
 
-					const newUrl = new URL( mtlfile, url );
+					const newUrl = url.startsWith("blob:") 
+						? (url + "/" + mtlfile) 
+						: new URL(mtlfile, url);
+
+					console.debug( 'Loading MTL file: ' + newUrl );
 
 					await (new Promise((resolve, reject) => {
 						scope.materialsLoader.load( newUrl.toString(), creator => {
