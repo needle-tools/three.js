@@ -14,6 +14,7 @@ import {
 	Vector3,
 	Color
 } from 'three';
+import { MTLLoader } from './MTLLoader.js';
 
 // o object_name | g group_name
 const _object_pattern = /^[og]\s*(.+)?/;
@@ -440,6 +441,7 @@ class OBJLoader extends Loader {
 		super( manager );
 
 		this.materials = null;
+		this.materialsLoader = new MTLLoader( manager );
 
 	}
 
@@ -451,11 +453,30 @@ class OBJLoader extends Loader {
 		loader.setPath( this.path );
 		loader.setRequestHeader( this.requestHeader );
 		loader.setWithCredentials( this.withCredentials );
-		loader.load( url, function ( text ) {
+		loader.load( url, async function ( text ) {
 
 			try {
 
-				onLoad( scope.parse( text ) );
+				const state = scope.parse( text, true );
+
+				for ( let i = 0, l = state.materialLibraries.length; i < l; i ++ ) {
+
+					const mtlfile = state.materialLibraries[ i ];
+
+					const newUrl = new URL( mtlfile, url );
+
+					await (new Promise((resolve, reject) => {
+						scope.materialsLoader.load( newUrl.toString(), creator => {
+
+							scope.setMaterials( creator );
+							resolve();
+							
+						}, null, reject );
+					}));
+
+				}
+
+				onLoad( scope.createObjects( state ) );
 
 			} catch ( e ) {
 
@@ -477,6 +498,14 @@ class OBJLoader extends Loader {
 
 	}
 
+	setMTLLoader ( loader ) { 
+
+		this.materialsLoader = loader;
+
+		return this;
+
+	}
+
 	setMaterials( materials ) {
 
 		this.materials = materials;
@@ -485,7 +514,7 @@ class OBJLoader extends Loader {
 
 	}
 
-	parse( text ) {
+	parse( text, parseOnly = false ) {
 
 		const state = new ParserState();
 
@@ -715,6 +744,16 @@ class OBJLoader extends Loader {
 
 		state.finalize();
 
+		// If the method is called from the load() function we do first load materials before creating the objects
+		// This is to not modify the functionality of parse() e.g. by making it async
+		if ( parseOnly ) return state;
+
+		return this.createObjects(state);
+	}
+
+
+	createObjects ( state ) {
+	
 		const container = new Group();
 		container.materialLibraries = [].concat( state.materialLibraries );
 
@@ -897,9 +936,7 @@ class OBJLoader extends Loader {
 		}
 
 		return container;
-
 	}
-
 }
 
 export { OBJLoader };
