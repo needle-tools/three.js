@@ -766,6 +766,17 @@ class OrbitControls extends Controls {
 		this.target.add( this.cursor );
 
 		let zoomChanged = false;
+
+		if ( this.enableDamping ) {
+
+			this._currentScale = MathUtils.lerp( this._currentScale, this._scale, this.dampingFactor );
+
+		} else {
+
+			this._currentScale = this._scale;
+
+		}
+
 		// adjust the camera position based on zoom only if we're not zooming to the cursor or if it's an ortho camera
 		// we adjust zoom later in these cases
 		if ( this.zoomToCursor && this._performCursorZoom || this.object.isOrthographicCamera ) {
@@ -773,16 +784,6 @@ class OrbitControls extends Controls {
 			this._spherical.radius = this._clampDistance( this._spherical.radius );
 
 		} else {
-
-			if ( this.enableDamping ) {
-
-				this._currentScale = MathUtils.lerp( this._currentScale, this._scale, this.dampingFactor );
-
-			} else {
-
-				this._currentScale = this._scale;
-
-			}
 
 			const prevRadius = this._spherical.radius;
 			this._spherical.radius = this._clampDistance( this._spherical.radius * this._currentScale );
@@ -824,7 +825,7 @@ class OrbitControls extends Controls {
 				// move the camera down the pointer ray
 				// this method avoids floating point error
 				const prevRadius = _v.length();
-				newRadius = this._clampDistance( prevRadius * this._scale );
+				newRadius = this._clampDistance( prevRadius * this._currentScale );
 
 				const radiusDelta = prevRadius - newRadius;
 				this.object.position.addScaledVector( this._dollyDirection, radiusDelta );
@@ -839,7 +840,7 @@ class OrbitControls extends Controls {
 				mouseBefore.unproject( this.object );
 
 				const prevZoom = this.object.zoom;
-				this.object.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.object.zoom / this._scale ) );
+				this.object.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.object.zoom / this._currentScale ) );
 				this.object.updateProjectionMatrix();
 
 				zoomChanged = prevZoom !== this.object.zoom;
@@ -908,7 +909,6 @@ class OrbitControls extends Controls {
 		}
 
 		this._scale = 1;
-		this._performCursorZoom = false;
 
 		// update condition is:
 		// min(camera displacement, camera rotation in radians)^2 > EPS
@@ -929,6 +929,9 @@ class OrbitControls extends Controls {
 
 		}
 
+
+		this._performCursorZoom = false;
+		
 		return false;
 
 	}
