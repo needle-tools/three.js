@@ -693,9 +693,8 @@ class OrbitControls extends Controls {
 
 			}
 
-			this._spherical.radius = this._clampDistance( this._spherical.radius * this._currentScale );
 			const prevRadius = this._spherical.radius;
-			this._spherical.radius = this._clampDistance( this._spherical.radius * this._scale );
+			this._spherical.radius = this._clampDistance( this._spherical.radius * this._currentScale );
 			zoomChanged = prevRadius != this._spherical.radius;
 
 		}
@@ -818,7 +817,6 @@ class OrbitControls extends Controls {
 		}
 
 		this._scale = 1;
-		this._currentScale = 1;
 		this._performCursorZoom = false;
 
 		// update condition is:
