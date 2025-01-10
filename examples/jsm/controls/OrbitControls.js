@@ -609,10 +609,7 @@ class OrbitControls extends Controls {
 		if ( this.object.isPerspectiveCamera ) {
 
 			// perspective
-			// NEEDLE: Support for OrbitControls on cameras that are parented to other objects.
-			const position = this.object.position;
-			this.object.getWorldPosition( position );
-			_v.copy( position ).sub( this.target );
+			this.object.getWorldPosition( _v ).sub( this.target );
 			let targetDistance = _v.length();
 
 			// half of the fov is center to top of screen
