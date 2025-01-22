@@ -238,7 +238,7 @@ class EventDispatcher {
 
 		}
 
-		if ( listeners[ type ].indexOf( listener ) === - 1 ) {
+		if ( listeners[ type ].indexOf( listener ) === -1 ) {
 
 			listeners[ type ].push( listener );
 
@@ -252,7 +252,7 @@ class EventDispatcher {
 
 		const listeners = this._listeners;
 
-		return listeners[ type ] !== undefined && listeners[ type ].indexOf( listener ) !== - 1;
+		return listeners[ type ] !== undefined && listeners[ type ].indexOf( listener ) !== -1;
 
 	}
 
@@ -267,7 +267,7 @@ class EventDispatcher {
 
 			const index = listenerArray.indexOf( listener );
 
-			if ( index !== - 1 ) {
+			if ( index !== -1 ) {
 
 				listenerArray.splice( index, 1 );
 
@@ -556,15 +556,15 @@ function denormalize( value, array ) {
 
 		case Int32Array:
 
-			return Math.max( value / 2147483647.0, - 1.0 );
+			return Math.max( value / 2147483647.0, -1 );
 
 		case Int16Array:
 
-			return Math.max( value / 32767.0, - 1.0 );
+			return Math.max( value / 32767.0, -1 );
 
 		case Int8Array:
 
-			return Math.max( value / 127.0, - 1.0 );
+			return Math.max( value / 127.0, -1 );
 
 		default:
 
@@ -1006,7 +1006,7 @@ class Vector2 {
 
 		// clamp, to handle numerical problems
 
-		return Math.acos( clamp$1( theta, - 1, 1 ) );
+		return Math.acos( clamp$1( theta, -1, 1 ) );
 
 	}
 
@@ -1582,9 +1582,9 @@ const LINEAR_SRGB_TO_LINEAR_DISPLAY_P3 = /*@__PURE__*/ new Matrix3().set(
 );
 
 const LINEAR_DISPLAY_P3_TO_LINEAR_SRGB = /*@__PURE__*/ new Matrix3().set(
-	1.2249401, - 0.2249404, 0.0,
-	- 0.0420569, 1.0420571, 0.0,
-	- 0.0196376, - 0.0786361, 1.0982735
+	1.2249401, -0.2249404, 0.0,
+	-0.0420569, 1.0420571, 0.0,
+	-0.0196376, -0.0786361, 1.0982735
 );
 
 /**
@@ -3239,7 +3239,7 @@ class Quaternion {
 
 			let s = 1 - t;
 			const cos = x0 * x1 + y0 * y1 + z0 * z1 + w0 * w1,
-				dir = ( cos >= 0 ? 1 : - 1 ),
+				dir = ( cos >= 0 ? 1 : -1 ),
 				sqrSin = 1 - cos * cos;
 
 			// Skip the Slerp for tiny steps to avoid numeric problems:
@@ -3582,7 +3582,7 @@ class Quaternion {
 
 	angleTo( q ) {
 
-		return 2 * Math.acos( Math.abs( clamp$1( this.dot( q ), - 1, 1 ) ) );
+		return 2 * Math.acos( Math.abs( clamp$1( this.dot( q ), -1, 1 ) ) );
 
 	}
 
@@ -3616,9 +3616,9 @@ class Quaternion {
 
 	conjugate() {
 
-		this._x *= - 1;
-		this._y *= - 1;
-		this._z *= - 1;
+		this._x *= -1;
+		this._y *= -1;
+		this._z *= -1;
 
 		this._onChangeCallback();
 
@@ -4400,7 +4400,7 @@ class Vector3 {
 
 		// clamp, to handle numerical problems
 
-		return Math.acos( clamp$1( theta, - 1, 1 ) );
+		return Math.acos( clamp$1( theta, -1, 1 ) );
 
 	}
 
@@ -5128,7 +5128,7 @@ const _v2$3 = /*@__PURE__*/ new Vector3();
 
 class Sphere {
 
-	constructor( center = new Vector3(), radius = - 1 ) {
+	constructor( center = new Vector3(), radius = -1 ) {
 
 		this.isSphere = true;
 
@@ -5192,7 +5192,7 @@ class Sphere {
 	makeEmpty() {
 
 		this.center.set( 0, 0, 0 );
-		this.radius = - 1;
+		this.radius = -1;
 
 		return this;
 
@@ -5374,7 +5374,7 @@ const _normal$2 = /*@__PURE__*/ new Vector3();
 
 class Ray {
 
-	constructor( origin = new Vector3(), direction = new Vector3( 0, 0, - 1 ) ) {
+	constructor( origin = new Vector3(), direction = new Vector3( 0, 0, -1 ) ) {
 
 		this.origin = origin;
 		this.direction = direction;
@@ -5780,7 +5780,7 @@ class Ray {
 
 		} else if ( DdN < 0 ) {
 
-			sign = - 1;
+			sign = -1;
 			DdN = - DdN;
 
 		} else {
@@ -6640,7 +6640,7 @@ class Matrix4 {
 		if ( coordinateSystem === WebGLCoordinateSystem ) {
 
 			c = - ( far + near ) / ( far - near );
-			d = ( - 2 * far * near ) / ( far - near );
+			d = ( -2 * far * near ) / ( far - near );
 
 		} else if ( coordinateSystem === WebGPUCoordinateSystem ) {
 
@@ -6656,7 +6656,7 @@ class Matrix4 {
 		te[ 0 ] = x;	te[ 4 ] = 0;	te[ 8 ] = a; 	te[ 12 ] = 0;
 		te[ 1 ] = 0;	te[ 5 ] = y;	te[ 9 ] = b; 	te[ 13 ] = 0;
 		te[ 2 ] = 0;	te[ 6 ] = 0;	te[ 10 ] = c; 	te[ 14 ] = d;
-		te[ 3 ] = 0;	te[ 7 ] = 0;	te[ 11 ] = - 1;	te[ 15 ] = 0;
+		te[ 3 ] = 0;	te[ 7 ] = 0;	te[ 11 ] = -1;	te[ 15 ] = 0;
 
 		return this;
 
@@ -6677,12 +6677,12 @@ class Matrix4 {
 		if ( coordinateSystem === WebGLCoordinateSystem ) {
 
 			z = ( far + near ) * p;
-			zInv = - 2 * p;
+			zInv = -2 * p;
 
 		} else if ( coordinateSystem === WebGPUCoordinateSystem ) {
 
 			z = near * p;
-			zInv = - 1 * p;
+			zInv = -1 * p;
 
 		} else {
 
@@ -6877,7 +6877,7 @@ class Euler {
 
 			case 'XYZ':
 
-				this._y = Math.asin( clamp$1( m13, - 1, 1 ) );
+				this._y = Math.asin( clamp$1( m13, -1, 1 ) );
 
 				if ( Math.abs( m13 ) < 0.9999999 ) {
 
@@ -6895,7 +6895,7 @@ class Euler {
 
 			case 'YXZ':
 
-				this._x = Math.asin( - clamp$1( m23, - 1, 1 ) );
+				this._x = Math.asin( - clamp$1( m23, -1, 1 ) );
 
 				if ( Math.abs( m23 ) < 0.9999999 ) {
 
@@ -6913,7 +6913,7 @@ class Euler {
 
 			case 'ZXY':
 
-				this._x = Math.asin( clamp$1( m32, - 1, 1 ) );
+				this._x = Math.asin( clamp$1( m32, -1, 1 ) );
 
 				if ( Math.abs( m32 ) < 0.9999999 ) {
 
@@ -6931,7 +6931,7 @@ class Euler {
 
 			case 'ZYX':
 
-				this._y = Math.asin( - clamp$1( m31, - 1, 1 ) );
+				this._y = Math.asin( - clamp$1( m31, -1, 1 ) );
 
 				if ( Math.abs( m31 ) < 0.9999999 ) {
 
@@ -6949,7 +6949,7 @@ class Euler {
 
 			case 'YZX':
 
-				this._z = Math.asin( clamp$1( m21, - 1, 1 ) );
+				this._z = Math.asin( clamp$1( m21, -1, 1 ) );
 
 				if ( Math.abs( m21 ) < 0.9999999 ) {
 
@@ -6967,7 +6967,7 @@ class Euler {
 
 			case 'XZY':
 
-				this._z = Math.asin( - clamp$1( m12, - 1, 1 ) );
+				this._z = Math.asin( - clamp$1( m12, -1, 1 ) );
 
 				if ( Math.abs( m12 ) < 0.9999999 ) {
 
@@ -7494,7 +7494,7 @@ class Object3D extends EventDispatcher {
 
 		const index = this.children.indexOf( object );
 
-		if ( index !== - 1 ) {
+		if ( index !== -1 ) {
 
 			object.parent = null;
 			this.children.splice( index, 1 );
@@ -8835,7 +8835,7 @@ class Color {
 
 	getHexString( colorSpace = SRGBColorSpace ) {
 
-		return ( '000000' + this.getHex( colorSpace ).toString( 16 ) ).slice( - 6 );
+		return ( '000000' + this.getHex( colorSpace ).toString( 16 ) ).slice( -6 );
 
 	}
 
@@ -9715,7 +9715,7 @@ function _generateTables() {
 
 		// very small number (0, -0)
 
-		if ( e < - 27 ) {
+		if ( e < -27 ) {
 
 			baseTable[ i ] = 0x0000;
 			baseTable[ i | 0x100 ] = 0x8000;
@@ -9724,7 +9724,7 @@ function _generateTables() {
 
 			// small number (denorm)
 
-		} else if ( e < - 14 ) {
+		} else if ( e < -14 ) {
 
 			baseTable[ i ] = 0x0400 >> ( - e - 14 );
 			baseTable[ i | 0x100 ] = ( 0x0400 >> ( - e - 14 ) ) | 0x8000;
@@ -9781,7 +9781,7 @@ function _generateTables() {
 
 		}
 
-		m &= ~ 0x00800000; // clear leading 1 bit
+		m &= -8388609; // clear leading 1 bit
 		e += 0x38800000; // adjust bias
 
 		mantissaTable[ i ] = m | e;
@@ -9839,7 +9839,7 @@ function toHalfFloat( val ) {
 
 	if ( Math.abs( val ) > 65504 ) console.warn( 'THREE.DataUtils.toHalfFloat(): Value out of range.' );
 
-	val = clamp$1( val, - 65504, 65504 );
+	val = clamp$1( val, -65504, 65504 );
 
 	_tables.floatView[ 0 ] = val;
 	const f = _tables.uint32View[ 0 ];
@@ -11066,7 +11066,7 @@ class BufferGeometry extends EventDispatcher {
 
 			tmp2.crossVectors( n2, t );
 			const test = tmp2.dot( tan2[ v ] );
-			const w = ( test < 0.0 ) ? - 1.0 : 1.0;
+			const w = ( test < 0.0 ) ? -1 : 1.0;
 
 			tangentAttribute.setXYZW( v, tmp.x, tmp.y, tmp.z, w );
 
@@ -11908,7 +11908,7 @@ function checkGeometryIntersection( object, material, raycaster, ray, uv, uv1, n
 
 			if ( intersection.normal.dot( ray.direction ) > 0 ) {
 
-				intersection.normal.multiplyScalar( - 1 );
+				intersection.normal.multiplyScalar( -1 );
 
 			}
 
@@ -11972,12 +11972,12 @@ class BoxGeometry extends BufferGeometry {
 
 		// build each side of the box geometry
 
-		buildPlane( 'z', 'y', 'x', - 1, - 1, depth, height, width, depthSegments, heightSegments, 0 ); // px
-		buildPlane( 'z', 'y', 'x', 1, - 1, depth, height, - width, depthSegments, heightSegments, 1 ); // nx
+		buildPlane( 'z', 'y', 'x', -1, -1, depth, height, width, depthSegments, heightSegments, 0 ); // px
+		buildPlane( 'z', 'y', 'x', 1, -1, depth, height, - width, depthSegments, heightSegments, 1 ); // nx
 		buildPlane( 'x', 'z', 'y', 1, 1, width, depth, height, widthSegments, depthSegments, 2 ); // py
-		buildPlane( 'x', 'z', 'y', 1, - 1, width, depth, - height, widthSegments, depthSegments, 3 ); // ny
-		buildPlane( 'x', 'y', 'z', 1, - 1, width, height, depth, widthSegments, heightSegments, 4 ); // pz
-		buildPlane( 'x', 'y', 'z', - 1, - 1, width, height, - depth, widthSegments, heightSegments, 5 ); // nz
+		buildPlane( 'x', 'z', 'y', 1, -1, width, depth, - height, widthSegments, depthSegments, 3 ); // ny
+		buildPlane( 'x', 'y', 'z', 1, -1, width, height, depth, widthSegments, heightSegments, 4 ); // pz
+		buildPlane( 'x', 'y', 'z', -1, -1, width, height, - depth, widthSegments, heightSegments, 5 ); // nz
 
 		// build geometry
 
@@ -12027,7 +12027,7 @@ class BoxGeometry extends BufferGeometry {
 
 					vector[ u ] = 0;
 					vector[ v ] = 0;
-					vector[ w ] = depth > 0 ? 1 : - 1;
+					vector[ w ] = depth > 0 ? 1 : -1;
 
 					// now apply vector to normal buffer
 
@@ -12535,7 +12535,7 @@ class PerspectiveCamera extends Camera {
 	 */
 	getViewBounds( distance, minTarget, maxTarget ) {
 
-		_v3$1.set( - 1, - 1, 0.5 ).applyMatrix4( this.projectionMatrixInverse );
+		_v3$1.set( -1, -1, 0.5 ).applyMatrix4( this.projectionMatrixInverse );
 
 		minTarget.set( _v3$1.x, _v3$1.y ).multiplyScalar( - distance / _v3$1.z );
 
@@ -12640,7 +12640,7 @@ class PerspectiveCamera extends Camera {
 		let top = near * Math.tan( DEG2RAD * 0.5 * this.fov ) / this.zoom;
 		let height = 2 * top;
 		let width = this.aspect * height;
-		let left = - 0.5 * width;
+		let left = -0.5 * width;
 		const view = this.view;
 
 		if ( this.view !== null && this.view.enabled ) {
@@ -12688,7 +12688,7 @@ class PerspectiveCamera extends Camera {
 
 }
 
-const fov = - 90; // negative fov is not an error
+const fov = -90; // negative fov is not an error
 const aspect = 1;
 
 class CubeCamera extends Object3D {
@@ -12745,39 +12745,39 @@ class CubeCamera extends Object3D {
 			cameraPX.lookAt( 1, 0, 0 );
 
 			cameraNX.up.set( 0, 1, 0 );
-			cameraNX.lookAt( - 1, 0, 0 );
+			cameraNX.lookAt( -1, 0, 0 );
 
-			cameraPY.up.set( 0, 0, - 1 );
+			cameraPY.up.set( 0, 0, -1 );
 			cameraPY.lookAt( 0, 1, 0 );
 
 			cameraNY.up.set( 0, 0, 1 );
-			cameraNY.lookAt( 0, - 1, 0 );
+			cameraNY.lookAt( 0, -1, 0 );
 
 			cameraPZ.up.set( 0, 1, 0 );
 			cameraPZ.lookAt( 0, 0, 1 );
 
 			cameraNZ.up.set( 0, 1, 0 );
-			cameraNZ.lookAt( 0, 0, - 1 );
+			cameraNZ.lookAt( 0, 0, -1 );
 
 		} else if ( coordinateSystem === WebGPUCoordinateSystem ) {
 
-			cameraPX.up.set( 0, - 1, 0 );
-			cameraPX.lookAt( - 1, 0, 0 );
+			cameraPX.up.set( 0, -1, 0 );
+			cameraPX.lookAt( -1, 0, 0 );
 
-			cameraNX.up.set( 0, - 1, 0 );
+			cameraNX.up.set( 0, -1, 0 );
 			cameraNX.lookAt( 1, 0, 0 );
 
 			cameraPY.up.set( 0, 0, 1 );
 			cameraPY.lookAt( 0, 1, 0 );
 
-			cameraNY.up.set( 0, 0, - 1 );
-			cameraNY.lookAt( 0, - 1, 0 );
+			cameraNY.up.set( 0, 0, -1 );
+			cameraNY.lookAt( 0, -1, 0 );
 
-			cameraPZ.up.set( 0, - 1, 0 );
+			cameraPZ.up.set( 0, -1, 0 );
 			cameraPZ.lookAt( 0, 0, 1 );
 
-			cameraNZ.up.set( 0, - 1, 0 );
-			cameraNZ.lookAt( 0, 0, - 1 );
+			cameraNZ.up.set( 0, -1, 0 );
+			cameraNZ.lookAt( 0, 0, -1 );
 
 		} else {
 
@@ -13742,10 +13742,10 @@ class Sprite extends Object3D {
 			_geometry$1 = new BufferGeometry();
 
 			const float32Array = new Float32Array( [
-				- 0.5, - 0.5, 0, 0, 0,
-				0.5, - 0.5, 0, 1, 0,
+				-0.5, -0.5, 0, 0, 0,
+				0.5, -0.5, 0, 1, 0,
 				0.5, 0.5, 0, 1, 1,
-				- 0.5, 0.5, 0, 0, 1
+				-0.5, 0.5, 0, 0, 1
 			] );
 
 			const interleavedBuffer = new InterleavedBuffer( float32Array, 5 );
@@ -13796,8 +13796,8 @@ class Sprite extends Object3D {
 
 		const center = this.center;
 
-		transformVertex( _vA.set( - 0.5, - 0.5, 0 ), _mvPosition, center, _worldScale, sin, cos );
-		transformVertex( _vB.set( 0.5, - 0.5, 0 ), _mvPosition, center, _worldScale, sin, cos );
+		transformVertex( _vA.set( -0.5, -0.5, 0 ), _mvPosition, center, _worldScale, sin, cos );
+		transformVertex( _vB.set( 0.5, -0.5, 0 ), _mvPosition, center, _worldScale, sin, cos );
 		transformVertex( _vC.set( 0.5, 0.5, 0 ), _mvPosition, center, _worldScale, sin, cos );
 
 		_uvA.set( 0, 0 );
@@ -13810,7 +13810,7 @@ class Sprite extends Object3D {
 		if ( intersect === null ) {
 
 			// check second triangle
-			transformVertex( _vB.set( - 0.5, 0.5, 0 ), _mvPosition, center, _worldScale, sin, cos );
+			transformVertex( _vB.set( -0.5, 0.5, 0 ), _mvPosition, center, _worldScale, sin, cos );
 			_uvB.set( 0, 1 );
 
 			intersect = raycaster.ray.intersectTriangle( _vA, _vC, _vB, false, _intersectPoint );
@@ -15038,7 +15038,7 @@ class Plane {
 
 	negate() {
 
-		this.constant *= - 1;
+		this.constant *= -1;
 		this.normal.negate();
 
 		return this;
@@ -15369,10 +15369,10 @@ class MultiDrawRenderList {
 
 			pool.push( {
 
-				start: - 1,
-				count: - 1,
-				z: - 1,
-				index: - 1,
+				start: -1,
+				count: -1,
+				z: -1,
+				index: -1,
 
 			} );
 
@@ -15721,7 +15721,7 @@ class BatchedMesh extends Mesh {
 
 	}
 
-	addGeometry( geometry, vertexCount = - 1, indexCount = - 1 ) {
+	addGeometry( geometry, vertexCount = -1, indexCount = -1 ) {
 
 		this._initializeGeometry( geometry );
 
@@ -15736,10 +15736,10 @@ class BatchedMesh extends Mesh {
 
 		// get the necessary range fo the geometry
 		const reservedRange = {
-			vertexStart: - 1,
-			vertexCount: - 1,
-			indexStart: - 1,
-			indexCount: - 1,
+			vertexStart: -1,
+			vertexCount: -1,
+			indexStart: -1,
+			indexCount: -1,
 		};
 
 		let lastRange = null;
@@ -15752,7 +15752,7 @@ class BatchedMesh extends Mesh {
 
 		}
 
-		if ( vertexCount === - 1 ) {
+		if ( vertexCount === -1 ) {
 
 			reservedRange.vertexCount = geometry.getAttribute( 'position' ).count;
 
@@ -15776,7 +15776,7 @@ class BatchedMesh extends Mesh {
 		const hasIndex = index !== null;
 		if ( hasIndex ) {
 
-			if ( indexCount	=== - 1 ) {
+			if ( indexCount	=== -1 ) {
 
 				reservedRange.indexCount = index.count;
 
@@ -15799,7 +15799,7 @@ class BatchedMesh extends Mesh {
 		}
 
 		if (
-			reservedRange.indexStart !== - 1 &&
+			reservedRange.indexStart !== -1 &&
 			reservedRange.indexStart + reservedRange.indexCount > this._maxIndexCount ||
 			reservedRange.vertexStart + reservedRange.vertexCount > this._maxVertexCount
 		) {
@@ -15816,7 +15816,7 @@ class BatchedMesh extends Mesh {
 		reservedRanges.push( reservedRange );
 		drawRanges.push( {
 			start: hasIndex ? reservedRange.indexStart : reservedRange.vertexStart,
-			count: - 1
+			count: -1
 		} );
 		bounds.push( {
 			boxInitialized: false,
@@ -16200,7 +16200,7 @@ class BatchedMesh extends Mesh {
 		const drawInfo = this._drawInfo;
 		if ( instanceId >= drawInfo.length || drawInfo[ instanceId ].active === false ) {
 
-			return - 1;
+			return -1;
 
 		}
 
@@ -16396,7 +16396,7 @@ class BatchedMesh extends Mesh {
 			// get the camera position in the local frame
 			_invMatrixWorld.copy( this.matrixWorld ).invert();
 			_vector$5.setFromMatrixPosition( camera.matrixWorld ).applyMatrix4( _invMatrixWorld );
-			_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).transformDirection( _invMatrixWorld );
+			_forward.set( 0, 0, -1 ).transformDirection( camera.matrixWorld ).transformDirection( _invMatrixWorld );
 
 			for ( let i = 0, l = drawInfo.length; i < l; i ++ ) {
 
@@ -17597,7 +17597,7 @@ class Curve {
 
 				vec.normalize();
 
-				const theta = Math.acos( clamp$1( tangents[ i - 1 ].dot( tangents[ i ] ), - 1, 1 ) ); // clamp for floating pt errors
+				const theta = Math.acos( clamp$1( tangents[ i - 1 ].dot( tangents[ i ] ), -1, 1 ) ); // clamp for floating pt errors
 
 				normals[ i ].applyMatrix4( mat.makeRotationAxis( vec, theta ) );
 
@@ -17611,7 +17611,7 @@ class Curve {
 
 		if ( closed === true ) {
 
-			let theta = Math.acos( clamp$1( normals[ 0 ].dot( normals[ segments ] ), - 1, 1 ) );
+			let theta = Math.acos( clamp$1( normals[ 0 ].dot( normals[ segments ] ), -1, 1 ) );
 			theta /= segments;
 
 			if ( tangents[ 0 ].dot( vec.crossVectors( normals[ 0 ], normals[ segments ] ) ) > 0 ) {
@@ -17881,7 +17881,7 @@ function CubicPoly() {
 
 		c0 = x0;
 		c1 = t0;
-		c2 = - 3 * x0 + 3 * x1 - 2 * t0 - t1;
+		c2 = -3 * x0 + 3 * x1 - 2 * t0 - t1;
 		c3 = 2 * x0 - 2 * x1 + t0 + t1;
 
 	}
@@ -18107,7 +18107,7 @@ function CatmullRom( t, p0, p1, p2, p3 ) {
 	const v1 = ( p3 - p1 ) * 0.5;
 	const t2 = t * t;
 	const t3 = t * t2;
-	return ( 2 * p1 - 2 * p2 + v0 + v1 ) * t3 + ( - 3 * p1 + 3 * p2 - 2 * v0 - v1 ) * t2 + v0 * t + p1;
+	return ( 2 * p1 - 2 * p2 + v0 + v1 ) * t3 + ( -3 * p1 + 3 * p2 - 2 * v0 - v1 ) * t2 + v0 * t + p1;
 
 }
 
@@ -19180,7 +19180,7 @@ class Path extends CurvePath {
 
 class LatheGeometry extends BufferGeometry {
 
-	constructor( points = [ new Vector2( 0, - 0.5 ), new Vector2( 0.5, 0 ), new Vector2( 0, 0.5 ) ], segments = 12, phiStart = 0, phiLength = Math.PI * 2 ) {
+	constructor( points = [ new Vector2( 0, -0.5 ), new Vector2( 0.5, 0 ), new Vector2( 0, 0.5 ) ], segments = 12, phiStart = 0, phiLength = Math.PI * 2 ) {
 
 		super();
 
@@ -19651,7 +19651,7 @@ class CylinderGeometry extends BufferGeometry {
 			let groupCount = 0;
 
 			const radius = ( top === true ) ? radiusTop : radiusBottom;
-			const sign = ( top === true ) ? 1 : - 1;
+			const sign = ( top === true ) ? 1 : -1;
 
 			// first we generate the center vertex data of the cap.
 			// because the geometry needs one set of uvs per face,
@@ -20119,10 +20119,10 @@ class DodecahedronGeometry extends PolyhedronGeometry {
 		const vertices = [
 
 			// (±1, ±1, ±1)
-			- 1, - 1, - 1,	- 1, - 1, 1,
-			- 1, 1, - 1, - 1, 1, 1,
-			1, - 1, - 1, 1, - 1, 1,
-			1, 1, - 1, 1, 1, 1,
+			-1, -1, -1,	-1, -1, 1,
+			-1, 1, -1, -1, 1, 1,
+			1, -1, -1, 1, -1, 1,
+			1, 1, -1, 1, 1, 1,
 
 			// (0, ±1/φ, ±φ)
 			0, - r, - t, 0, - r, t,
@@ -21055,7 +21055,7 @@ function onSegment( p, q, r ) {
 
 function sign$1( num ) {
 
-	return num > 0 ? 1 : num < 0 ? - 1 : 0;
+	return num > 0 ? 1 : num < 0 ? -1 : 0;
 
 }
 
@@ -21315,7 +21315,7 @@ function addContour( vertices, contour ) {
 
 class ExtrudeGeometry extends BufferGeometry {
 
-	constructor( shapes = new Shape( [ new Vector2( 0.5, 0.5 ), new Vector2( - 0.5, 0.5 ), new Vector2( - 0.5, - 0.5 ), new Vector2( 0.5, - 0.5 ) ] ), options = {} ) {
+	constructor( shapes = new Shape( [ new Vector2( 0.5, 0.5 ), new Vector2( -0.5, 0.5 ), new Vector2( -0.5, -0.5 ), new Vector2( 0.5, -0.5 ) ] ), options = {} ) {
 
 		super();
 
@@ -22102,9 +22102,9 @@ class IcosahedronGeometry extends PolyhedronGeometry {
 		const t = ( 1 + Math.sqrt( 5 ) ) / 2;
 
 		const vertices = [
-			- 1, t, 0, 	1, t, 0, 	- 1, - t, 0, 	1, - t, 0,
-			0, - 1, t, 	0, 1, t,	0, - 1, - t, 	0, 1, - t,
-			t, 0, - 1, 	t, 0, 1, 	- t, 0, - 1, 	- t, 0, 1
+			-1, t, 0, 	1, t, 0, 	-1, - t, 0, 	1, - t, 0,
+			0, -1, t, 	0, 1, t,	0, -1, - t, 	0, 1, - t,
+			t, 0, -1, 	t, 0, 1, 	- t, 0, -1, 	- t, 0, 1
 		];
 
 		const indices = [
@@ -22138,8 +22138,8 @@ class OctahedronGeometry extends PolyhedronGeometry {
 	constructor( radius = 1, detail = 0 ) {
 
 		const vertices = [
-			1, 0, 0, 	- 1, 0, 0,	0, 1, 0,
-			0, - 1, 0, 	0, 0, 1,	0, 0, - 1
+			1, 0, 0, 	-1, 0, 0,	0, 1, 0,
+			0, -1, 0, 	0, 0, 1,	0, 0, -1
 		];
 
 		const indices = [
@@ -22384,7 +22384,7 @@ class RingGeometry extends BufferGeometry {
 
 class ShapeGeometry extends BufferGeometry {
 
-	constructor( shapes = new Shape( [ new Vector2( 0, 0.5 ), new Vector2( - 0.5, - 0.5 ), new Vector2( 0.5, - 0.5 ) ] ), curveSegments = 12 ) {
+	constructor( shapes = new Shape( [ new Vector2( 0, 0.5 ), new Vector2( -0.5, -0.5 ), new Vector2( 0.5, -0.5 ) ] ), curveSegments = 12 ) {
 
 		super();
 
@@ -22624,7 +22624,7 @@ class SphereGeometry extends BufferGeometry {
 
 			} else if ( iy === heightSegments && thetaEnd === Math.PI ) {
 
-				uOffset = - 0.5 / widthSegments;
+				uOffset = -0.5 / widthSegments;
 
 			}
 
@@ -22707,7 +22707,7 @@ class TetrahedronGeometry extends PolyhedronGeometry {
 	constructor( radius = 1, detail = 0 ) {
 
 		const vertices = [
-			1, 1, 1, 	- 1, - 1, 1, 	- 1, 1, - 1, 	1, - 1, - 1
+			1, 1, 1, 	-1, -1, 1, 	-1, 1, -1, 	1, -1, -1
 		];
 
 		const indices = [
@@ -23012,7 +23012,7 @@ class TorusKnotGeometry extends BufferGeometry {
 
 class TubeGeometry extends BufferGeometry {
 
-	constructor( path = new QuadraticBezierCurve3( new Vector3( - 1, - 1, 0 ), new Vector3( - 1, 1, 0 ), new Vector3( 1, 1, 0 ) ), tubularSegments = 64, radius = 1, radialSegments = 8, closed = false ) {
+	constructor( path = new QuadraticBezierCurve3( new Vector3( -1, -1, 0 ), new Vector3( -1, 1, 0 ), new Vector3( 1, 1, 0 ) ), tubularSegments = 64, radius = 1, radialSegments = 8, closed = false ) {
 
 		super();
 
@@ -24553,7 +24553,7 @@ function subclip( sourceClip, name, startFrame, endFrame, fps = 30 ) {
 
 	for ( let i = 0; i < clip.tracks.length; ++ i ) {
 
-		clip.tracks[ i ].shift( - 1 * minStartTime );
+		clip.tracks[ i ].shift( -1 * minStartTime );
 
 	}
 
@@ -24950,10 +24950,10 @@ class CubicInterpolant extends Interpolant {
 
 		super( parameterPositions, sampleValues, sampleSize, resultBuffer );
 
-		this._weightPrev = - 0;
-		this._offsetPrev = - 0;
-		this._weightNext = - 0;
-		this._offsetNext = - 0;
+		this._weightPrev = -0;
+		this._offsetPrev = -0;
+		this._weightNext = -0;
+		this._offsetNext = -0;
 
 		this.DefaultSettings_ = {
 
@@ -25060,8 +25060,8 @@ class CubicInterpolant extends Interpolant {
 		// evaluate polynomials
 
 		const sP = - wP * ppp + 2 * wP * pp - wP * p;
-		const s0 = ( 1 + wP ) * ppp + ( - 1.5 - 2 * wP ) * pp + ( - 0.5 + wP ) * p + 1;
-		const s1 = ( - 1 - wN ) * ppp + ( 1.5 + wN ) * pp + 0.5 * p;
+		const s0 = ( 1 + wP ) * ppp + ( -1.5 - 2 * wP ) * pp + ( -0.5 + wP ) * p + 1;
+		const s1 = ( -1 - wN ) * ppp + ( 1.5 + wN ) * pp + 0.5 * p;
 		const sN = wN * ppp - wN * pp;
 
 		// combine data linearly
@@ -25350,7 +25350,7 @@ class KeyframeTrack {
 
 		}
 
-		while ( to !== - 1 && times[ to ] > endTime ) {
+		while ( to !== -1 && times[ to ] > endTime ) {
 
 			-- to;
 
@@ -25704,7 +25704,7 @@ VectorKeyframeTrack.prototype.ValueTypeName = 'vector';
 
 class AnimationClip {
 
-	constructor( name = '', duration = - 1, tracks = [], blendMode = NormalAnimationBlendMode ) {
+	constructor( name = '', duration = -1, tracks = [], blendMode = NormalAnimationBlendMode ) {
 
 		this.name = name;
 		this.tracks = tracks;
@@ -25805,7 +25805,7 @@ class AnimationClip {
 
 		}
 
-		return new this( name, - 1, tracks );
+		return new this( name, -1, tracks );
 
 	}
 
@@ -25917,7 +25917,7 @@ class AnimationClip {
 		const blendMode = animation.blendMode;
 
 		// automatic length determination in AnimationClip.
-		let duration = animation.length || - 1;
+		let duration = animation.length || -1;
 
 		const hierarchyTracks = animation.hierarchy || [];
 
@@ -25942,7 +25942,7 @@ class AnimationClip {
 
 						for ( let m = 0; m < animationKeys[ k ].morphTargets.length; m ++ ) {
 
-							morphTargetNames[ animationKeys[ k ].morphTargets[ m ] ] = - 1;
+							morphTargetNames[ animationKeys[ k ].morphTargets[ m ] ] = -1;
 
 						}
 
@@ -26307,7 +26307,7 @@ class LoadingManager {
 
 			const index = handlers.indexOf( regex );
 
-			if ( index !== - 1 ) {
+			if ( index !== -1 ) {
 
 				handlers.splice( index, 2 );
 
@@ -27563,13 +27563,13 @@ class PointLightShadow extends LightShadow {
 		];
 
 		this._cubeDirections = [
-			new Vector3( 1, 0, 0 ), new Vector3( - 1, 0, 0 ), new Vector3( 0, 0, 1 ),
-			new Vector3( 0, 0, - 1 ), new Vector3( 0, 1, 0 ), new Vector3( 0, - 1, 0 )
+			new Vector3( 1, 0, 0 ), new Vector3( -1, 0, 0 ), new Vector3( 0, 0, 1 ),
+			new Vector3( 0, 0, -1 ), new Vector3( 0, 1, 0 ), new Vector3( 0, -1, 0 )
 		];
 
 		this._cubeUps = [
 			new Vector3( 0, 1, 0 ), new Vector3( 0, 1, 0 ), new Vector3( 0, 1, 0 ),
-			new Vector3( 0, 1, 0 ), new Vector3( 0, 0, 1 ),	new Vector3( 0, 0, - 1 )
+			new Vector3( 0, 1, 0 ), new Vector3( 0, 0, 1 ),	new Vector3( 0, 0, -1 )
 		];
 
 	}
@@ -27661,7 +27661,7 @@ class PointLight extends Light {
 
 class OrthographicCamera extends Camera {
 
-	constructor( left = - 1, right = 1, top = 1, bottom = - 1, near = 0.1, far = 2000 ) {
+	constructor( left = -1, right = 1, top = 1, bottom = -1, near = 0.1, far = 2000 ) {
 
 		super();
 
@@ -27796,7 +27796,7 @@ class DirectionalLightShadow extends LightShadow {
 
 	constructor() {
 
-		super( new OrthographicCamera( - 5, 5, 5, - 5, 0.5, 500 ) );
+		super( new OrthographicCamera( -5, 5, 5, -5, 0.5, 500 ) );
 
 		this.isDirectionalLightShadow = true;
 
@@ -28584,7 +28584,7 @@ class LoaderUtils {
 
 		const index = url.lastIndexOf( '/' );
 
-		if ( index === - 1 ) return './';
+		if ( index === -1 ) return './';
 
 		return url.slice( 0, index + 1 );
 
@@ -30465,7 +30465,7 @@ class AudioListener extends Object3D {
 		if ( ! Number.isFinite( _position$1.x ) || ! Number.isFinite( _position$1.y ) || ! Number.isFinite( _position$1.z ) )
 			return;
 
-		_orientation$1.set( 0, 0, - 1 ).applyQuaternion( _quaternion$1 );
+		_orientation$1.set( 0, 0, -1 ).applyQuaternion( _quaternion$1 );
 
 		if ( listener.positionX ) {
 
@@ -31553,7 +31553,7 @@ class PropertyBinding {
 
 		const lastDot = results.nodeName && results.nodeName.lastIndexOf( '.' );
 
-		if ( lastDot !== undefined && lastDot !== - 1 ) {
+		if ( lastDot !== undefined && lastDot !== -1 ) {
 
 			const objectName = results.nodeName.substring( lastDot + 1 );
 
@@ -31561,7 +31561,7 @@ class PropertyBinding {
 			// is no way to parse 'foo.bar.baz': 'baz' must be a property, but
 			// 'bar' could be the objectName, or part of a nodeName (which can
 			// include '.' characters).
-			if ( _supportedObjectNames.indexOf( objectName ) !== - 1 ) {
+			if ( _supportedObjectNames.indexOf( objectName ) !== -1 ) {
 
 				results.nodeName = results.nodeName.substring( 0, lastDot );
 				results.objectName = objectName;
@@ -31582,7 +31582,7 @@ class PropertyBinding {
 
 	static findNode( root, nodeName ) {
 
-		if ( nodeName === undefined || nodeName === '' || nodeName === '.' || nodeName === - 1 || nodeName === root.name || nodeName === root.uuid ) {
+		if ( nodeName === undefined || nodeName === '' || nodeName === '.' || nodeName === -1 || nodeName === root.name || nodeName === root.uuid ) {
 
 			return root;
 
@@ -32541,7 +32541,7 @@ class AnimationAction {
 		this._weightInterpolant = null;
 
 		this.loop = LoopRepeat;
-		this._loopCount = - 1;
+		this._loopCount = -1;
 
 		// global mixer time when the action is to be started
 		// it's set back to 'null' upon start of the action
@@ -32593,7 +32593,7 @@ class AnimationAction {
 		this.enabled = true;
 
 		this.time = 0; // restart clip
-		this._loopCount = - 1;// forget previous loops
+		this._loopCount = -1;// forget previous loops
 		this._startTime = null;// forget scheduling
 
 		return this.stopFading().stopWarping();
@@ -32988,7 +32988,7 @@ class AnimationAction {
 
 		if ( deltaTime === 0 ) {
 
-			if ( loopCount === - 1 ) return time;
+			if ( loopCount === -1 ) return time;
 
 			return ( pingPong && ( loopCount & 1 ) === 1 ) ? duration - time : time;
 
@@ -32996,7 +32996,7 @@ class AnimationAction {
 
 		if ( loop === LoopOnce ) {
 
-			if ( loopCount === - 1 ) {
+			if ( loopCount === -1 ) {
 
 				// just started
 
@@ -33030,14 +33030,14 @@ class AnimationAction {
 
 				this._mixer.dispatchEvent( {
 					type: 'finished', action: this,
-					direction: deltaTime < 0 ? - 1 : 1
+					direction: deltaTime < 0 ? -1 : 1
 				} );
 
 			}
 
 		} else { // repetitive Repeat or PingPong
 
-			if ( loopCount === - 1 ) {
+			if ( loopCount === -1 ) {
 
 				// just started
 
@@ -33083,7 +33083,7 @@ class AnimationAction {
 
 					this._mixer.dispatchEvent( {
 						type: 'finished', action: this,
-						direction: deltaTime > 0 ? 1 : - 1
+						direction: deltaTime > 0 ? 1 : -1
 					} );
 
 				} else {
@@ -34003,7 +34003,7 @@ let UniformsGroup$1 = class UniformsGroup extends EventDispatcher {
 
 		const index = this.uniforms.indexOf( uniform );
 
-		if ( index !== - 1 ) this.uniforms.splice( index, 1 );
+		if ( index !== -1 ) this.uniforms.splice( index, 1 );
 
 		return this;
 
@@ -34213,7 +34213,7 @@ class Raycaster {
 		} else if ( camera.isOrthographicCamera ) {
 
 			this.ray.origin.set( coords.x, coords.y, ( camera.near + camera.far ) / ( camera.near - camera.far ) ).unproject( camera ); // set origin in plane of camera
-			this.ray.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+			this.ray.direction.set( 0, 0, -1 ).transformDirection( camera.matrixWorld );
 			this.camera = camera;
 
 		} else {
@@ -34229,7 +34229,7 @@ class Raycaster {
 		_matrix.identity().extractRotation( controller.matrixWorld );
 
 		this.ray.origin.setFromMatrixPosition( controller.matrixWorld );
-		this.ray.direction.set( 0, 0, - 1 ).applyMatrix4( _matrix );
+		this.ray.direction.set( 0, 0, -1 ).applyMatrix4( _matrix );
 
 		return this;
 
@@ -34359,7 +34359,7 @@ class Spherical {
 		} else {
 
 			this.theta = Math.atan2( x, z );
-			this.phi = Math.acos( clamp$1( y / this.radius, - 1, 1 ) );
+			this.phi = Math.acos( clamp$1( y / this.radius, -1, 1 ) );
 
 		}
 
@@ -34823,9 +34823,9 @@ class SpotLightHelper extends Object3D {
 		const positions = [
 			0, 0, 0, 	0, 0, 1,
 			0, 0, 0, 	1, 0, 1,
-			0, 0, 0,	- 1, 0, 1,
+			0, 0, 0,	-1, 0, 1,
 			0, 0, 0, 	0, 1, 1,
-			0, 0, 0, 	0, - 1, 1
+			0, 0, 0, 	0, -1, 1
 		];
 
 		for ( let i = 0, j = 1, l = 32; i < l; i ++, j ++ ) {
@@ -35597,40 +35597,40 @@ class CameraHelper extends LineSegments {
 
 		// center / target
 
-		setPoint( 'c', pointMap, geometry, _camera$1, 0, 0, - 1 );
+		setPoint( 'c', pointMap, geometry, _camera$1, 0, 0, -1 );
 		setPoint( 't', pointMap, geometry, _camera$1, 0, 0, 1 );
 
 		// near
 
-		setPoint( 'n1', pointMap, geometry, _camera$1, - w, - h, - 1 );
-		setPoint( 'n2', pointMap, geometry, _camera$1, w, - h, - 1 );
-		setPoint( 'n3', pointMap, geometry, _camera$1, - w, h, - 1 );
-		setPoint( 'n4', pointMap, geometry, _camera$1, w, h, - 1 );
+		setPoint( 'n1', pointMap, geometry, _camera$1, -1, -1, -1 );
+		setPoint( 'n2', pointMap, geometry, _camera$1, w, -1, -1 );
+		setPoint( 'n3', pointMap, geometry, _camera$1, -1, h, -1 );
+		setPoint( 'n4', pointMap, geometry, _camera$1, w, h, -1 );
 
 		// far
 
-		setPoint( 'f1', pointMap, geometry, _camera$1, - w, - h, 1 );
-		setPoint( 'f2', pointMap, geometry, _camera$1, w, - h, 1 );
-		setPoint( 'f3', pointMap, geometry, _camera$1, - w, h, 1 );
+		setPoint( 'f1', pointMap, geometry, _camera$1, -1, -1, 1 );
+		setPoint( 'f2', pointMap, geometry, _camera$1, w, -1, 1 );
+		setPoint( 'f3', pointMap, geometry, _camera$1, -1, h, 1 );
 		setPoint( 'f4', pointMap, geometry, _camera$1, w, h, 1 );
 
 		// up
 
-		setPoint( 'u1', pointMap, geometry, _camera$1, w * 0.7, h * 1.1, - 1 );
-		setPoint( 'u2', pointMap, geometry, _camera$1, - w * 0.7, h * 1.1, - 1 );
-		setPoint( 'u3', pointMap, geometry, _camera$1, 0, h * 2, - 1 );
+		setPoint( 'u1', pointMap, geometry, _camera$1, w * 0.7, h * 1.1, -1 );
+		setPoint( 'u2', pointMap, geometry, _camera$1, -1 * 0.7, h * 1.1, -1 );
+		setPoint( 'u3', pointMap, geometry, _camera$1, 0, h * 2, -1 );
 
 		// cross
 
-		setPoint( 'cf1', pointMap, geometry, _camera$1, - w, 0, 1 );
+		setPoint( 'cf1', pointMap, geometry, _camera$1, -1, 0, 1 );
 		setPoint( 'cf2', pointMap, geometry, _camera$1, w, 0, 1 );
-		setPoint( 'cf3', pointMap, geometry, _camera$1, 0, - h, 1 );
+		setPoint( 'cf3', pointMap, geometry, _camera$1, 0, -1, 1 );
 		setPoint( 'cf4', pointMap, geometry, _camera$1, 0, h, 1 );
 
-		setPoint( 'cn1', pointMap, geometry, _camera$1, - w, 0, - 1 );
-		setPoint( 'cn2', pointMap, geometry, _camera$1, w, 0, - 1 );
-		setPoint( 'cn3', pointMap, geometry, _camera$1, 0, - h, - 1 );
-		setPoint( 'cn4', pointMap, geometry, _camera$1, 0, h, - 1 );
+		setPoint( 'cn1', pointMap, geometry, _camera$1, -1, 0, -1 );
+		setPoint( 'cn2', pointMap, geometry, _camera$1, w, 0, -1 );
+		setPoint( 'cn3', pointMap, geometry, _camera$1, 0, -1, -1 );
+		setPoint( 'cn4', pointMap, geometry, _camera$1, 0, h, -1 );
 
 		geometry.getAttribute( 'position' ).needsUpdate = true;
 
@@ -35777,7 +35777,7 @@ class Box3Helper extends LineSegments {
 
 		const indices = new Uint16Array( [ 0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 2, 6, 3, 7 ] );
 
-		const positions = [ 1, 1, 1, - 1, 1, 1, - 1, - 1, 1, 1, - 1, 1, 1, 1, - 1, - 1, 1, - 1, - 1, - 1, - 1, 1, - 1, - 1 ];
+		const positions = [ 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1 ];
 
 		const geometry = new BufferGeometry();
 
@@ -35826,7 +35826,7 @@ class PlaneHelper extends Line {
 
 		const color = hex;
 
-		const positions = [ 1, - 1, 0, - 1, 1, 0, - 1, - 1, 0, 1, 1, 0, - 1, 1, 0, - 1, - 1, 0, 1, - 1, 0, 1, 1, 0 ];
+		const positions = [ 1, -1, 0, -1, 1, 0, -1, -1, 0, 1, 1, 0, -1, 1, 0, -1, -1, 0, 1, -1, 0, 1, 1, 0 ];
 
 		const geometry = new BufferGeometry();
 		geometry.setAttribute( 'position', new Float32BufferAttribute( positions, 3 ) );
@@ -35840,7 +35840,7 @@ class PlaneHelper extends Line {
 
 		this.size = size;
 
-		const positions2 = [ 1, 1, 0, - 1, 1, 0, - 1, - 1, 0, 1, 1, 0, - 1, - 1, 0, 1, - 1, 0 ];
+		const positions2 = [ 1, 1, 0, -1, 1, 0, -1, -1, 0, 1, 1, 0, -1, -1, 0, 1, -1, 0 ];
 
 		const geometry2 = new BufferGeometry();
 		geometry2.setAttribute( 'position', new Float32BufferAttribute( positions2, 3 ) );
@@ -35894,7 +35894,7 @@ class ArrowHelper extends Object3D {
 			_lineGeometry.setAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0, 0, 1, 0 ], 3 ) );
 
 			_coneGeometry = new CylinderGeometry( 0, 0.5, 1, 5, 1 );
-			_coneGeometry.translate( 0, - 0.5, 0 );
+			_coneGeometry.translate( 0, -0.5, 0 );
 
 		}
 
@@ -35921,7 +35921,7 @@ class ArrowHelper extends Object3D {
 
 			this.quaternion.set( 0, 0, 0, 1 );
 
-		} else if ( dir.y < - 0.99999 ) {
+		} else if ( dir.y < -0.99999 ) {
 
 			this.quaternion.set( 1, 0, 0, 0 );
 
@@ -36332,7 +36332,7 @@ class Controls extends EventDispatcher {
 
 		this.enabled = true;
 
-		this.state = - 1;
+		this.state = -1;
 
 		this.keys = {};
 		this.mouseButtons = { LEFT: null, MIDDLE: null, RIGHT: null };
@@ -36728,7 +36728,7 @@ function getCacheKey$1( object, force = false ) {
 
 	for ( const { property, childNode } of getNodeChildren( object ) ) {
 
-		values.push( values, cyrb53( property.slice( 0, - 4 ) ), childNode.getCacheKey( force ) );
+		values.push( values, cyrb53( property.slice( 0, -4 ) ), childNode.getCacheKey( force ) );
 
 	}
 
@@ -36845,7 +36845,7 @@ function getValueType( value ) {
 
 function getValueFromType( type, ...params ) {
 
-	const last4 = type ? type.slice( - 4 ) : undefined;
+	const last4 = type ? type.slice( -4 ) : undefined;
 
 	if ( params.length === 1 ) { // ensure same behaviour as in NodeBuilder.format()
 
@@ -38471,7 +38471,7 @@ class ShaderNodeInternal extends Node {
 
 const bools = [ false, true ];
 const uints = [ 0, 1, 2, 3 ];
-const ints = [ - 1, - 2 ];
+const ints = [ -1, -2 ];
 const floats = [ 0.5, 1.5, 1 / 3, 1e-6, 1e6, Math.PI, Math.PI * 2, 1 / Math.PI, 2 / Math.PI, 1 / ( Math.PI * 2 ), Math.PI / 2 ];
 
 const boolsCacheMap = new Map();
@@ -46042,7 +46042,7 @@ class Line2NodeMaterial extends NodeMaterial {
 
 			const a = cameraProjectionMatrix.element( 2 ).element( 2 ); // 3nd entry in 3th column
 			const b = cameraProjectionMatrix.element( 3 ).element( 2 ); // 3nd entry in 4th column
-			const nearEstimate = b.mul( - 0.5 ).div( a );
+			const nearEstimate = b.mul( -0.5 ).div( a );
 
 			const alpha = nearEstimate.sub( start.z ).div( end.z.sub( start.z ) );
 
@@ -46081,7 +46081,7 @@ class Line2NodeMaterial extends NodeMaterial {
 			// but we need to perform ndc-space calculations in the shader, so we must address this issue directly
 			// perhaps there is a more elegant solution -- WestLangley
 
-			const perspective = cameraProjectionMatrix.element( 2 ).element( 3 ).equal( - 1.0 ); // 4th entry in the 3rd column
+			const perspective = cameraProjectionMatrix.element( 2 ).element( 3 ).equal( -1 ); // 4th entry in the 3rd column
 
 			If( perspective, () => {
 
@@ -46247,7 +46247,7 @@ class Line2NodeMaterial extends NodeMaterial {
 				const vLineDistance = varying( lineDistance.add( materialLineDashOffset ) );
 				const vLineDistanceOffset = offsetNode ? vLineDistance.add( offsetNode ) : vLineDistance;
 
-				vUv.y.lessThan( - 1.0 ).or( vUv.y.greaterThan( 1.0 ) ).discard(); // discard endcaps
+				vUv.y.lessThan( -1 ).or( vUv.y.greaterThan( 1.0 ) ).discard(); // discard endcaps
 				vLineDistanceOffset.mod( dashSize.add( gapSize ) ).greaterThan( dashSize ).discard(); // todo - FIX
 
 			}
@@ -46465,7 +46465,7 @@ class EquirectUVNode extends TempNode {
 		const dir = this.dirNode;
 
 		const u = dir.z.atan2( dir.x ).mul( 1 / ( Math.PI * 2 ) ).add( 0.5 );
-		const v = dir.y.clamp( - 1.0, 1.0 ).asin().mul( 1 / Math.PI ).add( 0.5 );
+		const v = dir.y.clamp( -1, 1.0 ).asin().mul( 1 / Math.PI ).add( 0.5 );
 
 		return vec2( u, v );
 
@@ -46903,7 +46903,7 @@ const F_Schlick = /*@__PURE__*/ Fn( ( { f0, f90, dotVH } ) => {
 
 	// Optimized variant (presented by Epic at SIGGRAPH '13)
 	// https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
-	const fresnel = dotVH.mul( - 5.55473 ).sub( 6.98316 ).mul( dotVH ).exp2();
+	const fresnel = dotVH.mul( -5.55473 ).sub( 6.98316 ).mul( dotVH ).exp2();
 
 	return f0.mul( fresnel.oneMinus() ).add( f90.mul( fresnel ) );
 
@@ -47249,15 +47249,15 @@ const BRDF_GGX = /*@__PURE__*/ Fn( ( inputs ) => {
 // https://www.unrealengine.com/blog/physically-based-shading-on-mobile
 const DFGApprox = /*@__PURE__*/ Fn( ( { roughness, dotNV } ) => {
 
-	const c0 = vec4( - 1, - 0.0275, - 0.572, 0.022 );
+	const c0 = vec4( -1, -0.0275, -0.572, 0.022 );
 
-	const c1 = vec4( 1, 0.0425, 1.04, - 0.04 );
+	const c1 = vec4( 1, 0.0425, 1.04, -0.04 );
 
 	const r = roughness.mul( c0 ).add( c1 );
 
-	const a004 = r.x.mul( r.x ).min( dotNV.mul( - 9.28 ).exp2() ).mul( r.x ).add( r.y );
+	const a004 = r.x.mul( r.x ).min( dotNV.mul( -9.28 ).exp2() ).mul( r.x ).add( r.y );
 
-	const fab = vec2( - 1.04, 1.04 ).mul( a004 ).add( r.zw );
+	const fab = vec2( -1.04, 1.04 ).mul( a004 ).add( r.zw );
 
 	return fab;
 
@@ -47483,7 +47483,7 @@ const w0 = ( a ) => mul( bC, mul( a, mul( a, a.negate().add( 3.0 ) ).sub( 3.0 ) 
 
 const w1 = ( a ) => mul( bC, mul( a, mul( a, mul( 3.0, a ).sub( 6.0 ) ) ).add( 4.0 ) );
 
-const w2 = ( a ) => mul( bC, mul( a, mul( a, mul( - 3.0, a ).add( 3.0 ) ).add( 3.0 ) ).add( 1.0 ) );
+const w2 = ( a ) => mul( bC, mul( a, mul( a, mul( -3, a ).add( 3.0 ) ).add( 3.0 ) ).add( 1.0 ) );
 
 const w3 = ( a ) => mul( bC, pow( a, 3 ) );
 
@@ -47492,7 +47492,7 @@ const g0 = ( a ) => w0( a ).add( w1( a ) );
 const g1 = ( a ) => w2( a ).add( w3( a ) );
 
 // h0 and h1 are the two offset functions
-const h0 = ( a ) => add( - 1.0, w1( a ).div( w0( a ).add( w1( a ) ) ) );
+const h0 = ( a ) => add( -1, w1( a ).div( w0( a ).add( w1( a ) ) ) );
 
 const h1 = ( a ) => add( 1.0, w3( a ).div( w2( a ).add( w3( a ) ) ) );
 
@@ -47701,9 +47701,9 @@ const getIBLVolumeRefraction = /*@__PURE__*/ Fn( ( [ n, v, roughness, diffuseCol
 
 // XYZ to linear-sRGB color space
 const XYZ_TO_REC709 = /*@__PURE__*/ mat3(
-	3.2404542, - 0.9692660, 0.0556434,
-	- 1.5371385, 1.8760108, - 0.2040259,
-	- 0.4985314, 0.0415560, 1.0572252
+	3.2404542, -0.969266, 0.0556434,
+	-1.5371385, 1.8760108, -0.2040259,
+	-0.4985314, 0.0415560, 1.0572252
 );
 
 // Assume air interface for top
@@ -47732,7 +47732,7 @@ const evalSensitivity = ( OPD, shift ) => {
 	const pos = vec3( 1.6810e+06, 1.7953e+06, 2.2084e+06 );
 	const VAR = vec3( 4.3278e+09, 9.3046e+09, 6.6121e+09 );
 
-	const x = float( 9.7470e-14 * Math.sqrt( 2.0 * Math.PI * 4.5282e+09 ) ).mul( phase.mul( 2.2399e+06 ).add( shift.x ).cos() ).mul( phase.pow2().mul( - 4.5282e+09 ).exp() );
+	const x = float( 9.7470e-14 * Math.sqrt( 2.0 * Math.PI * 4.5282e+09 ) ).mul( phase.mul( 2.2399e+06 ).add( shift.x ).cos() ).mul( phase.pow2().mul( -45282e5 ).exp() );
 
 	let xyz = val.mul( VAR.mul( 2.0 * Math.PI ).sqrt() ).mul( pos.mul( phase ).add( shift ).cos() ).mul( phase.pow2().negate().mul( VAR ).exp() );
 	xyz = vec3( xyz.x.add( x ), xyz.y, xyz.z ).div( 1.0685e-7 );
@@ -47831,8 +47831,8 @@ const IBLSheenBRDF = /*@__PURE__*/ Fn( ( { normal, viewDir, roughness } ) => {
 
 	const a = select(
 		roughness.lessThan( 0.25 ),
-		float( - 339.2 ).mul( r2 ).add( float( 161.4 ).mul( roughness ) ).sub( 25.9 ),
-		float( - 8.48 ).mul( r2 ).add( float( 14.3 ).mul( roughness ) ).sub( 9.95 )
+		float( -339.2 ).mul( r2 ).add( float( 161.4 ).mul( roughness ) ).sub( 25.9 ),
+		float( -8.48 ).mul( r2 ).add( float( 14.3 ).mul( roughness ) ).sub( 9.95 )
 	);
 
 	const b = select(
@@ -48091,7 +48091,7 @@ class PhysicalLightingModel extends LightingModel {
 		const dotNV = transformedNormalView.dot( positionViewDirection ).clamp(); // @ TODO: Move to core dotNV
 
 		const aoNV = dotNV.add( ambientOcclusion );
-		const aoExp = roughness.mul( - 16.0 ).oneMinus().negate().exp2();
+		const aoExp = roughness.mul( -16 ).oneMinus().negate().exp2();
 
 		const aoNode = ambientOcclusion.sub( aoNV.pow( aoExp ).oneMinus() ).clamp();
 
@@ -48148,9 +48148,9 @@ class PhysicalLightingModel extends LightingModel {
 // These defines must match with PMREMGenerator
 
 const cubeUV_r0 = /*@__PURE__*/ float( 1.0 );
-const cubeUV_m0 = /*@__PURE__*/ float( - 2.0 );
+const cubeUV_m0 = /*@__PURE__*/ float( -2 );
 const cubeUV_r1 = /*@__PURE__*/ float( 0.8 );
-const cubeUV_m1 = /*@__PURE__*/ float( - 1.0 );
+const cubeUV_m1 = /*@__PURE__*/ float( -1 );
 const cubeUV_r4 = /*@__PURE__*/ float( 0.4 );
 const cubeUV_m4 = /*@__PURE__*/ float( 2.0 );
 const cubeUV_r5 = /*@__PURE__*/ float( 0.305 );
@@ -48168,7 +48168,7 @@ const cubeUV_minTileSize = /*@__PURE__*/ float( 16.0 );
 const getFace = /*@__PURE__*/ Fn( ( [ direction ] ) => {
 
 	const absDirection = vec3( abs( direction ) ).toVar();
-	const face = float( - 1.0 ).toVar();
+	const face = float( -1 ).toVar();
 
 	If( absDirection.x.greaterThan( absDirection.z ), () => {
 
@@ -48270,7 +48270,7 @@ const roughnessToMip = /*@__PURE__*/ Fn( ( [ roughness ] ) => {
 
 	} ).Else( () => {
 
-		mip.assign( float( - 2.0 ).mul( log2( mul( 1.16, roughness ) ) ) ); // 1.16 = 1.79^0.25
+		mip.assign( float( -2 ).mul( log2( mul( 1.16, roughness ) ) ) ); // 1.16 = 1.79^0.25
 
 	} );
 
@@ -48298,25 +48298,25 @@ const getDirection = /*@__PURE__*/ Fn( ( [ uv_immutable, face ] ) => {
 	} ).ElseIf( face.equal( 1.0 ), () => {
 
 		direction.assign( direction.xzy );
-		direction.xz.mulAssign( - 1.0 ); // ( -u, 1, -v ) pos y
+		direction.xz.mulAssign( -1 ); // ( -u, 1, -v ) pos y
 
 	} ).ElseIf( face.equal( 2.0 ), () => {
 
-		direction.x.mulAssign( - 1.0 ); // ( -u, v, 1 ) pos z
+		direction.x.mulAssign( -1 ); // ( -u, v, 1 ) pos z
 
 	} ).ElseIf( face.equal( 3.0 ), () => {
 
 		direction.assign( direction.zyx );
-		direction.xz.mulAssign( - 1.0 ); // ( -1, v, -u ) neg x
+		direction.xz.mulAssign( -1 ); // ( -1, v, -u ) neg x
 
 	} ).ElseIf( face.equal( 4.0 ), () => {
 
 		direction.assign( direction.xzy );
-		direction.xy.mulAssign( - 1.0 ); // ( -u, -1, v ) neg y
+		direction.xy.mulAssign( -1 ); // ( -u, -1, v ) neg y
 
 	} ).ElseIf( face.equal( 5.0 ), () => {
 
-		direction.z.mulAssign( - 1.0 ); // ( u, v, -1 ) neg zS
+		direction.z.mulAssign( -1 ); // ( u, v, -1 ) neg zS
 
 	} );
 
@@ -48419,7 +48419,7 @@ const blur = /*@__PURE__*/ Fn( ( { n, latitudinal, poleAxis, outputDirection, we
 		} );
 
 		const theta = float( dTheta.mul( float( i ) ) ).toVar();
-		gl_FragColor.addAssign( weights.element( i ).mul( getSample( { theta: theta.mul( - 1.0 ), axis, outputDirection, mipInt, envMap, CUBEUV_TEXEL_WIDTH, CUBEUV_TEXEL_HEIGHT, CUBEUV_MAX_MIP } ) ) );
+		gl_FragColor.addAssign( weights.element( i ).mul( getSample( { theta: theta.mul( -1 ), axis, outputDirection, mipInt, envMap, CUBEUV_TEXEL_WIDTH, CUBEUV_TEXEL_HEIGHT, CUBEUV_MAX_MIP } ) ) );
 		gl_FragColor.addAssign( weights.element( i ).mul( getSample( { theta, axis, outputDirection, mipInt, envMap, CUBEUV_TEXEL_WIDTH, CUBEUV_TEXEL_HEIGHT, CUBEUV_MAX_MIP } ) ) );
 
 	} );
@@ -48448,7 +48448,7 @@ function _getPMREMFromTexture( texture ) {
 
 	let cacheTexture = _cache.get( texture );
 
-	const pmremVersion = cacheTexture !== undefined ? cacheTexture.pmremVersion : - 1;
+	const pmremVersion = cacheTexture !== undefined ? cacheTexture.pmremVersion : -1;
 
 	if ( pmremVersion !== texture.pmremVersion ) {
 
@@ -48552,7 +48552,7 @@ class PMREMNode extends TempNode {
 
 		let pmrem = this._pmrem;
 
-		const pmremVersion = pmrem ? pmrem.pmremVersion : - 1;
+		const pmremVersion = pmrem ? pmrem.pmremVersion : -1;
 		const texture = this._value;
 
 		if ( pmremVersion !== texture.pmremVersion ) {
@@ -49626,23 +49626,23 @@ const normal = Fn( ( { texture, uv } ) => {
 
 	} ).ElseIf( uv.x.greaterThan( 1 - epsilon ), () => {
 
-		ret.assign( vec3( - 1, 0, 0 ) );
+		ret.assign( vec3( -1, 0, 0 ) );
 
 	} ).ElseIf( uv.y.greaterThan( 1 - epsilon ), () => {
 
-		ret.assign( vec3( 0, - 1, 0 ) );
+		ret.assign( vec3( 0, -1, 0 ) );
 
 	} ).ElseIf( uv.z.greaterThan( 1 - epsilon ), () => {
 
-		ret.assign( vec3( 0, 0, - 1 ) );
+		ret.assign( vec3( 0, 0, -1 ) );
 
 	} ).Else( () => {
 
 		const step = 0.01;
 
-		const x = texture.uv( uv.add( vec3( - step, 0.0, 0.0 ) ) ).r.sub( texture.uv( uv.add( vec3( step, 0.0, 0.0 ) ) ).r );
-		const y = texture.uv( uv.add( vec3( 0.0, - step, 0.0 ) ) ).r.sub( texture.uv( uv.add( vec3( 0.0, step, 0.0 ) ) ).r );
-		const z = texture.uv( uv.add( vec3( 0.0, 0.0, - step ) ) ).r.sub( texture.uv( uv.add( vec3( 0.0, 0.0, step ) ) ).r );
+		const x = texture.uv( uv.add( vec3( -0.01, 0.0, 0.0 ) ) ).r.sub( texture.uv( uv.add( vec3( step, 0.0, 0.0 ) ) ).r );
+		const y = texture.uv( uv.add( vec3( 0.0, -0.01, 0.0 ) ) ).r.sub( texture.uv( uv.add( vec3( 0.0, step, 0.0 ) ) ).r );
+		const z = texture.uv( uv.add( vec3( 0.0, 0.0, -0.01 ) ) ).r.sub( texture.uv( uv.add( vec3( 0.0, 0.0, step ) ) ).r );
 
 		ret.assign( vec3( x, y, z ) );
 
@@ -49731,7 +49731,7 @@ class VolumeNodeMaterial extends NodeMaterial {
 
 		const hitBox = Fn( ( { orig, dir } ) => {
 
-			const box_min = vec3( - 0.5 );
+			const box_min = vec3( -0.5 );
 			const box_max = vec3( 0.5 );
 
 			const inv_dir = dir.reciprocal();
@@ -52397,7 +52397,7 @@ const EXTRA_LOD_SIGMA = [ 0.125, 0.215, 0.35, 0.446, 0.526, 0.582 ];
 // samples and exit early, but not recompile the shader.
 const MAX_SAMPLES = 20;
 
-const _flatCamera = /*@__PURE__*/ new OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+const _flatCamera = /*@__PURE__*/ new OrthographicCamera( -1, 1, 1, -1, 0, 1 );
 const _cubeCamera = /*@__PURE__*/ new PerspectiveCamera( 90, 1 );
 const _clearColor$2 = /*@__PURE__*/ new Color();
 let _oldTarget = null;
@@ -52417,9 +52417,9 @@ const _axisDirections = [
 	/*@__PURE__*/ new Vector3( INV_PHI, 0, PHI ),
 	/*@__PURE__*/ new Vector3( 0, PHI, - INV_PHI ),
 	/*@__PURE__*/ new Vector3( 0, PHI, INV_PHI ),
-	/*@__PURE__*/ new Vector3( - 1, 1, - 1 ),
-	/*@__PURE__*/ new Vector3( 1, 1, - 1 ),
-	/*@__PURE__*/ new Vector3( - 1, 1, 1 ),
+	/*@__PURE__*/ new Vector3( -1, 1, -1 ),
+	/*@__PURE__*/ new Vector3( 1, 1, -1 ),
+	/*@__PURE__*/ new Vector3( -1, 1, 1 ),
 	/*@__PURE__*/ new Vector3( 1, 1, 1 )
 ];
 
@@ -52684,8 +52684,8 @@ class PMREMGenerator {
 		cubeCamera.far = far;
 
 		// px, py, pz, nx, ny, nz
-		const upSign = [ - 1, 1, - 1, - 1, - 1, - 1 ];
-		const forwardSign = [ 1, 1, 1, - 1, - 1, - 1 ];
+		const upSign = [ -1, 1, -1, -1, -1, -1 ];
+		const forwardSign = [ 1, 1, 1, -1, -1, -1 ];
 
 		const renderer = this._renderer;
 
@@ -53000,7 +53000,7 @@ function _createPlanes( lodMax ) {
 		for ( let face = 0; face < cubeFaces; face ++ ) {
 
 			const x = ( face % 3 ) * 2 / 3 - 1;
-			const y = face > 2 ? 0 : - 1;
+			const y = face > 2 ? 0 : -1;
 			const coordinates = [
 				x, y, 0,
 				x + 2 / 3, y, 0,
@@ -54138,7 +54138,7 @@ class NodeBuilder {
 
 	removeFlowTab() {
 
-		this.tab = this.tab.slice( 0, - 1 );
+		this.tab = this.tab.slice( 0, -1 );
 
 		return this;
 
@@ -54881,7 +54881,7 @@ function getTextureIndex( textures, name ) {
 
 	}
 
-	return - 1;
+	return -1;
 
 }
 
@@ -54986,7 +54986,7 @@ class FunctionOverloadingNode extends Node {
 		if ( candidateFnCall === null ) {
 
 			let candidateFn = null;
-			let candidateScore = - 1;
+			let candidateScore = -1;
 
 			for ( const functionNode of this.functionNodes ) {
 
@@ -55406,7 +55406,7 @@ const _normal = new Vector3();
 const _reflectorWorldPosition = new Vector3();
 const _cameraWorldPosition = new Vector3();
 const _rotationMatrix = new Matrix4();
-const _lookAtPosition = new Vector3( 0, 0, - 1 );
+const _lookAtPosition = new Vector3( 0, 0, -1 );
 const clipPlane = new Vector4();
 
 const _view = new Vector3();
@@ -55554,7 +55554,7 @@ class ReflectorNode extends TextureNode {
 
 		_rotationMatrix.extractRotation( camera.matrixWorld );
 
-		_lookAtPosition.set( 0, 0, - 1 );
+		_lookAtPosition.set( 0, 0, -1 );
 		_lookAtPosition.applyMatrix4( _rotationMatrix );
 		_lookAtPosition.add( _cameraWorldPosition );
 
@@ -55588,7 +55588,7 @@ class ReflectorNode extends TextureNode {
 
 		_q.x = ( Math.sign( clipPlane.x ) + projectionMatrix.elements[ 8 ] ) / projectionMatrix.elements[ 0 ];
 		_q.y = ( Math.sign( clipPlane.y ) + projectionMatrix.elements[ 9 ] ) / projectionMatrix.elements[ 5 ];
-		_q.z = - 1.0;
+		_q.z = -1;
 		_q.w = ( 1.0 + projectionMatrix.elements[ 10 ] ) / projectionMatrix.elements[ 14 ];
 
 		// Calculate the scaled plane vector
@@ -55631,7 +55631,7 @@ const reflector = ( parameters ) => nodeObject( new ReflectorNode( parameters ) 
 
 // Helper for passes that need to fill the viewport with a single quad.
 
-const _camera = /*@__PURE__*/ new OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+const _camera = /*@__PURE__*/ new OrthographicCamera( -1, 1, 1, -1, 0, 1 );
 
 // https://github.com/mrdoob/three.js/pull/21358
 
@@ -55641,9 +55641,9 @@ class QuadGeometry extends BufferGeometry {
 
 		super();
 
-		const uv = flipY === false ? [ 0, - 1, 0, 1, 2, 1 ] : [ 0, 2, 0, 0, 2, 0 ];
+		const uv = flipY === false ? [ 0, -1, 0, 1, 2, 1 ] : [ 0, 2, 0, 0, 2, 0 ];
 
-		this.setAttribute( 'position', new Float32BufferAttribute( [ - 1, 3, 0, - 1, - 1, 0, 3, - 1, 0 ], 3 ) );
+		this.setAttribute( 'position', new Float32BufferAttribute( [ -1, 3, 0, -1, -1, 0, 3, -1, 0 ], 3 ) );
 		this.setAttribute( 'uv', new Float32BufferAttribute( uv, 2 ) );
 
 	}
@@ -57120,7 +57120,7 @@ class GaussianBlurNode extends TempNode {
 
 		for ( let i = 0; i < kernelRadius; i ++ ) {
 
-			coefficients.push( 0.39894 * Math.exp( - 0.5 * i * i / ( kernelRadius * kernelRadius ) ) / kernelRadius );
+			coefficients.push( 0.39894 * Math.exp( -0.5 * i * i / ( kernelRadius * kernelRadius ) ) / kernelRadius );
 
 		}
 
@@ -57291,7 +57291,7 @@ const vibrance = /*@__PURE__*/ Fn( ( [ color, adjustment = float( 1 ) ] ) => {
 	const average = add( color.r, color.g, color.b ).div( 3.0 );
 
 	const mx = color.r.max( color.g.max( color.b ) );
-	const amt = mx.sub( average ).mul( adjustment ).mul( - 3.0 );
+	const amt = mx.sub( average ).mul( adjustment ).mul( -3 );
 
 	return mix( color.rgb, mx, amt );
 
@@ -57494,26 +57494,26 @@ class SobelOperatorNode extends TempNode {
 
 			// kernel definition (in glsl matrices are filled in column-major order)
 
-			const Gx = mat3( - 1, - 2, - 1, 0, 0, 0, 1, 2, 1 ); // x direction kernel
-			const Gy = mat3( - 1, 0, 1, - 2, 0, 2, - 1, 0, 1 ); // y direction kernel
+			const Gx = mat3( -1, -2, -1, 0, 0, 0, 1, 2, 1 ); // x direction kernel
+			const Gy = mat3( -1, 0, 1, -2, 0, 2, -1, 0, 1 ); // y direction kernel
 
 			// fetch the 3x3 neighbourhood of a fragment
 
 			// first column
 
-			const tx0y0 = luminance( sampleTexture( uvNode.add( texel.mul( vec2( - 1, - 1 ) ) ) ).xyz );
-			const tx0y1 = luminance( sampleTexture( uvNode.add( texel.mul( vec2( - 1, 0 ) ) ) ).xyz );
-			const tx0y2 = luminance( sampleTexture( uvNode.add( texel.mul( vec2( - 1, 1 ) ) ) ).xyz );
+			const tx0y0 = luminance( sampleTexture( uvNode.add( texel.mul( vec2( -1, -1 ) ) ) ).xyz );
+			const tx0y1 = luminance( sampleTexture( uvNode.add( texel.mul( vec2( -1, 0 ) ) ) ).xyz );
+			const tx0y2 = luminance( sampleTexture( uvNode.add( texel.mul( vec2( -1, 1 ) ) ) ).xyz );
 
 			// second column
 
-			const tx1y0 = luminance( sampleTexture( uvNode.add( texel.mul( vec2( 0, - 1 ) ) ) ).xyz );
+			const tx1y0 = luminance( sampleTexture( uvNode.add( texel.mul( vec2( 0, -1 ) ) ) ).xyz );
 			const tx1y1 = luminance( sampleTexture( uvNode.add( texel.mul( vec2( 0, 0 ) ) ) ).xyz );
 			const tx1y2 = luminance( sampleTexture( uvNode.add( texel.mul( vec2( 0, 1 ) ) ) ).xyz );
 
 			// third column
 
-			const tx2y0 = luminance( sampleTexture( uvNode.add( texel.mul( vec2( 1, - 1 ) ) ) ).xyz );
+			const tx2y0 = luminance( sampleTexture( uvNode.add( texel.mul( vec2( 1, -1 ) ) ) ).xyz );
 			const tx2y1 = luminance( sampleTexture( uvNode.add( texel.mul( vec2( 1, 0 ) ) ) ).xyz );
 			const tx2y2 = luminance( sampleTexture( uvNode.add( texel.mul( vec2( 1, 1 ) ) ) ).xyz );
 
@@ -57623,42 +57623,42 @@ class DepthOfFieldNode extends TempNode {
 			col = col.add( sampleTexture( uvNode.add( vec2( 0.0, 0.4 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
 			col = col.add( sampleTexture( uvNode.add( vec2( 0.15, 0.37 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
 			col = col.add( sampleTexture( uvNode.add( vec2( 0.29, 0.29 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.37, 0.15 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.37, 0.15 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
 			col = col.add( sampleTexture( uvNode.add( vec2( 0.40, 0.0 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( 0.37, - 0.15 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( 0.29, - 0.29 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.15, - 0.37 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( 0.0, - 0.4 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.15, 0.37 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.29, 0.29 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( 0.37, -0.15 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( 0.29, -0.29 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.15, -0.37 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( 0.0, -0.4 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.15, 0.37 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.29, 0.29 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
 			col = col.add( sampleTexture( uvNode.add( vec2( 0.37, 0.15 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.4, 0.0 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.37, - 0.15 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.29, - 0.29 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( 0.15, - 0.37 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.4, 0.0 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.37, -0.15 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.29, -0.29 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( 0.15, -0.37 ).mul( aspectcorrect ).mul( dofblur ) ) ) );
 			col = col.add( sampleTexture( uvNode.add( vec2( 0.15, 0.37 ).mul( aspectcorrect ).mul( dofblur9 ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.37, 0.15 ).mul( aspectcorrect ).mul( dofblur9 ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( 0.37, - 0.15 ).mul( aspectcorrect ).mul( dofblur9 ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.15, - 0.37 ).mul( aspectcorrect ).mul( dofblur9 ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.15, 0.37 ).mul( aspectcorrect ).mul( dofblur9 ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.37, 0.15 ).mul( aspectcorrect ).mul( dofblur9 ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( 0.37, -0.15 ).mul( aspectcorrect ).mul( dofblur9 ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.15, -0.37 ).mul( aspectcorrect ).mul( dofblur9 ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.15, 0.37 ).mul( aspectcorrect ).mul( dofblur9 ) ) ) );
 			col = col.add( sampleTexture( uvNode.add( vec2( 0.37, 0.15 ).mul( aspectcorrect ).mul( dofblur9 ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.37, - 0.15 ).mul( aspectcorrect ).mul( dofblur9 ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( 0.15, - 0.37 ).mul( aspectcorrect ).mul( dofblur9 ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.37, -0.15 ).mul( aspectcorrect ).mul( dofblur9 ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( 0.15, -0.37 ).mul( aspectcorrect ).mul( dofblur9 ) ) ) );
 			col = col.add( sampleTexture( uvNode.add( vec2( 0.29, 0.29 ).mul( aspectcorrect ).mul( dofblur7 ) ) ) );
 			col = col.add( sampleTexture( uvNode.add( vec2( 0.40, 0.0 ).mul( aspectcorrect ).mul( dofblur7 ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( 0.29, - 0.29 ).mul( aspectcorrect ).mul( dofblur7 ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( 0.0, - 0.4 ).mul( aspectcorrect ).mul( dofblur7 ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.29, 0.29 ).mul( aspectcorrect ).mul( dofblur7 ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.4, 0.0 ).mul( aspectcorrect ).mul( dofblur7 ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.29, - 0.29 ).mul( aspectcorrect ).mul( dofblur7 ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( 0.29, -0.29 ).mul( aspectcorrect ).mul( dofblur7 ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( 0.0, -0.4 ).mul( aspectcorrect ).mul( dofblur7 ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.29, 0.29 ).mul( aspectcorrect ).mul( dofblur7 ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.4, 0.0 ).mul( aspectcorrect ).mul( dofblur7 ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.29, -0.29 ).mul( aspectcorrect ).mul( dofblur7 ) ) ) );
 			col = col.add( sampleTexture( uvNode.add( vec2( 0.0, 0.4 ).mul( aspectcorrect ).mul( dofblur7 ) ) ) );
 			col = col.add( sampleTexture( uvNode.add( vec2( 0.29, 0.29 ).mul( aspectcorrect ).mul( dofblur4 ) ) ) );
 			col = col.add( sampleTexture( uvNode.add( vec2( 0.4, 0.0 ).mul( aspectcorrect ).mul( dofblur4 ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( 0.29, - 0.29 ).mul( aspectcorrect ).mul( dofblur4 ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( 0.0, - 0.4 ).mul( aspectcorrect ).mul( dofblur4 ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.29, 0.29 ).mul( aspectcorrect ).mul( dofblur4 ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.4, 0.0 ).mul( aspectcorrect ).mul( dofblur4 ) ) ) );
-			col = col.add( sampleTexture( uvNode.add( vec2( - 0.29, - 0.29 ).mul( aspectcorrect ).mul( dofblur4 ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( 0.29, -0.29 ).mul( aspectcorrect ).mul( dofblur4 ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( 0.0, -0.4 ).mul( aspectcorrect ).mul( dofblur4 ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.29, 0.29 ).mul( aspectcorrect ).mul( dofblur4 ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.4, 0.0 ).mul( aspectcorrect ).mul( dofblur4 ) ) ) );
+			col = col.add( sampleTexture( uvNode.add( vec2( -0.29, -0.29 ).mul( aspectcorrect ).mul( dofblur4 ) ) ) );
 			col = col.add( sampleTexture( uvNode.add( vec2( 0.0, 0.4 ).mul( aspectcorrect ).mul( dofblur4 ) ) ) );
 
 			col = col.div( 41 );
@@ -58012,7 +58012,7 @@ class GTAONode extends TempNode {
 			const noiseTexel = sampleNoise( noiseUv );
 			const randomVec = noiseTexel.xyz.mul( 2.0 ).sub( 1.0 );
 			const tangent = vec3( randomVec.xy, 0.0 ).normalize();
-			const bitangent = vec3( tangent.y.mul( - 1.0 ), tangent.x, 0.0 );
+			const bitangent = vec3( tangent.y.mul( -1 ), tangent.x, 0.0 );
 			const kernelMatrix = mat3( tangent, bitangent, vec3( 0.0, 0.0, 1.0 ) );
 
 			const DIRECTIONS = this.SAMPLES.lessThan( 30 ).select( 3, 5 );
@@ -58144,7 +58144,7 @@ function generateMagicSquare( size ) {
 
 	for ( let num = 1; num <= noiseSquareSize; ) {
 
-		if ( i === - 1 && j === noiseSize ) {
+		if ( i === -1 && j === noiseSize ) {
 
 			j = noiseSize - 2;
 			i = 0;
@@ -58406,7 +58406,7 @@ class FXAANode extends TempNode {
 
 	setup() {
 
-		const textureNode = this.textureNode.bias( - 100 );
+		const textureNode = this.textureNode.bias( -100 );
 		const uvNode = textureNode.uvNode || uv();
 
 		// FXAA 3.11 implementation by NVIDIA, ported to WebGL by Agost Biro (biro@archilogic.com)
@@ -58467,10 +58467,10 @@ class FXAANode extends TempNode {
 		const FxaaPixelShader = Fn( ( [ uv, fxaaQualityRcpFrame, fxaaQualityEdgeThreshold, fxaaQualityinvEdgeThreshold ] ) => {
 
 			const rgbaM = FxaaTexTop( uv ).toVar();
-			const rgbaS = FxaaTexOff( uv, vec2( 0.0, - 1.0 ), fxaaQualityRcpFrame.xy ).toVar();
+			const rgbaS = FxaaTexOff( uv, vec2( 0.0, -1 ), fxaaQualityRcpFrame.xy ).toVar();
 			const rgbaE = FxaaTexOff( uv, vec2( 1.0, 0.0 ), fxaaQualityRcpFrame.xy ).toVar();
 			const rgbaN = FxaaTexOff( uv, vec2( 0.0, 1.0 ), fxaaQualityRcpFrame.xy ).toVar();
-			const rgbaW = FxaaTexOff( uv, vec2( - 1.0, 0.0 ), fxaaQualityRcpFrame.xy ).toVar();
+			const rgbaW = FxaaTexOff( uv, vec2( -1, 0.0 ), fxaaQualityRcpFrame.xy ).toVar();
 			// . S .
 			// W M E
 			// . N .
@@ -58503,8 +58503,8 @@ class FXAANode extends TempNode {
 
 				// locate the edge
 
-				const x = contrastE.greaterThan( contrastW ).select( 1, - 1 ).toVar();
-				const y = contrastS.greaterThan( contrastN ).select( 1, - 1 ).toVar();
+				const x = contrastE.greaterThan( contrastW ).select( 1, -1 ).toVar();
+				const y = contrastS.greaterThan( contrastN ).select( 1, -1 ).toVar();
 
 				const dirToEdge = vec2( x, y ).toVar();
 				// . 2 .      . 1 .
@@ -58962,7 +58962,7 @@ class BloomNode extends TempNode {
 
 		for ( let i = 0; i < kernelRadius; i ++ ) {
 
-			coefficients.push( 0.39894 * Math.exp( - 0.5 * i * i / ( kernelRadius * kernelRadius ) ) / kernelRadius );
+			coefficients.push( 0.39894 * Math.exp( -0.5 * i * i / ( kernelRadius * kernelRadius ) ) / kernelRadius );
 
 		}
 
@@ -59148,9 +59148,9 @@ class PixelationNode extends TempNode {
 
 			const diff = property( 'float', 'diff' );
 			diff.addAssign( clamp( sampleDepth( 1, 0 ).sub( depth ) ) );
-			diff.addAssign( clamp( sampleDepth( - 1, 0 ).sub( depth ) ) );
+			diff.addAssign( clamp( sampleDepth( -1, 0 ).sub( depth ) ) );
 			diff.addAssign( clamp( sampleDepth( 0, 1 ).sub( depth ) ) );
-			diff.addAssign( clamp( sampleDepth( 0, - 1 ).sub( depth ) ) );
+			diff.addAssign( clamp( sampleDepth( 0, -1 ).sub( depth ) ) );
 
 			return floor( smoothstep( 0.01, 0.02, diff ).mul( 2 ) ).div( 2 );
 
@@ -59165,7 +59165,7 @@ class PixelationNode extends TempNode {
 
 			const normalEdgeBias = vec3( 1, 1, 1 ); // This should probably be a parameter.
 			const normalDiff = dot( normal.sub( neighborNormal ), normalEdgeBias );
-			const normalIndicator = clamp( smoothstep( - 0.01, 0.01, normalDiff ), 0.0, 1.0 );
+			const normalIndicator = clamp( smoothstep( -0.01, 0.01, normalDiff ), 0.0, 1.0 );
 
 			// Only the shallower pixel should detect the normal edge.
 
@@ -59179,9 +59179,9 @@ class PixelationNode extends TempNode {
 
 			const indicator = property( 'float', 'indicator' );
 
-			indicator.addAssign( neighborNormalEdgeIndicator( 0, - 1, depth, normal ) );
+			indicator.addAssign( neighborNormalEdgeIndicator( 0, -1, depth, normal ) );
 			indicator.addAssign( neighborNormalEdgeIndicator( 0, 1, depth, normal ) );
-			indicator.addAssign( neighborNormalEdgeIndicator( - 1, 0, depth, normal ) );
+			indicator.addAssign( neighborNormalEdgeIndicator( -1, 0, depth, normal ) );
 			indicator.addAssign( neighborNormalEdgeIndicator( 1, 0, depth, normal ) );
 
 			return step( 0.1, indicator );
@@ -59401,7 +59401,7 @@ class SSAAPassNode extends PassNode {
 				// The following equation varies the sampleWeight per sample so that it is uniformly distributed
 				// across a range of values whose rounding errors cancel each other out.
 
-				const uniformCenteredDistribution = ( - 0.5 + ( i + 0.5 ) / jitterOffsets.length );
+				const uniformCenteredDistribution = ( -0.5 + ( i + 0.5 ) / jitterOffsets.length );
 				this.sampleWeight.value += roundingRange * uniformCenteredDistribution;
 
 			}
@@ -59530,28 +59530,28 @@ const _JitterVectors = [
 		[ 0, 0 ]
 	],
 	[
-		[ 4, 4 ], [ - 4, - 4 ]
+		[ 4, 4 ], [ -4, -4 ]
 	],
 	[
-		[ - 2, - 6 ], [ 6, - 2 ], [ - 6, 2 ], [ 2, 6 ]
+		[ -2, -6 ], [ 6, -2 ], [ -6, 2 ], [ 2, 6 ]
 	],
 	[
-		[ 1, - 3 ], [ - 1, 3 ], [ 5, 1 ], [ - 3, - 5 ],
-		[ - 5, 5 ], [ - 7, - 1 ], [ 3, 7 ], [ 7, - 7 ]
+		[ 1, -3 ], [ -1, 3 ], [ 5, 1 ], [ -3, -5 ],
+		[ -5, 5 ], [ -7, -1 ], [ 3, 7 ], [ 7, -7 ]
 	],
 	[
-		[ 1, 1 ], [ - 1, - 3 ], [ - 3, 2 ], [ 4, - 1 ],
-		[ - 5, - 2 ], [ 2, 5 ], [ 5, 3 ], [ 3, - 5 ],
-		[ - 2, 6 ], [ 0, - 7 ], [ - 4, - 6 ], [ - 6, 4 ],
-		[ - 8, 0 ], [ 7, - 4 ], [ 6, 7 ], [ - 7, - 8 ]
+		[ 1, 1 ], [ -1, -3 ], [ -3, 2 ], [ 4, -1 ],
+		[ -5, -2 ], [ 2, 5 ], [ 5, 3 ], [ 3, -5 ],
+		[ -2, 6 ], [ 0, -7 ], [ -4, -6 ], [ -6, 4 ],
+		[ -8, 0 ], [ 7, -4 ], [ 6, 7 ], [ -7, -8 ]
 	],
 	[
-		[ - 4, - 7 ], [ - 7, - 5 ], [ - 3, - 5 ], [ - 5, - 4 ],
-		[ - 1, - 4 ], [ - 2, - 2 ], [ - 6, - 1 ], [ - 4, 0 ],
-		[ - 7, 1 ], [ - 1, 2 ], [ - 6, 3 ], [ - 3, 3 ],
-		[ - 7, 6 ], [ - 3, 6 ], [ - 5, 7 ], [ - 1, 7 ],
-		[ 5, - 7 ], [ 1, - 6 ], [ 6, - 5 ], [ 4, - 4 ],
-		[ 2, - 3 ], [ 7, - 2 ], [ 1, - 1 ], [ 4, - 1 ],
+		[ -4, -7 ], [ -7, -5 ], [ -3, -5 ], [ -5, -4 ],
+		[ -1, -4 ], [ -2, -2 ], [ -6, -1 ], [ -4, 0 ],
+		[ -7, 1 ], [ -1, 2 ], [ -6, 3 ], [ -3, 3 ],
+		[ -7, 6 ], [ -3, 6 ], [ -5, 7 ], [ -1, 7 ],
+		[ 5, -7 ], [ 1, -6 ], [ 6, -5 ], [ 4, -4 ],
+		[ 2, -3 ], [ 7, -2 ], [ 1, -1 ], [ 4, -1 ],
 		[ 2, 1 ], [ 6, 2 ], [ 0, 4 ], [ 4, 4 ],
 		[ 2, 5 ], [ 7, 5 ], [ 5, 6 ], [ 3, 7 ]
 	]
@@ -59753,15 +59753,15 @@ class AnaglyphPassNode extends StereoCompositePassNode {
 		// Dubois matrices from https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.7.6968&rep=rep1&type=pdf#page=4
 
 		this._colorMatrixLeft = uniform( new Matrix3().fromArray( [
-			0.456100, - 0.0400822, - 0.0152161,
-			0.500484, - 0.0378246, - 0.0205971,
-			0.176381, - 0.0157589, - 0.00546856
+			0.456100, -0.0400822, -0.0152161,
+			0.500484, -0.0378246, -0.0205971,
+			0.176381, -0.0157589, -546856e-8
 		] ) );
 
 		this._colorMatrixRight = uniform( new Matrix3().fromArray( [
-			- 0.0434706, 0.378476, - 0.0721527,
-			- 0.0879388, 0.73364, - 0.112961,
-			- 0.00155529, - 0.0184503, 1.2264
+			-0.0434706, 0.378476, -0.0721527,
+			-0.0879388, 0.73364, -0.112961,
+			-155529e-8, -0.0184503, 1.2264
 		] ) );
 
 	}
@@ -60953,7 +60953,7 @@ const VSMPassVertical = Fn( ( { samples, radius, size, shadowPass } ) => {
 	const squaredMean = float( 0 ).toVar();
 
 	const uvStride = samples.lessThanEqual( float( 1 ) ).select( float( 0 ), float( 2 ).div( samples.sub( 1 ) ) );
-	const uvStart = samples.lessThanEqual( float( 1 ) ).select( float( 0 ), float( - 1 ) );
+	const uvStart = samples.lessThanEqual( float( 1 ) ).select( float( 0 ), float( -1 ) );
 
 	Loop( { start: int( 0 ), end: int( samples ), type: 'int', condition: '<' }, ( { i } ) => {
 
@@ -60979,7 +60979,7 @@ const VSMPassHorizontal = Fn( ( { samples, radius, size, shadowPass } ) => {
 	const squaredMean = float( 0 ).toVar();
 
 	const uvStride = samples.lessThanEqual( float( 1 ) ).select( float( 0 ), float( 2 ).div( samples.sub( 1 ) ) );
-	const uvStart = samples.lessThanEqual( float( 1 ) ).select( float( 0 ), float( - 1 ) );
+	const uvStart = samples.lessThanEqual( float( 1 ) ).select( float( 0 ), float( -1 ) );
 
 	Loop( { start: int( 0 ), end: int( samples ), type: 'int', condition: '<' }, ( { i } ) => {
 
@@ -61882,9 +61882,9 @@ const acesFilmicToneMapping = /*@__PURE__*/ Fn( ( [ color, exposure ] ) => {
 
 	// ODT_SAT => XYZ => D60_2_D65 => sRGB
 	const ACESOutputMat = mat3(
-		1.60475, - 0.53108, - 0.07367,
-		- 0.10208, 1.10813, - 0.00605,
-		- 0.00327, - 0.07276, 1.07602
+		1.60475, -0.53108, -0.07367,
+		-0.10208, 1.10813, -605e-5,
+		-327e-5, -0.07276, 1.07602
 	);
 
 	color = color.mul( exposure ).div( 0.6 );
@@ -61908,7 +61908,7 @@ const acesFilmicToneMapping = /*@__PURE__*/ Fn( ( [ color, exposure ] ) => {
 	]
 } );
 
-const LINEAR_REC2020_TO_LINEAR_SRGB = /*@__PURE__*/ mat3( vec3( 1.6605, - 0.1246, - 0.0182 ), vec3( - 0.5876, 1.1329, - 0.1006 ), vec3( - 0.0728, - 0.0083, 1.1187 ) );
+const LINEAR_REC2020_TO_LINEAR_SRGB = /*@__PURE__*/ mat3( vec3( 1.6605, -0.1246, -0.0182 ), vec3( -0.5876, 1.1329, -0.1006 ), vec3( -0.0728, -83e-4, 1.1187 ) );
 const LINEAR_SRGB_TO_LINEAR_REC2020 = /*@__PURE__*/ mat3( vec3( 0.6274, 0.0691, 0.0164 ), vec3( 0.3293, 0.9195, 0.0880 ), vec3( 0.0433, 0.0113, 0.8956 ) );
 
 const agxDefaultContrastApprox = /*@__PURE__*/ Fn( ( [ x_immutable ] ) => {
@@ -61925,8 +61925,8 @@ const agxToneMapping = /*@__PURE__*/ Fn( ( [ color, exposure ] ) => {
 
 	const colortone = vec3( color ).toVar();
 	const AgXInsetMatrix = mat3( vec3( 0.856627153315983, 0.137318972929847, 0.11189821299995 ), vec3( 0.0951212405381588, 0.761241990602591, 0.0767994186031903 ), vec3( 0.0482516061458583, 0.101439036467562, 0.811302368396859 ) );
-	const AgXOutsetMatrix = mat3( vec3( 1.1271005818144368, - 0.1413297634984383, - 0.14132976349843826 ), vec3( - 0.11060664309660323, 1.157823702216272, - 0.11060664309660294 ), vec3( - 0.016493938717834573, - 0.016493938717834257, 1.2519364065950405 ) );
-	const AgxMinEv = float( - 12.47393 );
+	const AgXOutsetMatrix = mat3( vec3( 1.1271005818144368, -0.1413297634984383, -0.14132976349843826 ), vec3( -0.11060664309660323, 1.157823702216272, -0.11060664309660294 ), vec3( -0.016493938717834573, -0.016493938717834257, 1.2519364065950405 ) );
+	const AgxMinEv = float( -12.47393 );
 	const AgxMaxEv = float( 4.026069 );
 	colortone.mulAssign( exposure );
 	colortone.assign( LINEAR_SRGB_TO_LINEAR_REC2020.mul( colortone ) );
@@ -63351,9 +63351,9 @@ const mx_worley_noise_float_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immuta
 	const localpos = vec2( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ) ).toVar();
 	const sqdist = float( 1e6 ).toVar();
 
-	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
+	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
-		Loop( { start: - 1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
+		Loop( { start: -1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
 			const dist = float( mx_worley_distance( localpos, x, y, X, Y, jitter, metric ) ).toVar();
 			sqdist.assign( min$1( sqdist, dist ) );
@@ -63389,9 +63389,9 @@ const mx_worley_noise_vec2_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 	const localpos = vec2( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ) ).toVar();
 	const sqdist = vec2( 1e6, 1e6 ).toVar();
 
-	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
+	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
-		Loop( { start: - 1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
+		Loop( { start: -1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
 			const dist = float( mx_worley_distance( localpos, x, y, X, Y, jitter, metric ) ).toVar();
 
@@ -63437,9 +63437,9 @@ const mx_worley_noise_vec3_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 	const localpos = vec2( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ) ).toVar();
 	const sqdist = vec3( 1e6, 1e6, 1e6 ).toVar();
 
-	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
+	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
-		Loop( { start: - 1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
+		Loop( { start: -1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
 			const dist = float( mx_worley_distance( localpos, x, y, X, Y, jitter, metric ) ).toVar();
 
@@ -63491,11 +63491,11 @@ const mx_worley_noise_float_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immuta
 	const localpos = vec3( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ), mx_floorfrac( p.z, Z ) ).toVar();
 	const sqdist = float( 1e6 ).toVar();
 
-	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
+	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
-		Loop( { start: - 1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
+		Loop( { start: -1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
-			Loop( { start: - 1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
+			Loop( { start: -1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
 
 				const dist = float( mx_worley_distance( localpos, x, y, z, X, Y, Z, jitter, metric ) ).toVar();
 				sqdist.assign( min$1( sqdist, dist ) );
@@ -63535,11 +63535,11 @@ const mx_worley_noise_vec2_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 	const localpos = vec3( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ), mx_floorfrac( p.z, Z ) ).toVar();
 	const sqdist = vec2( 1e6, 1e6 ).toVar();
 
-	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
+	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
-		Loop( { start: - 1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
+		Loop( { start: -1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
-			Loop( { start: - 1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
+			Loop( { start: -1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
 
 				const dist = float( mx_worley_distance( localpos, x, y, z, X, Y, Z, jitter, metric ) ).toVar();
 
@@ -63589,11 +63589,11 @@ const mx_worley_noise_vec3_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 	const localpos = vec3( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ), mx_floorfrac( p.z, Z ) ).toVar();
 	const sqdist = vec3( 1e6, 1e6, 1e6 ).toVar();
 
-	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
+	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
-		Loop( { start: - 1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
+		Loop( { start: -1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
-			Loop( { start: - 1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
+			Loop( { start: -1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
 
 				const dist = float( mx_worley_distance( localpos, x, y, z, X, Y, Z, jitter, metric ) ).toVar();
 
@@ -64312,7 +64312,7 @@ const parse$1 = ( source ) => {
 
 	const pragmaMainIndex = source.indexOf( pragmaMain );
 
-	const mainCode = pragmaMainIndex !== - 1 ? source.slice( pragmaMainIndex + pragmaMain.length ) : source;
+	const mainCode = pragmaMainIndex !== -1 ? source.slice( pragmaMainIndex + pragmaMain.length ) : source;
 
 	const declaration = mainCode.match( declarationRegexp$1 );
 
@@ -64381,7 +64381,7 @@ const parse$1 = ( source ) => {
 
 		const precision = declaration[ 1 ] !== undefined ? declaration[ 1 ] : '';
 
-		const headerCode = pragmaMainIndex !== - 1 ? source.slice( 0, pragmaMainIndex ) : '';
+		const headerCode = pragmaMainIndex !== -1 ? source.slice( 0, pragmaMainIndex ) : '';
 
 		return {
 			type,
@@ -67805,7 +67805,7 @@ class UniformsGroup extends UniformBuffer {
 
 		const index = this.uniforms.indexOf( uniform );
 
-		if ( index !== - 1 ) {
+		if ( index !== -1 ) {
 
 			this.uniforms.splice( index, 1 );
 
