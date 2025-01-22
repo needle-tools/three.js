@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.169.4] – 2025-01-22
+- fix: backport WebXRManager layers support check
+
 ## [0.169.3] – 2025-01-10
 - feat: OrbitControls smooth zoom to cursor
 
