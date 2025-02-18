@@ -14,7 +14,8 @@ import {
 	mx_safepower, mx_contrast,
 	mx_srgb_texture_to_lin_rec709,
 	saturation,
-	timerLocal, frameId
+	timerLocal, frameId,
+	normalView,
 } from 'three';
 
 import 'three/examples/jsm/renderers/webgl-legacy/nodes/WebGLNodes.js';
@@ -692,8 +693,15 @@ class MaterialXNode {
 		material.metalnessNode = metalnessNode || float( 0 );
 		material.clearcoatNode = clearcoatNode || float( 0 );
 		material.clearcoatRoughnessNode = clearcoatRoughnessNode || float( 0 );
-		if ( normalNode ) material.normalNode = normalNode;
+		if ( normalNode ) {
+			normalNode.normalMapType = 0;
+			// material.normalNode = vec3(0,1,0);
+			// material.normalNode = normalView;
+			material.normalNode = normalNode;
+		}
 		if ( emissiveNode ) material.emissiveNode = emissiveNode;
+
+		console.log(material);
 
 	}
 

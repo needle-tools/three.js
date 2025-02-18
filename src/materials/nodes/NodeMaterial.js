@@ -445,7 +445,7 @@ class NodeMaterial extends Material {
 
 		let lightsN = this.lightsNode || builder.lightsNode;
 
-		if ( materialLightsNode.length > 0 ) {
+		if ( materialLightsNode.length > 0 && lightsN && lightsN.length > 0 ) {
 
 			lightsN = lights( [ ...lightsN.getLights(), ...materialLightsNode ] );
 

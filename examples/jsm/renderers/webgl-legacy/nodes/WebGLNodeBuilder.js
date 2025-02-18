@@ -147,7 +147,7 @@ class WebGLNodeBuilder extends NodeBuilder {
 		}
 
 		if ( material.normalNode && material.normalNode.isNode ) {
-
+			/*
 			this.addSlot( 'fragment', new SlotNode( {
 				node: material.normalNode,
 				nodeType: 'vec3',
@@ -155,7 +155,7 @@ class WebGLNodeBuilder extends NodeBuilder {
 				target: 'normal = %RESULT%;',
 				inclusionType: 'append'
 			} ) );
-
+*/
 		}
 
 		if ( material.emissiveNode && material.emissiveNode.isNode ) {
