@@ -941,6 +941,16 @@ class FBXTreeParser {
 
 			}
 
+			if (node.isSkinnedMesh) {
+
+				// Compute bounding sphere
+				node.computeBoundingBox();
+				node.computeBoundingSphere();
+				node.boundingBox.expandByScalar( 3 );
+				node.boundingSphere.radius *= 3;
+
+			}
+
 		} );
 
 		const animations = new AnimationParser().parse();
