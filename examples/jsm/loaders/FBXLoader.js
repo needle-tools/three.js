@@ -22,6 +22,7 @@ import {
 	Mesh,
 	MeshLambertMaterial,
 	MeshPhongMaterial,
+	MeshStandardMaterial,
 	NumberKeyframeTrack,
 	Object3D,
 	PerspectiveCamera,
