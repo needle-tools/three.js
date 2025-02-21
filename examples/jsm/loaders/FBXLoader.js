@@ -176,6 +176,12 @@ class FBXLoader extends Loader {
 
 	}
 
+	getFbxTree() {
+
+		return fbxTree;
+
+	}
+
 }
 
 // Parse the FBXTree object returned by the BinaryParser or TextParser and return a Group
