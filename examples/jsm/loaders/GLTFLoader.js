@@ -308,13 +308,24 @@ class GLTFLoader extends Loader {
 	parse( data, path, onLoad, onError ) {
 
 		let json;
+		let jsonErrorData;
 		const extensions = {};
 		const plugins = {};
 		const textDecoder = new TextDecoder();
 
 		if ( typeof data === 'string' ) {
 
-			json = JSON.parse( data );
+			try {
+
+				json = JSON.parse( data );
+
+			} catch ( error ) {
+
+				jsonErrorData = data;
+				if ( onError ) onError( error );
+				return;
+
+			}
 
 		} else if ( data instanceof ArrayBuffer ) {
 
@@ -333,11 +344,31 @@ class GLTFLoader extends Loader {
 
 				}
 
-				json = JSON.parse( extensions[ EXTENSIONS.KHR_BINARY_GLTF ].content );
+				try {
+
+					json = JSON.parse( extensions[ EXTENSIONS.KHR_BINARY_GLTF ].content );
+
+				} catch ( error ) {
+
+					jsonErrorData = extensions[ EXTENSIONS.KHR_BINARY_GLTF ].content;
+					if ( onError ) onError( error );
+					return;
+
+				}
 
 			} else {
 
-				json = JSON.parse( textDecoder.decode( data ) );
+				try {
+
+					json = JSON.parse( textDecoder.decode( data ) );
+
+				} catch ( error ) {
+
+					jsonErrorData = textDecoder.decode( data );
+					if ( onError ) onError( error );
+					return;
+				
+				}
 
 			}
 
@@ -353,6 +384,10 @@ class GLTFLoader extends Loader {
 			return;
 
 		}
+
+		// Allows inspection of JSON data contained in glTF after loading has completed.
+		this.json = json;
+		this.jsonErrorData = jsonErrorData;
 
 		const parser = new GLTFParser( json, {
 
