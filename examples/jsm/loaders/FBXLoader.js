@@ -2147,6 +2147,11 @@ class GeometryParser {
 			// so that we don't end up with an array of 0 triangles for the faces not participating in morph.
 			triangles = ShapeUtils.triangulateShape( triangulationInput, [] );
 
+		} else if ( faceLength === 2 ) {
+
+			console.warn( 'THREE.FBXLoader: Edge topology detected. This is currently not supported. The resulting mesh will not be correct.' );
+			triangles = [[ 0, 1, 2 ]];
+
 		} else {
 
 			// Regular triangle, skip earcut triangulation step
