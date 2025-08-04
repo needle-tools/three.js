@@ -21,6 +21,15 @@ import {
 const _changeEvent = { type: 'change' };
 const _startEvent = { type: 'start' };
 const _endEvent = { type: 'end' };
+
+/**
+ * Fires when all adjustments have finished (including damping).
+ *
+ * @event OrbitControls#endDamping
+ * @type {Object}
+ */
+const _endDampingEvent = { type: 'endDamping' };
+
 const _ray = new Ray();
 const _plane = new Plane();
 const _TILT_LIMIT = Math.cos( 70 * MathUtils.DEG2RAD );
@@ -161,6 +170,8 @@ class OrbitControls extends Controls {
 		this._pointerPositions = {};
 
 		this._controlActive = false;
+		this._lastIsDamping = false;
+		this._isDamping = false;
 
 		// event listeners
 
@@ -288,10 +299,14 @@ class OrbitControls extends Controls {
 		this.update();
 
 		this.state = _STATE.NONE;
+		this._isDamping = false;
 
 	}
 
 	update( deltaTime = null ) {
+
+		// Needle: if damping is enabled, update is managed externally, so we don't want to do it here.
+		if ( this.enableDamping && deltaTime === null ) return;
 
 		const position = this.object.getWorldPosition( this.object.position );
 
@@ -391,7 +406,7 @@ class OrbitControls extends Controls {
 
 			const prevRadius = this._spherical.radius;
 			this._spherical.radius = this._clampDistance( this._spherical.radius * this._currentScale );
-			zoomChanged = prevRadius != this._spherical.radius;
+			zoomChanged = Math.abs( prevRadius - this._spherical.radius ) > _EPS * 100;
 
 		}
 
@@ -435,7 +450,7 @@ class OrbitControls extends Controls {
 				this.object.position.addScaledVector( this._dollyDirection, radiusDelta );
 				this.object.updateMatrixWorld();
 
-				zoomChanged = !! radiusDelta;
+				zoomChanged = Math.abs( radiusDelta ) > _EPS;
 
 			} else if ( this.object.isOrthographicCamera ) {
 
@@ -447,7 +462,7 @@ class OrbitControls extends Controls {
 				this.object.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.object.zoom / this._currentScale ) );
 				this.object.updateProjectionMatrix();
 
-				zoomChanged = prevZoom !== this.object.zoom;
+				zoomChanged = Math.abs( prevZoom - this.object.zoom ) > _EPS;
 
 				const mouseAfter = new Vector3( this._mouse.x, this._mouse.y, 0 );
 				mouseAfter.unproject( this.object );
@@ -503,7 +518,7 @@ class OrbitControls extends Controls {
 			const prevZoom = this.object.zoom;
 			this.object.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.object.zoom / this._scale ) );
 
-			if ( prevZoom !== this.object.zoom ) {
+			if ( Math.abs( prevZoom - this.object.zoom ) > _EPS ) {
 
 				this.object.updateProjectionMatrix();
 				zoomChanged = true;
@@ -529,13 +544,32 @@ class OrbitControls extends Controls {
 			this._lastQuaternion.copy( this.object.quaternion );
 			this._lastTargetPosition.copy( this.target );
 
+			this._lastIsDamping = true;
+			this._isDamping = true;
+
 			return true;
+
+		} else {
+
+			this._lastPosition.copy( this.object.position );
+			this._lastQuaternion.copy( this.object.quaternion );
+			this._lastTargetPosition.copy( this.target );
+
+			this._lastIsDamping = this._isDamping;
+			this._isDamping = false;
 
 		}
 
+		if ( this._lastIsDamping && ! this._isDamping ) {
+
+			this._isDamping = false;
+			this._lastIsDamping = false;
+			this.dispatchEvent( _endDampingEvent );
+
+		}
 
 		this._performCursorZoom = false;
-		
+
 		return false;
 
 	}
