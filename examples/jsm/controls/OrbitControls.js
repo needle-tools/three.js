@@ -36,12 +36,12 @@ const _startEvent = { type: 'start' };
 const _endEvent = { type: 'end' };
 
 /**
- * Fires when all adjustments have finished (including damping).
+ * Fires when all movements have finished, including potential damping.
  *
- * @event OrbitControls#endDamping
+ * @event OrbitControls#endMovement
  * @type {Object}
  */
-const _endDampingEvent = { type: 'endDamping' };
+const _endMovementEvent = { type: 'endMovement' };
 
 const _ray = new Ray();
 const _plane = new Plane();
@@ -950,16 +950,20 @@ class OrbitControls extends Controls {
 			this._lastQuaternion.copy( this.object.quaternion );
 			this._lastTargetPosition.copy( this.target );
 
-			this._lastIsDamping = this._isDamping;
-			this._isDamping = false;
+			if ( this.state === _STATE.NONE ) {
+
+				this._lastIsDamping = this._isDamping;
+				this._isDamping = false;
+
+			}
 
 		}
 
-		if ( this._lastIsDamping && ! this._isDamping ) {
+		if ( this._lastIsDamping && ! this._isDamping && this.state === _STATE.NONE ) {
 
 			this._isDamping = false;
 			this._lastIsDamping = false;
-			this.dispatchEvent( _endDampingEvent );
+			this.dispatchEvent( _endMovementEvent );
 
 		}
 
