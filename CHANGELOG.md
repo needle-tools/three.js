@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.169.6] – 2025-08-04
+- fix: some checks inside OrbitControls were using direct floating point comparisons, now using `EPSILON` for checks
+- add: add `endDamping` event to OrbitControls
+- add: warning for edge topology in FBXLoader
+
 ## [0.169.5] – 2025-02-21
 - fix: FBXLoader didn't handle invalid material indices so far
 - add: FBXLoader now exposes `getFbxTree()` for debugging and validation
