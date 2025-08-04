@@ -2028,14 +2028,14 @@ class GLTFWriter {
 
 				for ( const attributeName in geometry.morphAttributes ) {
 
-					// glTF 2.0 morph supports only POSITION/NORMAL/TANGENT.
+					// glTF 2.0 morph supports only POSITION/NORMAL/TANGENT/COLOR.
 					// Three.js doesn't support TANGENT yet.
 
-					if ( attributeName !== 'position' && attributeName !== 'normal' ) {
+					if ( attributeName !== 'position' && attributeName !== 'normal' && attributeName !== 'color' ) {
 
 						if ( ! warned ) {
 
-							console.warn( 'GLTFExporter: Only POSITION and NORMAL morph are supported.' );
+							console.warn( 'GLTFExporter: Only POSITION, NORMAL and COLOR morph are supported.' );
 							warned = true;
 
 						}
@@ -2045,7 +2045,7 @@ class GLTFWriter {
 					}
 
 					const attribute = geometry.morphAttributes[ attributeName ][ i ];
-					const gltfAttributeName = attributeName.toUpperCase();
+					const gltfAttributeName = attributeName.toUpperCase() + ( attributeName === 'color' ? '_0' : '' );
 
 					// Three.js morph attribute has absolute values while the one of glTF has relative values.
 					//
