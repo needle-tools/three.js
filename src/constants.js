@@ -92,6 +92,15 @@ export const UnsignedShort4444Type = 1017;
 export const UnsignedShort5551Type = 1018;
 export const UnsignedInt248Type = 1020;
 export const UnsignedInt5999Type = 35902;
+
+/**
+ * An unsigned int 10_11_11 (packed) data type for textures.
+ *
+ * @type {number}
+ * @constant
+ */
+export const UnsignedInt101111Type = 35899;
+
 export const AlphaFormat = 1021;
 export const RGBFormat = 1022;
 export const RGBAFormat = 1023;
