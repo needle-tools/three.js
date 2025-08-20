@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgpu - glTF + anisotropy</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+	</head>
+
+	<body>
+		<div id="info">
+			<a href="https://threejs.org" target="_blank" rel="noopener">three.js webgpu</a> Extended Range (HDR)<br />
+		</div>
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "../build/three.webgpu.js",
+					"three/webgpu": "../build/three.webgpu.js",
+					"three/tsl": "../build/three.webgpu.js",
+					"three/addons/": "./jsm/"
+				}
+			}
+		</script>
+
+		<script type="module">
+
+			import * as THREE from 'three';
+
+			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+			import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+			
+			import { ExtendedSRGBColorSpace, ExtendedSRGBColorSpaceImpl } from 'three/addons/math/ColorSpaces.js';
+
+			THREE.ColorManagement.define( { [ ExtendedSRGBColorSpace ]: ExtendedSRGBColorSpaceImpl } );
+
+			let renderer, scene, camera, controls, lastContent;
+			const spheres = [];
+
+			init();
+
+			async function init() {
+
+				renderer = new THREE.WebGPURenderer( { antialias: true, outputType: THREE.HalfFloatType } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.setAnimationLoop( render );
+				renderer.outputColorSpace = ExtendedSRGBColorSpace;
+
+				// TODO: Add support for tone mapping #29573
+				// renderer.toneMapping = THREE.ACESFilmicToneMapping;
+				renderer.toneMappingExposure = 1.35;
+
+				document.body.appendChild( renderer.domElement );
+
+				scene = new THREE.Scene();
+
+				camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 0.01, 10 );
+				camera.position.set( - 0.35, - 0.2, 0.35 );
+
+				controls = new OrbitControls( camera, renderer.domElement );
+				controls.target.set( 0, - 0.08, 0.11 );
+				controls.minDistance = 0.1;
+				controls.maxDistance = 2;
+				controls.addEventListener( 'change', render );
+				controls.update();
+
+				const rgbeLoader = new RGBELoader().setPath( 'textures/equirectangular/' );
+				const gltfLoader = new GLTFLoader().setPath( 'models/gltf/' );
+
+				const [ texture, gltf ] = await Promise.all( [
+					rgbeLoader.loadAsync( 'royal_esplanade_1k.hdr' ),
+					gltfLoader.loadAsync( 'AnisotropyBarnLamp.glb' ),
+				] );
+
+				// environment
+
+				texture.mapping = THREE.EquirectangularReflectionMapping;
+
+				scene.background = texture;
+				scene.backgroundBlurriness = 0.0;
+				scene.environment = texture;
+				scene.environmentIntensity = 5;
+
+				// model
+
+
+				scene.add( gltf.scene );
+				lastContent = gltf.scene;
+
+				window.addEventListener( 'resize', onWindowResize );
+
+				// drop listener for GLB
+
+				renderer.domElement.addEventListener( 'dragover', event => {
+
+					event.preventDefault();
+
+				} );
+
+				renderer.domElement.addEventListener( 'drop', async event => {
+
+					event.preventDefault();
+					const file = event.dataTransfer.files[ 0 ];
+					if ( file !== undefined && file.name.endsWith( '.glb' ) ) {
+
+						// convert to blob
+						const blob = new Blob( [ await file.arrayBuffer() ], { type: 'application/octet-stream' } );
+						gltfLoader.setPath( '' );
+						const gltf = await gltfLoader.loadAsync( URL.createObjectURL( blob ) );
+
+
+						scene.add( gltf.scene );
+						scene.remove( lastContent );
+						lastContent = gltf.scene;
+
+					}
+
+				} );
+
+				// add random moving glowing spheres
+
+				const sphereGeometry = new THREE.SphereGeometry( 0.02, 32, 32 );
+
+				for ( let i = 0; i < 20; i ++ ) {
+
+					const sphereMaterial = new THREE.MeshPhysicalMaterial( { color: 0x000000, emissive: Math.random() * 0xffffff, emissiveIntensity: 30 } );
+					const sphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
+					sphere.position.set( Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5 ).normalize().multiplyScalar( 0.5 );
+					scene.add( sphere );
+
+					spheres.push( sphere );
+
+				}
+
+			}
+
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function render() {
+
+				renderer.renderAsync( scene, camera );
+
+				for ( let i = 0; i < spheres.length; i ++ ) {
+
+					const sphere = spheres[ i ];
+					sphere.position.y = Math.sin( performance.now() * 0.0003 + i ) * 0.5;
+
+				}
+
+			}
+
+		</script>
+
+	</body>
+</html>

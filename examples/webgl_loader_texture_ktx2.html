@@ -74,7 +74,7 @@
 		<script type="importmap">
 			{
 				"imports": {
-					"three": "../build/three.module.js",
+					"three": "../build/three.webgpu.js",
 					"three/addons/": "./jsm/"
 				}
 			}
@@ -140,9 +140,12 @@
 
 				canvas = document.getElementById( 'c' );
 
-				renderer = new THREE.WebGLRenderer( { canvas, antialias: true } );
+				renderer = new THREE.WebGPURenderer( { canvas, antialias: true } );
 				renderer.setClearColor( 0xffffff, 1 );
 				renderer.setPixelRatio( window.devicePixelRatio );
+
+				if ( renderer.isWebGPURenderer )
+					await renderer.init();
 
 				const loader = new KTX2Loader()
 					.setTranscoderPath( 'jsm/libs/basis/' )
@@ -282,7 +285,7 @@
 					const bottom = renderer.domElement.clientHeight - rect.bottom;
 
 					renderer.setViewport( left, bottom, width, height );
-					renderer.setScissor( left, bottom, width, height );
+					// renderer.setScissor( left, bottom, width, height );
 
 					const camera = scene.userData.camera;
 
