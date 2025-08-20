@@ -1,9 +1,9 @@
-import { Mesh, MeshBasicMaterial, SphereGeometry, Vector3 } from 'three';
+import { Mesh, SphereGeometry, Vector3, ShaderMaterial, CubeUVReflectionMapping } from 'three';
 
 /**
- * A ground-projected skybox. The height is how far the camera that took the photo was above the ground - 
- * a larger value will magnify the downward part of the image. By default the object is centered at the camera, 
- * so it is often helpful to set skybox.position.y = height to put the ground at the origin. Set the radius 
+ * A ground-projected skybox. The height is how far the camera that took the photo was above the ground -
+ * a larger value will magnify the downward part of the image. By default the object is centered at the camera,
+ * so it is often helpful to set skybox.position.y = height to put the ground at the origin. Set the radius
  * large enough to ensure your user's camera stays inside.
  */
 
@@ -18,7 +18,7 @@ class GroundedSkybox extends Mesh {
 		}
 
 		const geometry = new SphereGeometry( radius, 2 * resolution, resolution );
-		geometry.scale( 1, 1, -1 );
+		geometry.scale( 1, 1, - 1 );
 
 		const pos = geometry.getAttribute( 'position' );
 		const tmp = new Vector3();
@@ -41,7 +41,92 @@ class GroundedSkybox extends Mesh {
 
 		pos.needsUpdate = true;
 
-		super( geometry, new MeshBasicMaterial( { map, depthWrite: false } ) );
+
+		// Build a minimal shader that samples `map`.
+		// If the texture uses the PMREM CubeUV layout, enable the CubeUV sampling path.
+		const isCubeUV = map && map.mapping === CubeUVReflectionMapping;
+		const defines = {};
+		if ( isCubeUV ) {
+
+			// Derive CubeUV constants from the packed texture size (same as WebGLProgram.generateCubeUVSize).
+			const image = map.image;
+			const imageWidth = image && image.width ? image.width : 0;
+			const imageHeight = image && image.height ? image.height : 0;
+
+			if ( imageWidth > 0 && imageHeight > 0 ) {
+
+				defines.USE_CUBEUV = 1;
+				defines.CUBEUV_TEXEL_WIDTH = ( 1 / imageWidth );
+				defines.CUBEUV_TEXEL_HEIGHT = ( 1 / imageHeight );
+				defines.CUBEUV_MAX_MIP = ( Math.log2( imageHeight ) - 2 ) + ".";
+
+			}
+
+		}
+
+		const material = new ShaderMaterial( {
+			name: 'GroundedSkyboxMaterial',
+			uniforms: {
+				map: { value: map },
+				backgroundBlurriness: { value: 0.0 },
+			},
+			defines: defines,
+			vertexShader: /* glsl */`
+				varying vec2 vUv;
+				varying vec3 vDir;
+				void main() {
+					vUv = uv;
+					vec3 worldPos = ( modelMatrix * vec4( position, 1.0 ) ).xyz;
+					vDir = worldPos - cameraPosition;
+					vDir = position.xyz;
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+				}
+			`,
+			fragmentShader: /* glsl */`
+				precision mediump float;
+				precision mediump int;
+				uniform sampler2D map;
+				uniform float backgroundBlurriness;
+				varying vec2 vUv;
+				varying vec3 vDir;
+
+				#ifdef USE_CUBEUV
+				#define ENVMAP_TYPE_CUBE_UV
+				#include <cube_uv_reflection_fragment>
+				#endif
+				#include <common>
+
+				void main() {
+					vec4 col;
+					#ifdef USE_CUBEUV
+						// Sample the CubeUV-packed PMREM texture with zero roughness (sharpest level).
+						vec3 dir = normalize( vDir );
+						col = textureCubeUV( map, dir, backgroundBlurriness * (-vDir.y + 10.0) );
+					#else
+						// Fallback: regular 2D texture sampling using mesh UVs.
+						col = texture2D( map, vUv );
+					#endif
+					gl_FragColor = col;
+					#include <colorspace_fragment>
+				}
+			`,
+			depthWrite: false
+		} );
+		console.log(material);
+
+		super( geometry, material );
+
+	}
+
+	set map( value ) {
+
+		this.material.uniforms.map.value = value;
+
+	}
+
+	set backgroundBlurriness( value ) {
+
+		this.material.uniforms.backgroundBlurriness.value = value;
 
 	}
 

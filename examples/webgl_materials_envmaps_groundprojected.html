@@ -50,6 +50,13 @@
 
 			async function init() {
 
+				//
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
 				camera = new THREE.PerspectiveCamera(
 					40,
 					window.innerWidth / window.innerHeight,
@@ -65,11 +72,17 @@
 				const envMap = await hdrLoader.loadAsync( 'textures/equirectangular/blouberg_sunrise_2_1k.hdr' );
 				envMap.mapping = THREE.EquirectangularReflectionMapping;
 
-				skybox = new GroundedSkybox( envMap, params.height, params.radius );
+				const pmremGenerator = new THREE.PMREMGenerator( renderer );
+				const pmremTexture = await pmremGenerator.fromEquirectangular( envMap );
+				pmremGenerator.dispose();
+
+				scene.backgroundBlurriness = 0.1;
+				scene.environment = pmremTexture.texture;
+
+				skybox = new GroundedSkybox( scene.environment, params.height, params.radius );
 				skybox.position.y = params.height - 0.01;
 				scene.add( skybox );
-
-				scene.environment = envMap;
+				skybox.backgroundBlurriness = scene.backgroundBlurriness;
 
 				const dracoLoader = new DRACOLoader();
 				dracoLoader.setDecoderPath( 'jsm/libs/draco/gltf/' );
@@ -82,7 +95,7 @@
 				loader.load( 'models/gltf/ferrari.glb', function ( gltf ) {
 
 					const bodyMaterial = new THREE.MeshPhysicalMaterial( {
-						color: 0x000000, metalness: 1.0, roughness: 0.8,
+						color: 0x000000, metalness: 1.0, roughness: 0.0, // r=0.8
 						clearcoat: 1.0, clearcoatRoughness: 0.2
 					} );
 
@@ -126,13 +139,6 @@
 
 				//
 
-				renderer = new THREE.WebGLRenderer( { antialias: true } );
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				renderer.toneMapping = THREE.ACESFilmicToneMapping;
-
-				//
-
 				const controls = new OrbitControls( camera, renderer.domElement );
 				controls.addEventListener( 'change', render );
 				controls.target.set( 0, 2, 0 );
@@ -160,6 +166,15 @@
 						scene.background = scene.environment;
 
 					}
+
+					render();
+
+				} );
+
+				// add backgroundBlurriness controls
+				gui.add( scene, 'backgroundBlurriness', 0, 1 ).name( 'Background Blur' ).onChange( function ( value ) {
+
+					skybox.backgroundBlurriness = value;
 
 					render();
 
