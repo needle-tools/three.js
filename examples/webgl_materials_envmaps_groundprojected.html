@@ -83,6 +83,7 @@
 				skybox.position.y = params.height - 0.01;
 				scene.add( skybox );
 				skybox.backgroundBlurriness = scene.backgroundBlurriness;
+				skybox.backgroundIntensity = scene.backgroundIntensity;
 
 				const dracoLoader = new DRACOLoader();
 				dracoLoader.setDecoderPath( 'jsm/libs/draco/gltf/' );
@@ -175,6 +176,15 @@
 				gui.add( scene, 'backgroundBlurriness', 0, 1 ).name( 'Background Blur' ).onChange( function ( value ) {
 
 					skybox.backgroundBlurriness = value;
+
+					render();
+
+				} );
+
+				// add backgroundIntensity controls
+				gui.add( scene, 'backgroundIntensity', 0, 1 ).name( 'Background Intensity' ).onChange( function ( value ) {
+
+					skybox.backgroundIntensity = value;
 
 					render();
 

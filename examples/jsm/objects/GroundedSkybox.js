@@ -58,7 +58,7 @@ class GroundedSkybox extends Mesh {
 				defines.USE_CUBEUV = 1;
 				defines.CUBEUV_TEXEL_WIDTH = ( 1 / imageWidth );
 				defines.CUBEUV_TEXEL_HEIGHT = ( 1 / imageHeight );
-				defines.CUBEUV_MAX_MIP = ( Math.log2( imageHeight ) - 2 ) + ".";
+				defines.CUBEUV_MAX_MIP = ( Math.log2( imageHeight ) - 2 ) + '.';
 
 			}
 
@@ -69,16 +69,22 @@ class GroundedSkybox extends Mesh {
 			uniforms: {
 				map: { value: map },
 				backgroundBlurriness: { value: 0.0 },
+				backgroundIntensity: { value: 1.0 },
+				radius: { value: radius },
 			},
 			defines: defines,
 			vertexShader: /* glsl */`
 				varying vec2 vUv;
-				varying vec3 vDir;
+				varying vec4 vDir;
+				uniform float radius;
 				void main() {
 					vUv = uv;
 					vec3 worldPos = ( modelMatrix * vec4( position, 1.0 ) ).xyz;
-					vDir = worldPos - cameraPosition;
-					vDir = position.xyz;
+					float offset = radius * 0.1;
+					// Use a cubic smoothstep for a smoother transition than linear
+					float t = clamp( ( length( position ) - offset ) / ( radius - offset ), 0.0, 1.0 );
+					float factor = t * t * ( 3.0 - 2.0 * t );
+					vDir = vec4( position.xyz, factor );
 					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 				}
 			`,
@@ -87,8 +93,9 @@ class GroundedSkybox extends Mesh {
 				precision mediump int;
 				uniform sampler2D map;
 				uniform float backgroundBlurriness;
+				uniform float backgroundIntensity;
 				varying vec2 vUv;
-				varying vec3 vDir;
+				varying vec4 vDir;
 
 				#ifdef USE_CUBEUV
 				#define ENVMAP_TYPE_CUBE_UV
@@ -100,8 +107,9 @@ class GroundedSkybox extends Mesh {
 					vec4 col;
 					#ifdef USE_CUBEUV
 						// Sample the CubeUV-packed PMREM texture with zero roughness (sharpest level).
-						vec3 dir = normalize( vDir );
-						col = textureCubeUV( map, dir, backgroundBlurriness * (-vDir.y + 10.0) );
+						vec3 dir = normalize( vDir.xyz );
+						col = textureCubeUV( map, dir, backgroundBlurriness * vDir.w );
+						col *= mix( 1.0, 0.0, (1.0 - backgroundIntensity) * vDir.w );
 					#else
 						// Fallback: regular 2D texture sampling using mesh UVs.
 						col = texture2D( map, vUv );
@@ -112,7 +120,6 @@ class GroundedSkybox extends Mesh {
 			`,
 			depthWrite: false
 		} );
-		console.log(material);
 
 		super( geometry, material );
 
@@ -127,6 +134,12 @@ class GroundedSkybox extends Mesh {
 	set backgroundBlurriness( value ) {
 
 		this.material.uniforms.backgroundBlurriness.value = value;
+
+	}
+
+	set backgroundIntensity( value ) {
+
+		this.material.uniforms.backgroundIntensity.value = value;
 
 	}
 
