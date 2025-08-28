@@ -50,6 +50,8 @@
 			import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 			import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 			import { GLTFAnimationPointerExtension } from '@needle-tools/three-animation-pointer';
+			import {Pane} from 'https://cdn.jsdelivr.net/npm/tweakpane@4.0.5/dist/tweakpane.min.js';
+
 
 			let mixer;
 
@@ -99,6 +101,7 @@
 
 				const model = gltf.scene;
 				scene.add( model );
+				console.log({gltf});
 
 				mixer = new THREE.AnimationMixer( model );
 				mixer.clipAction( gltf.animations[ 0 ] ).play();
@@ -121,12 +124,27 @@
 
 			};
 
+			const pane = new Pane();
+			pane.element.style.marginTop = "120px";
+			let playAnim = false;
 
+			const resetButton = pane.addButton({
+				title: 'Toggle Animation',
+			});
+			resetButton.on('click', () => {
+				playAnim = !playAnim;
+			});
+			// const resetBtn = pane.addButton({
+			// 	title: 'Reset Animation',
+			// });
+			// resetBtn.on('click', () => {
+			// 	mixer.stopAllAction();
+			// });
 			function animate() {
 
 				const delta = clock.getDelta();
 
-				mixer.update( delta );
+				if(playAnim) mixer.update( delta );
 
 				controls.update();
 
