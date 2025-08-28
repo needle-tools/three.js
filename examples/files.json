@@ -357,6 +357,7 @@
 		"webgpu_lines_fat_wireframe",
 		"webgpu_lines_fat",
 		"webgpu_loader_gltf",
+		"webgpu_loader_gltf_animation_pointer",
 		"webgpu_loader_gltf_anisotropy",
 		"webgpu_loader_gltf_compressed",
 		"webgpu_loader_gltf_dispersion",
