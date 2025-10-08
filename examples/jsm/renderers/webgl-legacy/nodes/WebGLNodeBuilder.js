@@ -637,7 +637,10 @@ ${ flowData.code }
 			const uniforms = this.getUniforms( shaderStage );
 			const attributes = this.getAttributes( shaderStage );
 			const varyings = this.getVaryings( shaderStage );
-			const vars = this.getVars( shaderStage );
+			let vars = this.getVars( shaderStage );
+			// NEEDLE: Remove - otherwise we get duplicate definition errors
+			// TODO since we renamed this to modelViewMatrix_2, we can likely remove this line!
+			vars = vars.replace("mat4 modelViewMatrix;", "");
 			const codes = this.getCodes( shaderStage );
 
 			shaderData[ shaderStage ] = `${this.getSignature()}

@@ -83,6 +83,8 @@ class Renderer {
 
 		this.nodes = {
 			library: new NodeLibrary(),
+			// NEEDLE: These are just override nodes - we don't need to set them,
+			// but they need to be present
 			modelViewMatrix: null,
 			modelNormalViewMatrix: null
 		};
