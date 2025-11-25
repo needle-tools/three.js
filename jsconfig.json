@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {
+    "checkJs": true,
+    "types": ["./types/index.d.ts"]
+  },
+  "include": ["src/**/*"]
+}

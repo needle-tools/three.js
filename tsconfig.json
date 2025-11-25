@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
+    "rootDirs": [".", "types"],
+    "types": ["@webgpu/types"],
+    "lib": ["dom", "es2020"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*", "types/**/*"]
+}
