@@ -12,6 +12,12 @@ class Loader {
 		this.resourcePath = '';
 		this.requestHeader = {};
 
+		if ( typeof __THREE_DEVTOOLS__ !== 'undefined' ) {
+
+			__THREE_DEVTOOLS__.dispatchEvent( new CustomEvent( 'observe', { detail: this } ) );
+
+		}
+
 	}
 
 	load( /* url, onLoad, onProgress, onError */ ) {}
