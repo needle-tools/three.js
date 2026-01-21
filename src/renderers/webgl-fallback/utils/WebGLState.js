@@ -1096,12 +1096,28 @@ class WebGLState {
 
 		if ( renderContext.textures !== null ) {
 
-			drawBuffers = this.currentDrawbuffers.get( framebuffer );
+			// framebuffer can be null for XR opaque framebuffers, WeakMap requires object keys
+			if ( framebuffer !== null ) {
 
-			if ( drawBuffers === undefined ) {
+				drawBuffers = this.currentDrawbuffers.get( framebuffer );
 
-				drawBuffers = [];
-				this.currentDrawbuffers.set( framebuffer, drawBuffers );
+				if ( drawBuffers === undefined ) {
+
+					drawBuffers = [];
+					this.currentDrawbuffers.set( framebuffer, drawBuffers );
+
+				}
+
+			} else {
+
+				// For null framebuffer (XR opaque), use a cached array on this instance
+				if ( this.currentDrawbuffersDefault === undefined ) {
+
+					this.currentDrawbuffersDefault = [];
+
+				}
+
+				drawBuffers = this.currentDrawbuffersDefault;
 
 			}
 
