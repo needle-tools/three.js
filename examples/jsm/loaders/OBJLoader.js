@@ -500,6 +500,12 @@ class OBJLoader extends Loader {
 				for ( let i = 0, l = state.materialLibraries.length; i < l; i ++ ) {
 
 					const mtlfile = state.materialLibraries[ i ];
+					
+					// Safety check: skip if mtlfile is not a valid string
+					if ( !mtlfile || typeof mtlfile !== 'string' || mtlfile.trim() === '' ) {
+						console.warn( 'THREE.OBJLoader: Invalid or empty material library reference, skipping.' );
+						continue;
+					}
 
 					const newUrl = url.startsWith("blob:") 
 						? (url + "/" + mtlfile) 
