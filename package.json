@@ -1,6 +1,6 @@
 {
   "name": "@needle-tools/three",
-  "version": "0.169.12",
+  "version": "0.169.13",
   "description": "JavaScript 3D library",
   "type": "module",
   "main": "./build/three.cjs",
@@ -31,7 +31,8 @@
     "LICENSE",
     "package.json",
     "README.md",
-    "src"
+    "src",
+    "types"
   ],
   "directories": {
     "doc": "docs",
