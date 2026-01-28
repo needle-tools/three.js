@@ -1,6 +1,6 @@
 {
   "name": "@needle-tools/three",
-  "version": "0.169.13",
+  "version": "0.169.14",
   "description": "JavaScript 3D library",
   "type": "module",
   "main": "./build/three.cjs",
@@ -8,16 +8,40 @@
   "types": "./types/index.d.ts",
   "exports": {
     ".": {
-      "import": "./build/three.module.js",
-      "require": "./build/three.cjs"
+      "import": {
+        "types": "./types/index.d.ts",
+        "default": "./build/three.module.js"
+      },
+      "require": {
+        "types": "./types/build/three.d.cts",
+        "default": "./build/three.cjs"
+      }
     },
     "./examples/fonts/*": "./examples/fonts/*",
-    "./examples/jsm/*": "./examples/jsm/*",
-    "./addons": "./examples/jsm/Addons.js",
-    "./addons/*": "./examples/jsm/*",
-    "./src/*": "./src/*",
-    "./webgpu": "./build/three.webgpu.js",
-    "./tsl": "./build/three.webgpu.js"
+    "./examples/jsm/*": {
+      "types": "./types/examples/jsm/*.d.ts",
+      "default": "./examples/jsm/*"
+    },
+    "./addons": {
+      "types": "./types/examples/jsm/Addons.d.ts",
+      "default": "./examples/jsm/Addons.js"
+    },
+    "./addons/*": {
+      "types": "./types/examples/jsm/*.d.ts",
+      "default": "./examples/jsm/*"
+    },
+    "./src/*": {
+      "types": "./types/src/*.d.ts",
+      "default": "./src/*"
+    },
+    "./webgpu": {
+      "types": "./types/build/three.webgpu.d.ts",
+      "import": "./build/three.webgpu.js"
+    },
+    "./tsl": {
+      "types": "./types/build/three.webgpu.d.ts",
+      "import": "./build/three.webgpu.js"
+    }
   },
   "repository": {
     "type": "git",
