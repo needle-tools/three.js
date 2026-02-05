@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.169.16] – 2026-02-05
+- fix: Camera scale affecting lighting 
+
 ## [0.169.11] – 2025-08-28
 - add: GLTFLoaderAnimationPointer back in for Needle Engine backwards compatibility ([forum](https://forum.needle.tools/t/latest-release-breaks-later-versions/2697))
 
