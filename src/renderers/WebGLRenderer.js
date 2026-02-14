@@ -2456,11 +2456,12 @@ class WebGLRenderer {
 
 			}
 
-			if ( material.id !== _currentMaterialId ) {
+			if ( material.id !== _currentMaterialId || material._forceRefresh ) {
 
 				_currentMaterialId = material.id;
 
 				refreshMaterial = true;
+				material._forceRefresh = false;
 
 			}
 
