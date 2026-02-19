@@ -123,7 +123,7 @@ function WebGLRenderList() {
 
 		const renderItem = getNextRenderItem( object, geometry, material, groupOrder, z, group );
 
-		object.onBeforeRenderListPush( object, geometry, material, group );
+		object.onBeforeRenderListPush?.( object, geometry, material, group );
 
 		if ( material.transmission > 0.0 ) {
 
@@ -139,7 +139,7 @@ function WebGLRenderList() {
 
 		}
 
-		object.onAfterRenderListPush( object, geometry, material, group );
+		object.onAfterRenderListPush?.( object, geometry, material, group );
 
 	}
 
