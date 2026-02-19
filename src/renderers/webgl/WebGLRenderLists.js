@@ -108,6 +108,8 @@ function WebGLRenderList() {
 
 		const renderItem = getNextRenderItem( object, geometry, material, groupOrder, z, group );
 
+		object.onBeforeRenderListPush( object, geometry, material, group );
+
 		if ( material.transmission > 0.0 ) {
 
 			transmissive.push( renderItem );
@@ -121,6 +123,8 @@ function WebGLRenderList() {
 			opaque.push( renderItem );
 
 		}
+
+		object.onAfterRenderListPush( object, geometry, material, group );
 
 	}
 
