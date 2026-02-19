@@ -6,7 +6,7 @@
 'use strict';
 
 var _documentCurrentScript = typeof document !== 'undefined' ? document.currentScript : null;
-const REVISION = '169.18';
+const REVISION = '169.19';
 
 const MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2 };
 const TOUCH = { ROTATE: 0, PAN: 1, DOLLY_PAN: 2, DOLLY_ROTATE: 3 };
@@ -21386,7 +21386,7 @@ function WebGLRenderList() {
 
 		const renderItem = getNextRenderItem( object, geometry, material, groupOrder, z, group );
 
-		object.onBeforeRenderListPush( object, geometry, material, group );
+		object.onBeforeRenderListPush?.( object, geometry, material, group );
 
 		if ( material.transmission > 0.0 ) {
 
@@ -21402,7 +21402,7 @@ function WebGLRenderList() {
 
 		}
 
-		object.onAfterRenderListPush( object, geometry, material, group );
+		object.onAfterRenderListPush?.( object, geometry, material, group );
 
 	}
 
