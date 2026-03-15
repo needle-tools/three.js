@@ -1,6 +1,6 @@
 {
   "name": "@needle-tools/three",
-  "version": "0.169.19",
+  "version": "0.169.20-experimental.0",
   "description": "JavaScript 3D library",
   "type": "module",
   "main": "./build/three.cjs",

@@ -4,8 +4,35 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+
+## [0.169.20-experimental.0] – 2026-03-15
+- fix: resolve bare `three` imports as self-reference (esm.sh compatibility)
+
+## [0.169.19] – 2026-02-19
+- fix: null safety check for onBeforeRenderList
+
+## [0.169.18] – 2026-02-19
+- add: `onBeforeRenderListPush` / `onAfterRenderListPush` callbacks on Object3D to allow overriding transparent state before render list insertion
+
+## [0.169.17] – 2026-02-16
+- add: material force refresh uniforms flag
+- internal: prebuild script to keep REVISION constant in sync
+
 ## [0.169.16] – 2026-02-05
-- fix: Camera scale affecting lighting 
+- fix: Camera scale affecting lighting
+
+## [0.169.15] – 2026-01-28
+- fix: OBJLoader mtlfile path safety checks
+
+## [0.169.14] – 2026-01-28
+- internal: adjust types import paths in package.json
+
+## [0.169.13] – 2026-01-28
+- internal: add types to package.json
+
+## [0.169.12] – 2025-11-25
+- internal: add TypeScript types setup
+- internal: comments for WebGLNodeBuilder and Renderer related to Node handling
 
 ## [0.169.11] – 2025-08-28
 - add: GLTFLoaderAnimationPointer back in for Needle Engine backwards compatibility ([forum](https://forum.needle.tools/t/latest-release-breaks-later-versions/2697))
