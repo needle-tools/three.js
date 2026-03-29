@@ -125,7 +125,7 @@ export const modelViewMatrix = /*@__PURE__*/ ( Fn( ( builder ) => {
 
 	return builder.context.modelViewMatrix || mediumpModelViewMatrix;
 
-} ).once() )().toVar( 'modelViewMatrix' );
+} ).once() )().toVar( 'modelViewMatrix_2' );
 
 // GPU Precision
 
