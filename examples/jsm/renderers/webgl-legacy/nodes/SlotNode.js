@@ -1,4 +1,4 @@
-import { Node } from 'three';
+import Node from 'three/src/nodes/core/Node.js';
 
 class SlotNode extends Node {
 
