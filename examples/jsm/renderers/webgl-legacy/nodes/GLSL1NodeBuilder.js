@@ -1,4 +1,6 @@
-import { MathNode, GLSLNodeParser, NodeBuilder } from 'three';
+import MathNode from 'three/src/nodes/math/MathNode.js';
+import GLSLNodeParser from 'three/src/nodes/parsers/GLSLNodeParser.js';
+import NodeBuilder from 'three/src/nodes/core/NodeBuilder.js';
 
 const glslMethods = {
 	[ MathNode.ATAN2 ]: 'atan'
