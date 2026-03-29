@@ -6,7 +6,7 @@
 'use strict';
 
 var _documentCurrentScript = typeof document !== 'undefined' ? document.currentScript : null;
-const REVISION = '169.19';
+const REVISION = '169.20';
 
 const MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2 };
 const TOUCH = { ROTATE: 0, PAN: 1, DOLLY_PAN: 2, DOLLY_ROTATE: 3 };
@@ -44344,6 +44344,12 @@ class Loader {
 		this.resourcePath = '';
 		this.requestHeader = {};
 
+		if ( typeof __THREE_DEVTOOLS__ !== 'undefined' ) {
+
+			__THREE_DEVTOOLS__.dispatchEvent( new CustomEvent( 'observe', { detail: this } ) );
+
+		}
+
 	}
 
 	load( /* url, onLoad, onProgress, onError */ ) {}
@@ -51051,6 +51057,12 @@ class AnimationMixer extends EventDispatcher {
 		this._accuIndex = 0;
 		this.time = 0;
 		this.timeScale = 1.0;
+
+		if ( typeof __THREE_DEVTOOLS__ !== 'undefined' ) {
+
+			__THREE_DEVTOOLS__.dispatchEvent( new CustomEvent( 'observe', { detail: this } ) );
+
+		}
 
 	}
 
