@@ -184,7 +184,7 @@ class AudioListener extends Object3D {
 
 		this.matrixWorld.decompose( _position, _quaternion, _scale );
 
-		if ( ! Number.isFinite( _position.x ) || ! Number.isFinite( _position.y ) || !Number.isFinite( _position.z ))
+		if ( ! Number.isFinite( _position.x ) || ! Number.isFinite( _position.y ) || ! Number.isFinite( _position.z ) )
 			return;
 
 		// the initial forward and up directions must be orthogonal
