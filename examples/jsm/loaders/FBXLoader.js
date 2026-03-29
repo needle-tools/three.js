@@ -1367,7 +1367,7 @@ class FBXTreeParser {
 
 			if ( needsDefaultMaterial ) {
 
-				const defaultMaterial = new MeshPhongMaterial();
+				const defaultMaterial = new MeshStandardMaterial();
 				materials.push( defaultMaterial );
 
 			}
