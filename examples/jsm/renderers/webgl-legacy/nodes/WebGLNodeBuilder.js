@@ -1,4 +1,5 @@
-import { defaultShaderStages, normalView } from 'three/tsl';
+import { defaultShaderStages } from 'three/src/nodes/core/constants.js';
+import { normalView } from 'three/src/nodes/accessors/Normal.js';
 import NodeFrame from 'three/src/nodes/core/NodeFrame.js';
 import NodeBuilder from 'three/src/nodes/core/NodeBuilder.js';
 import GLSLNodeParser from 'three/src/nodes/parsers/GLSLNodeParser.js';
