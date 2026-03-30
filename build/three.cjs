@@ -5,7 +5,8 @@
  */
 'use strict';
 
-const REVISION = '183';
+var _documentCurrentScript = typeof document !== 'undefined' ? document.currentScript : null;
+const REVISION = '183.2';
 
 /**
  * Represents mouse buttons and interaction types in context of controls.
@@ -7966,14 +7967,15 @@ Texture.DEFAULT_IMAGE = null;
  */
 Texture.DEFAULT_MAPPING = UVMapping;
 
+
 /**
  * The default anisotropy value for all textures.
  *
  * @static
  * @type {number}
- * @default 1
+ * @default 4
  */
-Texture.DEFAULT_ANISOTROPY = 1;
+Texture.DEFAULT_ANISOTROPY = 4;
 
 /**
  * Class representing a 4D vector. A 4D vector is an ordered quadruplet of numbers
@@ -20822,6 +20824,10 @@ class Material extends EventDispatcher {
 		this._alphaTest = value;
 
 	}
+
+	onBuild( /* shaderobject, renderer */ ) {}
+
+	// onBeforeRender and onBeforeCompile only supported in WebGLRenderer
 
 	/**
 	 * An optional callback that is executed immediately before the material is used to render a 3D object.
@@ -50407,6 +50413,9 @@ class AudioListener extends Object3D {
 
 		this.matrixWorld.decompose( _position$1, _quaternion$1, _scale$1 );
 
+		if ( ! Number.isFinite( _position$1.x ) || ! Number.isFinite( _position$1.y ) || ! Number.isFinite( _position$1.z ) )
+			return;
+
 		// the initial forward and up directions must be orthogonal
 		_forward.set( 0, 0, -1 ).applyQuaternion( _quaternion$1 );
 		_up.set( 0, 1, 0 ).applyQuaternion( _quaternion$1 );
@@ -50811,7 +50820,7 @@ class Audio extends Object3D {
 
 				// ensure _progress does not exceed duration with looped audios
 
-				this._progress = this._progress % ( this.duration || this.buffer.duration );
+				this._progress = this._progress % ( this.duration || ( this.buffer ? this.buffer.duration : Number.MAX_VALUE ) );
 
 			}
 
@@ -52225,19 +52234,23 @@ class PropertyBinding {
 		// search into node subtree.
 		if ( root.children ) {
 
-			const searchNodeSubtree = function ( children ) {
+			const searchNodeSubtree = function ( children, checkByUserDataName ) {
 
 				for ( let i = 0; i < children.length; i ++ ) {
 
 					const childNode = children[ i ];
 
-					if ( childNode.name === nodeName || childNode.uuid === nodeName ) {
+					if ( ! checkByUserDataName && ( childNode.name === nodeName || childNode.uuid === nodeName ) ) {
+
+						return childNode;
+
+					} else if ( checkByUserDataName && childNode.userData && childNode.userData.name === nodeName ) {
 
 						return childNode;
 
 					}
 
-					const result = searchNodeSubtree( childNode.children );
+					const result = searchNodeSubtree( childNode.children, checkByUserDataName );
 
 					if ( result ) return result;
 
@@ -52252,6 +52265,18 @@ class PropertyBinding {
 			if ( subTreeNode ) {
 
 				return subTreeNode;
+
+			} else {
+
+				// Search again by userData.name, as set by GLTFLoader.
+				// We don't want to do that in a single pass to avoid incorrect matches.
+				const subTreeNode = searchNodeSubtree( root.children, true );
+
+				if ( subTreeNode ) {
+
+					return subTreeNode;
+
+				}
 
 			}
 
@@ -59457,9 +59482,21 @@ if ( typeof __THREE_DEVTOOLS__ !== 'undefined' ) {
 
 if ( typeof window !== 'undefined' ) {
 
+	try {
+
+		if ( ({ url: (typeof document === 'undefined' ? require('u' + 'rl').pathToFileURL(__filename).href : (_documentCurrentScript && _documentCurrentScript.tagName.toUpperCase() === 'SCRIPT' && _documentCurrentScript.src || new URL('three.cjs', document.baseURI).href)) }) ) {
+
+			if ( ! window.__THREE__IMPORTS__) window.__THREE__IMPORTS__ = [];
+			window.__THREE__IMPORTS__.push( { url: (typeof document === 'undefined' ? require('u' + 'rl').pathToFileURL(__filename).href : (_documentCurrentScript && _documentCurrentScript.tagName.toUpperCase() === 'SCRIPT' && _documentCurrentScript.src || new URL('three.cjs', document.baseURI).href)), revision: REVISION } );
+
+		}
+
+	} catch { }
+
 	if ( window.__THREE__ ) {
 
-		warn( 'WARNING: Multiple instances of Three.js being imported.' );
+		warn( 'WARNING: Multiple instances of Three.js being imported. Existing: ' + window.__THREE__ + ', new: ' + REVISION );
+		console.warn( 'THREE imports:', window.__THREE__IMPORTS__ );
 
 	} else {
 
@@ -59876,9 +59913,9 @@ var logdepthbuf_pars_vertex = "#ifdef USE_LOGARITHMIC_DEPTH_BUFFER\n\tvarying fl
 
 var logdepthbuf_vertex = "#ifdef USE_LOGARITHMIC_DEPTH_BUFFER\n\tvFragDepth = 1.0 + gl_Position.w;\n\tvIsPerspective = float( isPerspectiveMatrix( projectionMatrix ) );\n#endif";
 
-var map_fragment = "#ifdef USE_MAP\n\tvec4 sampledDiffuseColor = texture2D( map, vMapUv );\n\t#ifdef DECODE_VIDEO_TEXTURE\n\t\tsampledDiffuseColor = sRGBTransferEOTF( sampledDiffuseColor );\n\t#endif\n\tdiffuseColor *= sampledDiffuseColor;\n#endif";
+var map_fragment = "#ifdef USE_MAP\n#ifdef USE_MIPMAP_BIAS\n    vec4 sampledDiffuseColor = texture2D( map, vMapUv, mipmapBias );\n#else\n\tvec4 sampledDiffuseColor = texture2D( map, vMapUv );\n#endif\n\t#ifdef DECODE_VIDEO_TEXTURE\n\t\tsampledDiffuseColor = sRGBTransferEOTF( sampledDiffuseColor );\n\t#endif\n\tdiffuseColor *= sampledDiffuseColor;\n#endif";
 
-var map_pars_fragment = "#ifdef USE_MAP\n\tuniform sampler2D map;\n#endif";
+var map_pars_fragment = "#ifdef USE_MAP\n\tuniform sampler2D map;\n        \n#ifdef USE_MIPMAP_BIAS\n    uniform float mipmapBias;\n#endif\n#endif";
 
 var map_particle_fragment = "#if defined( USE_MAP ) || defined( USE_ALPHAMAP )\n\t#if defined( USE_POINTS_UV )\n\t\tvec2 uv = vUv;\n\t#else\n\t\tvec2 uv = ( uvTransform * vec3( gl_PointCoord.x, 1.0 - gl_PointCoord.y, 1 ) ).xy;\n\t#endif\n#endif\n#ifdef USE_MAP\n\tdiffuseColor *= texture2D( map, uv );\n#endif\n#ifdef USE_ALPHAMAP\n\tdiffuseColor.a *= texture2D( alphaMap, uv ).g;\n#endif";
 
@@ -62378,6 +62415,10 @@ class PMREMGenerator {
 		};
 
 		const cubeUVRenderTarget = _createRenderTarget( width, height, params );
+
+		// NEEDLE: This was added to work around a caching bug in PMREMGenerator that lead to incorrect results.
+		const { _lodMax } = this;
+		( { sizeLods: this._sizeLods, lodPlanes: this._lodPlanes, sigmas: this._sigmas } = _createPlanes( _lodMax ) );
 
 		if ( this._pingPongRenderTarget === null || this._pingPongRenderTarget.width !== width || this._pingPongRenderTarget.height !== height ) {
 
@@ -67721,6 +67762,8 @@ function WebGLRenderList() {
 
 		const renderItem = getNextRenderItem( object, geometry, material, groupOrder, z, group );
 
+		object.onBeforeRenderListPush?.( object, geometry, material, group );
+
 		if ( material.transmission > 0.0 ) {
 
 			transmissive.push( renderItem );
@@ -67734,6 +67777,8 @@ function WebGLRenderList() {
 			opaque.push( renderItem );
 
 		}
+
+		object.onAfterRenderListPush?.( object, geometry, material, group );
 
 	}
 
@@ -73288,6 +73333,8 @@ class WebXRManager extends EventDispatcher {
 		 */
 		this.isPresenting = false;
 
+		this.controllerAutoUpdate = true;
+
 		/**
 		 * Returns a group representing the `target ray` space of the XR controller.
 		 * Use this space for visualizing 3D objects that support the user in pointing
@@ -73406,7 +73453,7 @@ class WebXRManager extends EventDispatcher {
 
 				controllerInputSources[ i ] = null;
 
-				controllers[ i ].disconnect( inputSource );
+				if ( controllers[ i ] ) controllers[ i ].disconnect( inputSource );
 
 			}
 
@@ -73736,7 +73783,7 @@ class WebXRManager extends EventDispatcher {
 				if ( index >= 0 ) {
 
 					controllerInputSources[ index ] = null;
-					controllers[ index ].disconnect( inputSource );
+					if ( controllers[ index ] ) controllers[ index ].disconnect( inputSource );
 
 				}
 
@@ -74236,14 +74283,18 @@ class WebXRManager extends EventDispatcher {
 
 			//
 
-			for ( let i = 0; i < controllers.length; i ++ ) {
+			if ( scope.controllerAutoUpdate ) {
 
-				const inputSource = controllerInputSources[ i ];
-				const controller = controllers[ i ];
+				for ( let i = 0; i < controllers.length; i ++ ) {
 
-				if ( inputSource !== null && controller !== undefined ) {
+					const inputSource = controllerInputSources[ i ];
+					const controller = controllers[ i ];
 
-					controller.update( inputSource, frame, customReferenceSpace || referenceSpace );
+					if ( inputSource !== null && controller !== undefined ) {
+
+						controller.update( inputSource, frame, customReferenceSpace || referenceSpace );
+
+					}
 
 				}
 
@@ -77428,6 +77479,8 @@ class WebGLRenderer {
 
 				parameters.uniforms = programCache.getUniforms( material );
 
+				material.onBuild( object, parameters, _this );
+
 				material.onBeforeCompile( parameters, _this );
 
 				program = programCache.acquireProgram( parameters, programCacheKey );
@@ -77710,11 +77763,12 @@ class WebGLRenderer {
 
 			}
 
-			if ( material.id !== _currentMaterialId ) {
+			if ( material.id !== _currentMaterialId || material._forceRefresh ) {
 
 				_currentMaterialId = material.id;
 
 				refreshMaterial = true;
+				material._forceRefresh = false;
 
 			}
 
