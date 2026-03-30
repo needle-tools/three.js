@@ -187,7 +187,7 @@ if ( typeof window !== 'undefined' ) {
 	if ( window.__THREE__ ) {
 
 		warn( 'WARNING: Multiple instances of Three.js being imported. Existing: ' + window.__THREE__ + ', new: ' + REVISION );
-		warn( window.__THREE__IMPORTS__ );
+		console.warn( 'THREE imports:', window.__THREE__IMPORTS__ );
 
 	} else {
 
