@@ -1,4 +1,4 @@
-export const REVISION = '183.2';
+export const REVISION = '183.2-canary.0';
 
 /**
  * Represents mouse buttons and interaction types in context of controls.
