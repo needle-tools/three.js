@@ -50,7 +50,7 @@ class WebGPUTexturePassUtils extends DataMap {
 struct VarysStruct {
 	@builtin( position ) Position: vec4f,
 	@location( 0 ) vTex : vec2f,
-	@location( 1 ) @interpolate(flat, either) vBaseArrayLayer: u32,
+	@location( 1 ) @interpolate(flat) vBaseArrayLayer: u32,
 };
 
 @group( 0 ) @binding ( 2 )

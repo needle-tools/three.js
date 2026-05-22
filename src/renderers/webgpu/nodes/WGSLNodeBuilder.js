@@ -1919,7 +1919,7 @@ ${ flowData.code }
 
 					} else if ( /^(int|uint|ivec|uvec)/.test( varying.type ) ) {
 
-						attributesSnippet += ' @interpolate(flat, either)';
+						attributesSnippet += ' @interpolate(flat)';
 
 					}
 
