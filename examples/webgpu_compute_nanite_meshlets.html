@@ -15,7 +15,7 @@
 				<a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a><span>GPU Meshlet Rasterizer</span>
 			</div>
 
-			<small>Drop GLB to convert to meshlets</small>
+			<small>Drop GLB to convert to meshlets, hold ALT to add</small>
 		</div>
 
 		<script type="importmap">
@@ -57,8 +57,9 @@
 
 			let camera, renderer, controls;
 			let computeRasterize, computeClear, computeFrustum, computeDispatch, computeHWArgs;
-			let quadMesh, hwScene, hwMesh;
+			let quadMesh, backgroundQuadMesh, hwScene, hwMesh;
 			let environmentMap;
+			let cameraWorldMatrixUniform, cameraProjectionInverseUniform;
 			let cameraPos, projScreenMatrixUniform, frustumPlanesUniform;
 			let cotHalfFovUniform, pixelErrorThresholdUniform, maxRasterSizeUniform;
 			let materialModeUniform;
@@ -72,6 +73,17 @@
 			let screenPayloadAttr, screenPayloadBuffer, screenPayloadRead;
 			let maxPixels;
 			let currentSources = [];
+			let currentMeshletAsset = null;
+			let currentMaterialTextures = [];
+			const focusPoint = new THREE.Vector3();
+			const focusTarget = new THREE.Vector3();
+			const focusStart = new THREE.Vector3();
+			const pointerCoords = new THREE.Vector2();
+			const raycaster = new THREE.Raycaster();
+			const focusTargets = [];
+			const focusAnimation = { active: false, start: 0, duration: 650 };
+			let statsGroup, statsMeshGroup;
+			let statsEditors = null;
 
 			const MAX_GRID_ROWS = 32;
 			const MAX_GRID_COLS = 32;
@@ -85,15 +97,23 @@
 			const MESHLET_MAX_TRIANGLES = 64;
 			const LOD_COUNT = 6;
 			const MAX_RASTER_SIZE = 16;
+			const MATERIAL_TEXTURE_SIZE = 1024;
+			const ENVIRONMENT_BACKGROUND_BLUR = 0.5;
 			const options = { Mode: 'PBR', Rasterizer: 'Both' };
+			const statsState = {
+				instances: '',
+				meshes: '',
+				sceneTriangles: '',
+				residentMeshlets: ''
+			};
 
 			// Visibility payload lanes: instanceId, meshletId, localTriangleId, unused.
 			// Keeping meshlet id in a full u32 avoids tying asset size to bit packing.
 			const DEPTH_PRECISION_MAX = 4294967295.0; 	// Maximum value of the 32-bit depth (2^32 - 1)
 
-			const background = new THREE.Color( .1, .1, .1 );
 			let dropProgressElement, dropProgressText, dropProgressBar;
 			let dropTaskId = 0;
+			let isSwappingAsset = false;
 
 			installDropHandler();
 			init();
@@ -116,6 +136,7 @@
 					totalChunks,
 					maxMeshletsPerLod
 				} = initialAsset.meshlets;
+				currentMeshletAsset = initialAsset.meshlets;
 
 				validateMeshletAsset( totalChunks );
 				configureInstanceGrid( maxMeshletsPerLod );
@@ -149,9 +170,13 @@
 					controls.zoomSpeed = .5;
 					controls.maxDistance = 1000;
 					controls.maxPolarAngle = Math.PI / 2;
+					focusPoint.copy( controls.target );
+					focusTarget.copy( focusPoint );
 
 					materialModeUniform = uniform( materialModeValue( options.Mode ), 'uint' );
-					timeScale = uniform( 1.0 );
+					timeScale = uniform( 0.0 );
+					cameraWorldMatrixUniform = uniform( new THREE.Matrix4() );
+					cameraProjectionInverseUniform = uniform( new THREE.Matrix4() );
 
 					const parameterGroup = renderer.inspector.createParameters( 'Parameters' );
 					parameterGroup.add( options, 'Mode', { 'Meshlet Debug': 'Meshlet Debug', 'Base Color': 'Base Color', 'PBR': 'PBR' } ).addEventListener( 'change', ( e ) => {
@@ -164,7 +189,10 @@
 
 					parameterGroup.add( timeScale, 'value', 0.0, 1.0 );
 
+					createStatsUI();
+
 					window.addEventListener( 'resize', onWindowResize );
+					renderer.domElement.addEventListener( 'dblclick', onDoubleClickFocus );
 
 				} else {
 
@@ -176,18 +204,22 @@
 
 				const {
 					textureMaps,
-					metalRoughnessMaps,
-					normalMaps,
-					aoMaps,
-					emissiveMaps,
+					metalRoughnessMap,
+					normalMap,
+					aoMap,
+					emissiveMap,
 					vertexArray,
 					normalArray,
+					colorArray,
 					uvArray,
 					totalVertices
 				} = buildVertexGeometry( sources );
+				currentMaterialTextures = [ textureMaps, metalRoughnessMap, normalMap, aoMap, emissiveMap ];
 
 				const instanceModelData = new Uint32Array( instanceCount );
 				const instanceCounts = new Uint32Array( sources.length );
+				const staticInstanceData = new Float32Array( instanceCount * 4 );
+				let dataIndex = 0;
 
 				for ( let i = 0; i < instanceCount; i ++ ) {
 
@@ -197,7 +229,14 @@
 					instanceModelData[ i ] = modelId;
 					instanceCounts[ modelId ] ++;
 
+					staticInstanceData[ dataIndex ++ ] = ( x - rows / 2 ) * 4.0;
+					staticInstanceData[ dataIndex ++ ] = - 1;
+					staticInstanceData[ dataIndex ++ ] = ( y - cols / 2 ) * 4.0;
+					staticInstanceData[ dataIndex ++ ] = 1.0; // scale
+
 				}
+				rebuildFocusTargets( sources, staticInstanceData, instanceModelData );
+				updateStats( sources, initialAsset.meshlets, instanceCounts );
 
 				const lodOffsetsBuffer = storage( new THREE.StorageBufferAttribute( lodOffsetsData, 4 ), 'uvec4', lods.length ).toReadOnly();
 				const lodErrorBuffer = storage( new THREE.StorageBufferAttribute( lodErrorData, 1 ), 'float', lods.length ).toReadOnly();
@@ -207,6 +246,7 @@
 				// Storage Buffers
 				const vertexBuffer = storage( new THREE.StorageBufferAttribute( vertexArray, 4 ), 'vec4', totalVertices ).toReadOnly();
 				const normalBuffer = storage( new THREE.StorageBufferAttribute( normalArray, 4 ), 'vec4', totalVertices ).toReadOnly();
+				const colorBuffer = storage( new THREE.StorageBufferAttribute( colorArray, 4 ), 'vec4', totalVertices ).toReadOnly();
 				const uvBuffer = storage( new THREE.StorageBufferAttribute( uvArray, 2 ), 'vec2', totalVertices ).toReadOnly();
 				const meshletTopologyAttr = new THREE.StorageBufferAttribute( new Uint32Array( meshletTopologyStats.decodedTopologyWords ), 1 );
 				const meshletTopologyBuffer = storage( meshletTopologyAttr, 'uint', meshletTopologyStats.decodedTopologyWords ).toReadOnly();
@@ -221,21 +261,6 @@
 
 				// Atomic visibility depth plus explicit payload lanes for the winning fragment.
 				createScreenBuffers();
-
-				const staticInstanceData = new Float32Array( instanceCount * 4 );
-				let dataIndex = 0;
-
-				for ( let i = 0; i < instanceCount; i ++ ) {
-
-					const row = Math.floor( i / cols );
-					const col = i % cols;
-
-					staticInstanceData[ dataIndex ++ ] = ( row - rows / 2 ) * 4.0;
-					staticInstanceData[ dataIndex ++ ] = - 1;
-					staticInstanceData[ dataIndex ++ ] = ( col - cols / 2 ) * 4.0;
-					staticInstanceData[ dataIndex ++ ] = 1.0; // scale
-
-				}
 
 				const instanceDataBuffer = storage( new THREE.StorageBufferAttribute( staticInstanceData, 4 ), 'vec4', instanceCount );
 				const instanceModelBuffer = storage( new THREE.StorageBufferAttribute( instanceModelData, 1 ), 'uint', instanceCount ).toReadOnly();
@@ -706,79 +731,50 @@
 
 				} );
 
+				const sampleEnvironmentBackground = Fn( () => {
+
+					const ndc = uv().mul( 2.0 ).sub( 1.0 );
+					const viewPosition = cameraProjectionInverseUniform.mul( vec4( ndc, 1.0, 1.0 ) );
+					const viewDirection = viewPosition.xyz.div( viewPosition.w ).normalize();
+					const worldDirection = cameraWorldMatrixUniform.mul( vec4( viewDirection, 0.0 ) ).xyz.normalize();
+
+					return vec4( pmremTexture( environmentMap, worldDirection, float( ENVIRONMENT_BACKGROUND_BLUR ) ), 1.0 );
+
+				} );
+
 				const sampleBaseColor = Fn( ( [ materialId, uvCoord ] ) => {
 
-					const color = texture( textureMaps[ 0 ], uvCoord ).toVar();
-
-					If( materialId.equal( 1 ), () => {
-
-						color.assign( texture( textureMaps[ 1 ], uvCoord ) );
-
-					} );
-
-					return color;
+					return texture( textureMaps, uvCoord ).depth( int( materialId ) );
 
 				} );
 
 				const sampleMetalRoughness = Fn( ( [ materialId, uvCoord ] ) => {
 
-					const value = texture( metalRoughnessMaps[ 0 ], uvCoord ).rgb.toVar();
-
-					If( materialId.equal( 1 ), () => {
-
-						value.assign( texture( metalRoughnessMaps[ 1 ], uvCoord ).rgb );
-
-					} );
-
-					return value;
+					return texture( metalRoughnessMap, uvCoord ).depth( int( materialId ) ).rgb;
 
 				} );
 
 				const sampleNormalMap = Fn( ( [ materialId, uvCoord ] ) => {
 
-					const value = texture( normalMaps[ 0 ], uvCoord ).xyz.toVar();
-
-					If( materialId.equal( 1 ), () => {
-
-						value.assign( texture( normalMaps[ 1 ], uvCoord ).xyz );
-
-					} );
-
-					return value;
+					return texture( normalMap, uvCoord ).depth( int( materialId ) ).xyz;
 
 				} );
 
 				const sampleAo = Fn( ( [ materialId, uvCoord ] ) => {
 
-					const value = texture( aoMaps[ 0 ], uvCoord ).r.toVar();
-
-					If( materialId.equal( 1 ), () => {
-
-						value.assign( texture( aoMaps[ 1 ], uvCoord ).r );
-
-					} );
-
-					return value;
+					return texture( aoMap, uvCoord ).depth( int( materialId ) ).r;
 
 				} );
 
 				const sampleEmissive = Fn( ( [ materialId, uvCoord ] ) => {
 
-					const value = texture( emissiveMaps[ 0 ], uvCoord ).rgb.toVar();
-
-					If( materialId.equal( 1 ), () => {
-
-						value.assign( texture( emissiveMaps[ 1 ], uvCoord ).rgb );
-
-					} );
-
-					return value;
+					return texture( emissiveMap, uvCoord ).depth( int( materialId ) ).rgb;
 
 				} );
 
-				const shadePBR = Fn( ( [ materialId, uvCoord, geometryNormal, worldPosition, dWorldDx, dWorldDy, dUvDx, dUvDy ] ) => {
+				const shadePBR = Fn( ( [ materialId, uvCoord, vertexColor, geometryNormal, worldPosition, dWorldDx, dWorldDy, dUvDx, dUvDy ] ) => {
 
-					const baseColor = sampleBaseColor( materialId, uvCoord ).rgb;
+					const baseColor = sampleBaseColor( materialId, uvCoord ).rgb.mul( vertexColor.rgb );
 					const metalRoughness = sampleMetalRoughness( materialId, uvCoord );
 					const ao = sampleAo( materialId, uvCoord );
 					const emissive = sampleEmissive( materialId, uvCoord );
@@ -847,8 +843,9 @@
 
 					// Varyings for the hardware fallback triangles. Keep payload decoding in the vertex shader.
 					const vDebugColor = varyingProperty( 'vec4', 'vDebugColor' );
-					const vMaterialSelect = varyingProperty( 'float', 'vMaterialSelect' );
+					const vMaterialId = varyingProperty( 'uint', 'vMaterialId' );
 					const vUv = varyingProperty( 'vec2', 'vUv' );
+					const vColor = varyingProperty( 'vec4', 'vColor' );
 					const vWorldPosition = varyingProperty( 'vec3', 'vWorldPosition' );
 					const vNormal = varyingProperty( 'vec3', 'vNormal' );
 
@@ -882,10 +879,11 @@
 
 						const uvVal = uvBuffer.element( vertGlobalIdx );
 						vUv.assign( uvVal );
+						vColor.assign( colorBuffer.element( vertGlobalIdx ) );
 						vWorldPosition.assign( worldPos.xyz );
 						vNormal.assign( instanceWorldRead.element( instId ).mul( vec4( normalBuffer.element( vertGlobalIdx ).xyz, 0.0 ) ).xyz.normalize() );
 						vDebugColor.assign( hashColor( meshletId.add( instId.mul( 1000 ) ) ) );
-						vMaterialSelect.assign( float( meshletData.z ) );
+						vMaterialId.assign( meshletData.z );
 
 						return worldPos.xyz;
 
@@ -905,23 +903,11 @@
 							// Hardware interpolated UV!
 							If( materialModeUniform.equal( 1 ), () => {
 
-								outColor.assign( sampleBaseColor( uint( 0 ), vUv ) );
-
-								If( vMaterialSelect.greaterThan( 0.5 ), () => {
-
-									outColor.assign( sampleBaseColor( uint( 1 ), vUv ) );
-
-								} );
+								outColor.assign( vec4( sampleBaseColor( vMaterialId, vUv ).rgb.mul( vColor.rgb ), 1.0 ) );
 
 							} ).Else( () => {
 
-								outColor.assign( shadePBR( uint( 0 ), vUv, vNormal, vWorldPosition, vWorldPosition.dFdx(), vWorldPosition.dFdy(), vUv.dFdx(), vUv.dFdy() ) );
-
-								If( vMaterialSelect.greaterThan( 0.5 ), () => {
-
-									outColor.assign( shadePBR( uint( 1 ), vUv, vNormal, vWorldPosition, vWorldPosition.dFdx(), vWorldPosition.dFdy(), vUv.dFdx(), vUv.dFdy() ) );
-
-								} );
+								outColor.assign( shadePBR( vMaterialId, vUv, vColor, vNormal, vWorldPosition, vWorldPosition.dFdx(), vWorldPosition.dFdy(), vUv.dFdx(), vUv.dFdy() ) );
 
 							} );
 
@@ -977,7 +963,7 @@
 					const depth32 = screenTriRead.element( pixelIndex );
 
 					// Background color for pixels with no geometry
-					const outColor = vec4( background, 1.0 ).toVar();
+					const outColor = sampleEnvironmentBackground().toVar();
 
 					If( depth32.greaterThan( 0 ), () => {
 
@@ -1011,6 +997,9 @@
 						const t_uv0 = uvBuffer.element( i0 );
 						const t_uv1 = uvBuffer.element( i1 );
 						const t_uv2 = uvBuffer.element( i2 );
+						const c0 = colorBuffer.element( i0 );
+						const c1 = colorBuffer.element( i1 );
+						const c2 = colorBuffer.element( i2 );
 
 						// Project Vertices to Screen Space
 						const matrixWorld = instanceWorldBuffer.element( instId );
@@ -1060,6 +1049,7 @@
 						const b2_p = b2.div( p2.w ).div( safeZInv );
 
 						const uv_interp = t_uv0.mul( b0_p ).add( t_uv1.mul( b1_p ) ).add( t_uv2.mul( b2_p ) );
+						const color_interp = c0.mul( b0_p ).add( c1.mul( b1_p ) ).add( c2.mul( b2_p ) );
 						const world_interp = w0Pos.mul( b0_p ).add( w1Pos.mul( b1_p ) ).add( w2Pos.mul( b2_p ) );
 						const normal_interp = w0Norm.mul( b0_p ).add( w1Norm.mul( b1_p ) ).add( w2Norm.mul( b2_p ) ).normalize();
 
@@ -1111,11 +1101,11 @@
 
 							If( materialModeUniform.equal( 1 ), () => {
 
-								outColor.assign( sampleBaseColor( materialId, uv_interp ) );
+								outColor.assign( vec4( sampleBaseColor( materialId, uv_interp ).rgb.mul( color_interp.rgb ), 1.0 ) );
 
 							} ).Else( () => {
 
-								outColor.assign( shadePBR( materialId, uv_interp, normal_interp, world_interp, dWorldDx, dWorldDy, dUvDx, dUvDy ) );
+								outColor.assign( shadePBR( materialId, uv_interp, color_interp, normal_interp, world_interp, dWorldDx, dWorldDy, dUvDx, dUvDy ) );
 
 							} );
 
@@ -1128,6 +1118,12 @@
 				} )();
 
 				quadMesh = new THREE.QuadMesh( material );
+
+				const backgroundMaterial = new THREE.NodeMaterial();
+				backgroundMaterial.depthWrite = true;
+				backgroundMaterial.depthNode = float( 1.0 );
+				backgroundMaterial.colorNode = sampleEnvironmentBackground();
+				backgroundQuadMesh = new THREE.QuadMesh( backgroundMaterial );
 
 				renderer.setAnimationLoop( animate );
 
@@ -1161,6 +1157,102 @@
 
 				}
 
+				function createStatsUI() {
+
+					if ( statsGroup ) return;
+
+					statsGroup = renderer.inspector.createParameters( 'Stats' ).close();
+					const statsSceneGroup = statsGroup.addFolder( 'Scene' );
+					statsEditors = {
+						instances: addReadOnlyStat( statsSceneGroup, 'instances', 'Instances' ),
+						meshes: addReadOnlyStat( statsSceneGroup, 'meshes', 'Meshes' ),
+						sceneTriangles: addReadOnlyStat( statsSceneGroup, 'sceneTriangles', 'Scene triangles' ),
+						residentMeshlets: addReadOnlyStat( statsSceneGroup, 'residentMeshlets', 'Resident meshlets' )
+					};
+
+					statsMeshGroup = statsGroup.addFolder( 'Mesh LODs' ).close();
+
+				}
+
+				function addReadOnlyStat( group, property, name, target = statsState ) {
+
+					const editor = group.add( target, property ).name( name );
+					editor.input.disabled = true;
+
+					return editor;
+
+				}
+
+				function formatStatNumber( value ) {
+
+					return Math.round( value ).toLocaleString( 'en-US' );
+
+				}
+
+				function clearStatsMeshLods() {
+
+					if ( statsMeshGroup === undefined ) return;
+
+					for ( const item of [ ...statsMeshGroup.paramList.children ] ) {
+
+						statsMeshGroup.paramList.remove( item );
+
+					}
+
+				}
+
+				function updateStats( sources, meshlets, instanceCounts ) {
+
+					statsState.instances = formatStatNumber( instanceCount );
+					statsState.meshes = formatStatNumber( sources.length );
+					statsState.residentMeshlets = formatStatNumber( meshlets.totalChunks );
+
+					let sceneTriangles = 0;
+					for ( let i = 0; i < sources.length; i ++ ) {
+
+						sceneTriangles += ( instanceCounts[ i ] || 0 ) * ( sources[ i ].indices.length / 3 );
+
+					}
+
+					statsState.sceneTriangles = formatStatNumber( sceneTriangles );
+
+					clearStatsMeshLods();
+
+					for ( let sourceIndex = 0; sourceIndex < sources.length; sourceIndex ++ ) {
+
+						const source = sources[ sourceIndex ];
+						const meshStats = {};
+						const meshGroup = statsMeshGroup.addFolder( source.name || `Mesh ${ sourceIndex + 1 }` ).close();
+
+						meshStats.sourceTriangles = formatStatNumber( source.indices.length / 3 );
+						addReadOnlyStat( meshGroup, 'sourceTriangles', 'Source triangles', meshStats );
+
+						for ( let lodIndex = 0; lodIndex < LOD_COUNT; lodIndex ++ ) {
+
+							const lod = meshlets.lods[ sourceIndex * LOD_COUNT + lodIndex ];
+							const meshletKey = `lod${ lodIndex }Meshlets`;
+							const triangleKey = `lod${ lodIndex }Triangles`;
+							meshStats[ meshletKey ] = formatStatNumber( lod.numChunks );
+							meshStats[ triangleKey ] = formatStatNumber( lod.numTriangles );
+
+							addReadOnlyStat( meshGroup, meshletKey, `LOD ${ lodIndex } meshlets`, meshStats );
+							addReadOnlyStat( meshGroup, triangleKey, `LOD ${ lodIndex } triangles`, meshStats );
+
+						}
+
+					}
+
+					if ( statsEditors ) {
+
+						statsEditors.instances.setValue( statsState.instances );
+						statsEditors.meshes.setValue( statsState.meshes );
+						statsEditors.sceneTriangles.setValue( statsState.sceneTriangles );
+						statsEditors.residentMeshlets.setValue( statsState.residentMeshlets );
+
+					}
+
+				}
+
 				function configureInstanceGrid( maxMeshletsPerLod ) {
 
 					const maxInstancesByWorkQueue = Math.max( 1, Math.floor( MAX_WORK_QUEUE_ITEMS / Math.max( maxMeshletsPerLod, 1 ) ) );
@@ -1187,7 +1279,6 @@
 					try {
 
 						await updateDropProgress( `${ append ? 'Appending' : 'Reading' } ${ file.name }`, 0.02 );
-						if ( renderer ) renderer.setAnimationLoop( null );
 
 						const buffer = await file.arrayBuffer();
 						if ( taskId !== dropTaskId ) return;
@@ -1198,15 +1289,26 @@
 
 						await updateDropProgress( 'Parsing GLB', 0.12 );
 						const source = await loadSourceModelFromBuffer( file.name, buffer, 0 );
-						const sources = append && currentSources.length > 0 ? [ ...currentSources, source ] : [ source ];
+						const shouldAppend = append && currentSources.length > 0 && currentMeshletAsset !== null;
+						const sources = shouldAppend ? [ ...currentSources, source ] : [ source ];
 						assignSourceMaterialIds( sources );
 						if ( taskId !== dropTaskId ) return;
 
-						const meshlets = await buildBrowserMeshletAsset( sources, async ( message, progress ) => {
+						const meshlets = shouldAppend
+							? mergeMeshletAssets(
+								currentMeshletAsset,
+								await buildBrowserMeshletAsset( [ source ], async ( message, progress ) => {
 
-							await updateDropProgress( message, 0.12 + progress * 0.76 );
+									await updateDropProgress( message, 0.12 + progress * 0.76 );
 
-						} );
+								} ),
+								countSourceVertices( currentSources )
+							)
+							: await buildBrowserMeshletAsset( sources, async ( message, progress ) => {
+
+								await updateDropProgress( message, 0.12 + progress * 0.76 );
+
+							} );
 						if ( taskId !== dropTaskId ) return;
 
 						console.info(
@@ -1215,7 +1317,9 @@
 						validateMeshletAsset( meshlets.totalChunks );
 
 						await updateDropProgress( 'Uploading GPU buffers', 0.92 );
+						isSwappingAsset = true;
 						await init( { sources, meshlets } );
+						isSwappingAsset = false;
 
 						await updateDropProgress( 'Ready', 1.0 );
 						window.setTimeout( hideDropProgress, 500 );
@@ -1223,8 +1327,8 @@
 					} catch ( error ) {
 
 						console.error( error );
+						isSwappingAsset = false;
 						await updateDropProgress( `Failed: ${ error.message }`, 1.0 );
-						if ( renderer ) renderer.setAnimationLoop( animate );
 
 					}
 
@@ -1232,11 +1336,103 @@
 
 				function assignSourceMaterialIds( sources ) {
 
+					let materialBase = 0;
+
 					for ( let i = 0; i < sources.length; i ++ ) {
 
-						sources[ i ].materialId = Math.min( i, 1 );
+						sources[ i ].materialBase = materialBase;
+						materialBase += sources[ i ].materials.length;
 
 					}
+
+				}
+
+				function countSourceVertices( sources ) {
+
+					let vertices = 0;
+					for ( const source of sources ) vertices += source.positions.length / 3;
+
+					return vertices;
+
+				}
+
+				function mergeMeshletAssets( base, next, vertexBase ) {
+
+					const meshletData = new Uint32Array( base.meshletData.length + next.meshletData.length );
+					meshletData.set( base.meshletData );
+					for ( let i = 0; i < next.meshletData.length / 4; i ++ ) {
+
+						const dst = base.meshletData.length + i * 4;
+						const src = i * 4;
+						meshletData[ dst + 0 ] = next.meshletData[ src + 0 ] + base.meshletTopologyStats.decodedTopologyWords;
+						meshletData[ dst + 1 ] = next.meshletData[ src + 1 ];
+						meshletData[ dst + 2 ] = next.meshletData[ src + 2 ];
+						meshletData[ dst + 3 ] = next.meshletData[ src + 3 ];
+
+					}
+
+					const meshletDecodeData = new Uint32Array( base.meshletDecodeData.length + next.meshletDecodeData.length );
+					meshletDecodeData.set( base.meshletDecodeData );
+					for ( let i = 0; i < next.meshletDecodeData.length / 4; i ++ ) {
+
+						const dst = base.meshletDecodeData.length + i * 4;
+						const src = i * 4;
+						meshletDecodeData[ dst + 0 ] = next.meshletDecodeData[ src + 0 ] + base.meshletStreamData.length;
+						meshletDecodeData[ dst + 1 ] = next.meshletDecodeData[ src + 1 ] + base.meshletTopologyStats.decodedTopologyWords;
+						meshletDecodeData[ dst + 2 ] = next.meshletDecodeData[ src + 2 ];
+						meshletDecodeData[ dst + 3 ] = next.meshletDecodeData[ src + 3 ] + vertexBase;
+
+					}
+
+					const meshletStreamData = new Uint8Array( base.meshletStreamData.length + next.meshletStreamData.length );
+					meshletStreamData.set( base.meshletStreamData );
+					meshletStreamData.set( next.meshletStreamData, base.meshletStreamData.length );
+					const meshletStreamWords = new Uint32Array( meshletStreamData.buffer, meshletStreamData.byteOffset, meshletStreamData.byteLength / 4 ).slice();
+
+					const chunkBoundsData = new Float32Array( base.chunkBoundsData.length + next.chunkBoundsData.length );
+					chunkBoundsData.set( base.chunkBoundsData );
+					chunkBoundsData.set( next.chunkBoundsData, base.chunkBoundsData.length );
+
+					const lods = [
+						...base.lods,
+						...next.lods.map( ( lod ) => ( {
+							triangleStart: lod.triangleStart + base.meshletTopologyStats.totalTriangles,
+							numTriangles: lod.numTriangles,
+							chunkStart: lod.chunkStart + base.totalChunks,
+							numChunks: lod.numChunks,
+							error: lod.error
+						} ) )
+					];
+
+					const lodOffsetsData = new Uint32Array( lods.length * 4 );
+					const lodErrorData = new Float32Array( lods.length );
+					for ( let i = 0; i < lods.length; i ++ ) {
+
+						const lod = lods[ i ];
+						lodOffsetsData.set( [ lod.triangleStart, lod.numTriangles, lod.chunkStart, lod.numChunks ], i * 4 );
+						lodErrorData[ i ] = lod.error;
+
+					}
+
+					return {
+						lods,
+						meshletData,
+						meshletStreamWords,
+						meshletStreamData,
+						meshletDecodeData,
+						chunkBoundsData,
+						lodOffsetsData,
+						lodErrorData,
+						totalChunks: base.totalChunks + next.totalChunks,
+						maxMeshletsPerLod: Math.max( base.maxMeshletsPerLod, next.maxMeshletsPerLod ),
+						meshletTopologyStats: {
+							sourceCount: base.meshletTopologyStats.sourceCount + next.meshletTopologyStats.sourceCount,
+							lodCount: LOD_COUNT,
+							totalTriangles: base.meshletTopologyStats.totalTriangles + next.meshletTopologyStats.totalTriangles,
+							encodedBytes: meshletStreamData.length,
+							decodedTopologyWords: base.meshletTopologyStats.decodedTopologyWords + next.meshletTopologyStats.decodedTopologyWords
+						}
+					};
 
 				}
 
@@ -1246,6 +1442,7 @@
 						loadSourceModel( 'DamagedHelmet', 'models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf', 0 ),
 						loadSourceModel( 'CoffeeMug', 'models/gltf/coffeeMug.glb', 1 )
 					] );
+					assignSourceMaterialIds( sources );
 					const meshlets = await buildBrowserMeshletAsset( sources );
 
 					return { sources, meshlets };
@@ -1341,38 +1538,95 @@
 
 					const positionList = [];
 					const normalList = [];
+					const colorList = [];
 					const uvList = [];
 					const indexList = [];
+					const primitives = [];
+					const materials = [];
+					const materialMap = new Map();
 					let vertexOffset = 0;
-					let sourceMaterial = null;
+
+					const defaultMaterial = new THREE.MeshStandardMaterial();
+					const tempPosition = new THREE.Vector3();
+					const tempNormal = new THREE.Vector3();
+					const tempSkinnedNormal = new THREE.Vector4();
+					const normalMatrix = new THREE.Matrix3();
+
+					const getMaterialId = ( material ) => {
+
+						material = material || defaultMaterial;
+
+						let id = materialMap.get( material );
+						if ( id === undefined ) {
+
+							id = materials.length;
+							materials.push( material );
+							materialMap.set( material, id );
+
+						}
+
+						return id;
+
+					};
 
 					gltf.scene.updateMatrixWorld( true );
 					gltf.scene.traverse( ( child ) => {
 
 						if ( ! child.isMesh ) return;
 
-						if ( sourceMaterial === null ) sourceMaterial = Array.isArray( child.material ) ? child.material[ 0 ] : child.material;
+						if ( child.isSkinnedMesh ) child.skeleton.update();
 
-						const geometry = child.geometry.clone();
-						geometry.applyMatrix4( child.matrixWorld );
+						const geometry = child.geometry;
+						const materialsForMesh = Array.isArray( child.material ) ? child.material : [ child.material ];
 						if ( geometry.getAttribute( 'normal' ) === undefined ) geometry.computeVertexNormals();
+						normalMatrix.getNormalMatrix( child.matrixWorld );
 
 						const position = geometry.getAttribute( 'position' );
 						const normal = geometry.getAttribute( 'normal' );
+						const color = geometry.getAttribute( 'color' );
 						const uv = geometry.getAttribute( 'uv' );
 						const indices = getGeometryIndices( geometry );
 
 						for ( let i = 0; i < position.count; i ++ ) {
 
-							positionList.push( position.getX( i ), position.getY( i ), position.getZ( i ) );
+							tempPosition.fromBufferAttribute( position, i );
+							if ( child.isSkinnedMesh ) child.applyBoneTransform( i, tempPosition );
+							tempPosition.applyMatrix4( child.matrixWorld );
+							positionList.push( tempPosition.x, tempPosition.y, tempPosition.z );
 
 							if ( normal ) {
 
-								normalList.push( normal.getX( i ), normal.getY( i ), normal.getZ( i ) );
+								tempNormal.fromBufferAttribute( normal, i );
+
+								if ( child.isSkinnedMesh ) {
+
+									tempSkinnedNormal.set( tempNormal.x, tempNormal.y, tempNormal.z, 0 );
+									child.applyBoneTransform( i, tempSkinnedNormal );
+									tempNormal.set( tempSkinnedNormal.x, tempSkinnedNormal.y, tempSkinnedNormal.z );
+
+								}
+
+								tempNormal.applyMatrix3( normalMatrix ).normalize();
+								normalList.push( tempNormal.x, tempNormal.y, tempNormal.z );
 
 							} else {
 
 								normalList.push( 0, 1, 0 );
+
+							}
+
+							if ( color ) {
+
+								colorList.push(
+									color.getX( i ),
+									color.getY( i ),
+									color.getZ( i ),
+									color.itemSize >= 4 ? color.getW( i ) : 1
+								);
+
+							} else {
+
+								colorList.push( 1, 1, 1, 1 );
 
 							}
 
@@ -1388,9 +1642,29 @@
 
 						}
 
-						for ( let i = 0; i < indices.length; i ++ ) {
+						const groups = geometry.groups.length > 0 ? geometry.groups : [ { start: 0, count: indices.length, materialIndex: 0 } ];
 
-							indexList.push( indices[ i ] + vertexOffset );
+						for ( const group of groups ) {
+
+							const groupIndices = [];
+							const end = Math.min( group.start + group.count, indices.length );
+
+							for ( let i = group.start; i < end; i ++ ) {
+
+								const index = indices[ i ] + vertexOffset;
+								groupIndices.push( index );
+								indexList.push( index );
+
+							}
+
+							if ( groupIndices.length >= 3 ) {
+
+								primitives.push( {
+									indices: new Uint32Array( groupIndices ),
+									materialId: getMaterialId( materialsForMesh[ group.materialIndex ] )
+								} );
+
+							}
 
 						}
 
@@ -1406,51 +1680,172 @@
 
 					const positions = new Float32Array( positionList );
 					normalizePositions( positions );
-
-					const material = sourceMaterial || new THREE.MeshStandardMaterial();
-					const materialColor = material.color || new THREE.Color( 1, 1, 1 );
-					const materialMetalness = material.metalness ?? 0;
-					const materialRoughness = material.roughness ?? 1;
-
-					const textureMap = prepareTexture( material.map || createSolidTexture( materialColor.r * 255, materialColor.g * 255, materialColor.b * 255, 255, THREE.SRGBColorSpace ), THREE.SRGBColorSpace );
-					const metalRoughnessMap = prepareTexture( material.metalnessMap || material.roughnessMap || createSolidTexture( 0, materialRoughness * 255, materialMetalness * 255, 255 ) );
-					const normalMap = prepareTexture( material.normalMap || createSolidTexture( 128, 128, 255, 255 ) );
-					const aoMap = prepareTexture( material.aoMap || createSolidTexture( 255, 255, 255, 255 ) );
-					const emissiveMap = prepareTexture( material.emissiveMap || createSolidTexture( 0, 0, 0, 255, THREE.SRGBColorSpace ), THREE.SRGBColorSpace );
+					const bounds = computePositionBounds( positions );
 
 					return {
 						name,
 						materialId,
+						materialBase: 0,
+						materials,
+						primitives,
+						bounds,
 						positions,
 						normals: new Float32Array( normalList ),
+						colors: new Float32Array( colorList ),
 						uvs: new Float32Array( uvList ),
-						indices: new Uint32Array( indexList ),
-						textureMap,
-						metalRoughnessMap,
-						normalMap,
-						aoMap,
-						emissiveMap
+						indices: new Uint32Array( indexList )
 					};
 
 				}
 
-				function prepareTexture( map, colorSpace = THREE.NoColorSpace ) {
+				function createMaterialTextureArray( materials, channel, colorSpace = THREE.NoColorSpace ) {
 
+					const layerCount = Math.max( materials.length, 1 );
+					const size = chooseMaterialTextureSize( materials, channel );
+					const layerBytes = size * size * 4;
+					const data = new Uint8Array( layerBytes * layerCount );
+					const canvas = document.createElement( 'canvas' );
+					canvas.width = size;
+					canvas.height = size;
+					const context = canvas.getContext( '2d', { willReadFrequently: true } );
+
+					for ( let i = 0; i < layerCount; i ++ ) {
+
+						const layer = buildMaterialTextureLayer( context, size, materials[ i ], channel );
+						data.set( layer, i * layerBytes );
+
+					}
+
+					const map = new THREE.DataArrayTexture( data, size, size, layerCount );
 					map.colorSpace = colorSpace;
 					map.wrapS = THREE.RepeatWrapping;
 					map.wrapT = THREE.RepeatWrapping;
+					map.minFilter = THREE.LinearMipmapLinearFilter;
+					map.magFilter = THREE.LinearFilter;
+					map.generateMipmaps = true;
+					map.needsUpdate = true;
 
 					return map;
 
 				}
 
-				function createSolidTexture( r, g, b, a, colorSpace = THREE.NoColorSpace ) {
+				function chooseMaterialTextureSize( materials, channel ) {
 
-					const map = new THREE.DataTexture( new Uint8Array( [ r, g, b, a ] ), 1, 1 );
-					map.colorSpace = colorSpace;
-					map.needsUpdate = true;
+					let size = 1;
 
-					return map;
+					for ( const material of materials ) {
+
+						const image = getMaterialTexture( material, channel )?.image;
+						if ( image && image.width && image.height ) size = Math.max( size, image.width, image.height );
+
+					}
+
+					return Math.min( MATERIAL_TEXTURE_SIZE, THREE.MathUtils.ceilPowerOfTwo( size ) );
+
+				}
+
+				function buildMaterialTextureLayer( context, size, material, channel ) {
+
+					const map = getMaterialTexture( material, channel );
+					const fallback = getMaterialFallbackColor( material, channel );
+
+					context.clearRect( 0, 0, size, size );
+
+					if ( map && map.image && map.image.width && map.image.height ) {
+
+						context.drawImage( map.image, 0, 0, size, size );
+
+					} else {
+
+						context.fillStyle = `rgba(${ fallback[ 0 ] }, ${ fallback[ 1 ] }, ${ fallback[ 2 ] }, ${ fallback[ 3 ] / 255 })`;
+						context.fillRect( 0, 0, size, size );
+
+					}
+
+					const imageData = context.getImageData( 0, 0, size, size );
+					const data = imageData.data;
+					applyMaterialFactors( data, material, channel, Boolean( map ) );
+
+					return data;
+
+				}
+
+				function getMaterialTexture( material, channel ) {
+
+					if ( channel === 'baseColor' ) return material?.map || null;
+					if ( channel === 'metalRoughness' ) return material?.metalnessMap || material?.roughnessMap || null;
+					if ( channel === 'normal' ) return material?.normalMap || null;
+					if ( channel === 'ao' ) return material?.aoMap || null;
+					if ( channel === 'emissive' ) return material?.emissiveMap || null;
+
+					return null;
+
+				}
+
+				function getMaterialFallbackColor( material, channel ) {
+
+					if ( channel === 'baseColor' ) {
+
+						const color = material?.color || new THREE.Color( 1, 1, 1 );
+						return [ color.r * 255, color.g * 255, color.b * 255, ( material?.opacity ?? 1 ) * 255 ];
+
+					}
+
+					if ( channel === 'metalRoughness' ) return [ 0, ( material?.roughness ?? 1 ) * 255, ( material?.metalness ?? 0 ) * 255, 255 ];
+					if ( channel === 'normal' ) return [ 128, 128, 255, 255 ];
+					if ( channel === 'ao' ) return [ 255, 255, 255, 255 ];
+
+					const emissive = material?.emissive || new THREE.Color( 0, 0, 0 );
+					const intensity = material?.emissiveIntensity ?? 1;
+					return [
+						Math.min( emissive.r * intensity * 255, 255 ),
+						Math.min( emissive.g * intensity * 255, 255 ),
+						Math.min( emissive.b * intensity * 255, 255 ),
+						255
+					];
+
+				}
+
+				function applyMaterialFactors( data, material, channel, hasTexture ) {
+
+					if ( channel === 'baseColor' ) {
+
+						const color = material?.color || new THREE.Color( 1, 1, 1 );
+						const opacity = material?.opacity ?? 1;
+						if ( hasTexture ) multiplyTextureChannels( data, color.r, color.g, color.b, opacity );
+
+					} else if ( channel === 'metalRoughness' ) {
+
+						const roughness = hasTexture ? material?.roughness ?? 1 : 1;
+						const metalness = hasTexture ? material?.metalness ?? 1 : 1;
+
+						for ( let i = 0; i < data.length; i += 4 ) {
+
+							data[ i + 1 ] = Math.min( data[ i + 1 ] * roughness, 255 );
+							data[ i + 2 ] = Math.min( data[ i + 2 ] * metalness, 255 );
+
+						}
+
+					} else if ( channel === 'emissive' ) {
+
+						const color = material?.emissive || new THREE.Color( 1, 1, 1 );
+						const intensity = material?.emissiveIntensity ?? 1;
+						if ( hasTexture ) multiplyTextureChannels( data, color.r * intensity, color.g * intensity, color.b * intensity, 1 );
+
+					}
+
+				}
+
+				function multiplyTextureChannels( data, r, g, b, a ) {
+
+					for ( let i = 0; i < data.length; i += 4 ) {
+
+						data[ i + 0 ] = Math.min( data[ i + 0 ] * r, 255 );
+						data[ i + 1 ] = Math.min( data[ i + 1 ] * g, 255 );
+						data[ i + 2 ] = Math.min( data[ i + 2 ] * b, 255 );
+						data[ i + 3 ] = Math.min( data[ i + 3 ] * a, 255 );
+
+					}
 
 				}
 
@@ -1505,6 +1900,33 @@
 
 				}
 
+				function computePositionBounds( positions ) {
+
+					const min = new THREE.Vector3( Infinity, Infinity, Infinity );
+					const max = new THREE.Vector3( - Infinity, - Infinity, - Infinity );
+					const point = new THREE.Vector3();
+
+					for ( let i = 0; i < positions.length / 3; i ++ ) {
+
+						point.set(
+							positions[ i * 3 + 0 ],
+							positions[ i * 3 + 1 ],
+							positions[ i * 3 + 2 ]
+						);
+
+						min.min( point );
+						max.max( point );
+
+					}
+
+					const center = min.clone().add( max ).multiplyScalar( 0.5 );
+					const size = max.clone().sub( min );
+					const radius = size.length() * 0.5;
+
+					return { center, size, radius };
+
+				}
+
 				function getGeometryIndices( geometry ) {
 
 					if ( geometry.index ) {
@@ -1530,22 +1952,14 @@
 
 					const vertexList = [];
 					const normalList = [];
+					const colorList = [];
 					const uvList = [];
-					const textureMaps = sources.map( ( source ) => source.textureMap );
-					const metalRoughnessMaps = sources.map( ( source ) => source.metalRoughnessMap );
-					const normalMaps = sources.map( ( source ) => source.normalMap );
-					const aoMaps = sources.map( ( source ) => source.aoMap );
-					const emissiveMaps = sources.map( ( source ) => source.emissiveMap );
-
-					while ( textureMaps.length < 2 ) {
-
-						textureMaps.push( textureMaps[ 0 ] );
-						metalRoughnessMaps.push( metalRoughnessMaps[ 0 ] );
-						normalMaps.push( normalMaps[ 0 ] );
-						aoMaps.push( aoMaps[ 0 ] );
-						emissiveMaps.push( emissiveMaps[ 0 ] );
-
-					}
+					const materials = sources.flatMap( ( source ) => source.materials );
+					const textureMaps = createMaterialTextureArray( materials, 'baseColor', THREE.SRGBColorSpace );
+					const metalRoughnessMap = createMaterialTextureArray( materials, 'metalRoughness' );
+					const normalMap = createMaterialTextureArray( materials, 'normal' );
+					const aoMap = createMaterialTextureArray( materials, 'ao' );
+					const emissiveMap = createMaterialTextureArray( materials, 'emissive', THREE.SRGBColorSpace );
 
 					for ( const source of sources ) {
 
@@ -1575,6 +1989,21 @@
 
 							}
 
+							if ( source.colors ) {
+
+								colorList.push(
+									source.colors[ i * 4 + 0 ],
+									source.colors[ i * 4 + 1 ],
+									source.colors[ i * 4 + 2 ],
+									source.colors[ i * 4 + 3 ]
+								);
+
+							} else {
+
+								colorList.push( 1, 1, 1, 1 );
+
+							}
+
 							uvList.push( source.uvs[ i * 2 + 0 ], source.uvs[ i * 2 + 1 ] );
 
 						}
@@ -1583,12 +2012,13 @@
 
 					return {
 						textureMaps,
-						metalRoughnessMaps,
-						normalMaps,
-						aoMaps,
-						emissiveMaps,
+						metalRoughnessMap,
+						normalMap,
+						aoMap,
+						emissiveMap,
 						vertexArray: new Float32Array( vertexList ),
 						normalArray: new Float32Array( normalList ),
+						colorArray: new Float32Array( colorList ),
 						uvArray: new Float32Array( uvList ),
 						totalVertices: vertexList.length / 4
 					};
@@ -1638,37 +2068,9 @@
 						for ( let i = 0; i < lodTargets.length; i ++ ) {
 
 							const target = lodTargets[ i ];
-							let indices = source.indices;
 							let error = 0;
 
 							await reportProgress( source, `preparing LOD ${ i + 1 }/${ lodTargets.length }`, 0.05 );
-
-							if ( i > 0 ) {
-
-								const targetIndexCount = Math.max( 3, Math.floor( source.indices.length * target.ratio / 3 ) * 3 );
-								const simplified = MeshoptSimplifier.simplifyWithAttributes(
-									source.indices,
-									source.positions,
-									3,
-									simplifierAttributes.data,
-									simplifierAttributes.stride,
-									target.weights,
-									null,
-									targetIndexCount,
-									target.error,
-									target.flags
-								);
-
-								if ( simplified[ 0 ].length >= 3 ) {
-
-									indices = simplified[ 0 ];
-									error = simplified[ 1 ] * sourceScale;
-
-								}
-
-							}
-
-							if ( i > 0 ) error = Math.max( error, previousLodError * 1.05 );
 
 							await reportProgress( source, `building meshlets for LOD ${ i + 1 }/${ lodTargets.length }`, 0.35 );
 
@@ -1680,58 +2082,93 @@
 								error
 							};
 
-							const meshletBuffers = MeshoptClusterizer.buildMeshlets(
-								indices,
-								source.positions,
-								3,
-								MESHLET_MAX_VERTICES,
-								MESHLET_MAX_TRIANGLES,
-								0.25
-							);
-							const bounds = MeshoptClusterizer.computeMeshletBounds( meshletBuffers, source.positions, 3 );
+							for ( let p = 0; p < source.primitives.length; p ++ ) {
 
-							await reportProgress( source, `compressing meshlets for LOD ${ i + 1 }/${ lodTargets.length }`, 0.55 );
+								const primitive = source.primitives[ p ];
+								let indices = primitive.indices;
 
-							for ( let m = 0; m < meshletBuffers.meshletCount; m ++ ) {
+								if ( i > 0 ) {
 
-								if ( m % 16 === 0 ) {
+									const targetIndexCount = Math.max( 3, Math.floor( primitive.indices.length * target.ratio / 3 ) * 3 );
+									const simplified = MeshoptSimplifier.simplifyWithAttributes(
+										primitive.indices,
+										source.positions,
+										3,
+										simplifierAttributes.data,
+										simplifierAttributes.stride,
+										target.weights,
+										null,
+										targetIndexCount,
+										target.error,
+										target.flags
+									);
 
-									await reportProgress( source, `compressing meshlet ${ m + 1 }/${ meshletBuffers.meshletCount } for LOD ${ i + 1 }/${ lodTargets.length }`, 0.55 + 0.4 * ( m / meshletBuffers.meshletCount ) );
+									if ( simplified[ 0 ].length >= 3 ) {
 
-								}
+										indices = simplified[ 0 ];
+										error = Math.max( error, simplified[ 1 ] * sourceScale );
 
-								const meshlet = MeshoptClusterizer.extractMeshlet( meshletBuffers, m );
-								const vertexCount = meshlet.vertices.length;
-								const triangleCount = meshlet.triangles.length / 3;
-								const outputOffset = topologyWords;
-								const encodedMeshlet = MeshoptClusterizer.encodeMeshlet( meshlet.vertices, meshlet.triangles, 3 );
-
-								while ( meshletStreamList.length % 4 !== 0 ) {
-
-									meshletStreamList.push( 0 );
+									}
 
 								}
 
-								const streamOffset = meshletStreamList.length;
-								for ( let e = 0; e < encodedMeshlet.length; e ++ ) meshletStreamList.push( encodedMeshlet[ e ] );
-
-								meshletDataList.push( outputOffset, triangleCount | ( vertexCount << 8 ), source.materialId, 0 );
-								meshletDecodeDataList.push(
-									streamOffset,
-									outputOffset,
-									encodedMeshlet.length | ( vertexCount << 16 ) | ( triangleCount << 24 ),
-									vertexBase
+								const meshletBuffers = MeshoptClusterizer.buildMeshlets(
+									indices,
+									source.positions,
+									3,
+									MESHLET_MAX_VERTICES,
+									MESHLET_MAX_TRIANGLES,
+									0.25
 								);
+								const bounds = MeshoptClusterizer.computeMeshletBounds( meshletBuffers, source.positions, 3 );
 
-								chunkBoundsList.push( bounds[ m ].centerX, bounds[ m ].centerY, bounds[ m ].centerZ, bounds[ m ].radius );
+								await reportProgress( source, `compressing LOD ${ i + 1 }/${ lodTargets.length }, part ${ p + 1 }/${ source.primitives.length }`, 0.55 );
 
-								topologyWords += vertexCount + triangleCount;
-								totalTriangles += triangleCount;
-								totalChunks ++;
-								lod.numTriangles += triangleCount;
-								lod.numChunks ++;
+								for ( let m = 0; m < meshletBuffers.meshletCount; m ++ ) {
+
+									if ( m % 16 === 0 ) {
+
+										await reportProgress( source, `compressing part ${ p + 1 }/${ source.primitives.length } meshlet ${ m + 1 }/${ meshletBuffers.meshletCount } for LOD ${ i + 1 }/${ lodTargets.length }`, 0.55 + 0.4 * ( ( p + m / meshletBuffers.meshletCount ) / source.primitives.length ) );
+
+									}
+
+									const meshlet = MeshoptClusterizer.extractMeshlet( meshletBuffers, m );
+									const vertexCount = meshlet.vertices.length;
+									const triangleCount = meshlet.triangles.length / 3;
+									const outputOffset = topologyWords;
+									const encodedMeshlet = MeshoptClusterizer.encodeMeshlet( meshlet.vertices, meshlet.triangles, 3 );
+
+									while ( meshletStreamList.length % 4 !== 0 ) {
+
+										meshletStreamList.push( 0 );
+
+									}
+
+									const streamOffset = meshletStreamList.length;
+									for ( let e = 0; e < encodedMeshlet.length; e ++ ) meshletStreamList.push( encodedMeshlet[ e ] );
+
+									meshletDataList.push( outputOffset, triangleCount | ( vertexCount << 8 ), source.materialBase + primitive.materialId, 0 );
+									meshletDecodeDataList.push(
+										streamOffset,
+										outputOffset,
+										encodedMeshlet.length | ( vertexCount << 16 ) | ( triangleCount << 24 ),
+										vertexBase
+									);
+
+									chunkBoundsList.push( bounds[ m ].centerX, bounds[ m ].centerY, bounds[ m ].centerZ, bounds[ m ].radius );
+
+									topologyWords += vertexCount + triangleCount;
+									totalTriangles += triangleCount;
+									totalChunks ++;
+									lod.numTriangles += triangleCount;
+									lod.numChunks ++;
+
+								}
 
 							}
+
+							if ( i > 0 ) error = Math.max( error, previousLodError * 1.05 );
+							lod.error = error;
 
 							maxMeshletsPerLod = Math.max( maxMeshletsPerLod, lod.numChunks );
 							lods.push( lod );
@@ -2052,6 +2489,7 @@
 					if ( computeHWArgs ) computeHWArgs.dispose();
 
 					if ( quadMesh ) quadMesh.material.dispose();
+					if ( backgroundQuadMesh ) backgroundQuadMesh.material.dispose();
 					if ( hwMesh ) hwMesh.material.dispose();
 
 				}
@@ -2067,6 +2505,7 @@
 				}
 
 				if ( quadMesh ) quadMesh.material.dispose();
+				if ( backgroundQuadMesh ) backgroundQuadMesh.material.dispose();
 				if ( hwMesh ) {
 
 					hwMesh.geometry.dispose();
@@ -2074,12 +2513,92 @@
 
 				}
 
-				quadMesh = hwScene = hwMesh = undefined;
+				for ( const map of currentMaterialTextures ) map.dispose();
+				currentMaterialTextures = [];
+
+				quadMesh = backgroundQuadMesh = hwScene = hwMesh = undefined;
 				computeRasterize = computeClear = computeFrustum = computeDispatch = computeHWArgs = undefined;
 				meshletDataBuffer = chunkBoundsBuffer = undefined;
 				instanceWorldBuffer = instanceMvpBuffer = undefined;
 				instanceWorldAttr = instanceMvpAttr = undefined;
 				hwDrawBuffer = undefined;
+
+			}
+
+			const focusTargetGeometry = new THREE.BoxGeometry( 1, 1, 1 );
+			const focusTargetMaterial = new THREE.MeshBasicMaterial();
+
+			function rebuildFocusTargets( sources, instanceData, instanceModelData ) {
+
+				focusTargets.length = 0;
+
+				for ( let i = 0; i < instanceCount; i ++ ) {
+
+					const source = sources[ instanceModelData[ i ] ];
+					const bounds = source.bounds;
+					const scale = instanceData[ i * 4 + 3 ];
+					const center = new THREE.Vector3(
+						instanceData[ i * 4 + 0 ] + bounds.center.x * scale,
+						instanceData[ i * 4 + 1 ] + bounds.center.y * scale,
+						instanceData[ i * 4 + 2 ] + bounds.center.z * scale
+					);
+
+					const target = new THREE.Mesh( focusTargetGeometry, focusTargetMaterial );
+					target.position.copy( center );
+					target.scale.set(
+						Math.max( bounds.size.x * scale, 0.001 ),
+						Math.max( bounds.size.y * scale, 0.001 ),
+						Math.max( bounds.size.z * scale, 0.001 )
+					);
+					target.updateMatrixWorld( true );
+					target.userData.focusPoint = center;
+					focusTargets.push( target );
+
+				}
+
+			}
+
+			function onDoubleClickFocus( event ) {
+
+				pointerCoords.set(
+					( event.clientX / window.innerWidth ) * 2 - 1,
+					- ( event.clientY / window.innerHeight ) * 2 + 1
+				);
+
+				raycaster.setFromCamera( pointerCoords, camera );
+				const intersects = raycaster.intersectObjects( focusTargets, false );
+				if ( intersects.length === 0 ) return;
+
+				const hit = intersects[ 0 ];
+				const target = hit.object;
+				const boundsCenter = target.userData.focusPoint;
+				const nextFocus = new THREE.Vector3( boundsCenter.x, hit.point.y, boundsCenter.z );
+
+				focusStart.copy( controls.target );
+				focusTarget.copy( nextFocus );
+				focusAnimation.start = performance.now();
+				focusAnimation.active = true;
+
+			}
+
+			function updateFocusAnimation() {
+
+				if ( focusAnimation.active === false ) return;
+
+				const elapsed = performance.now() - focusAnimation.start;
+				const t = Math.min( elapsed / focusAnimation.duration, 1.0 );
+				const k = t < 0.5 ? 4.0 * t * t * t : 1.0 - Math.pow( - 2.0 * t + 2.0, 3.0 ) / 2.0;
+
+				controls.target.lerpVectors( focusStart, focusTarget, k );
+				focusPoint.copy( controls.target );
+
+				if ( t >= 1.0 ) {
+
+					controls.target.copy( focusTarget );
+					focusPoint.copy( focusTarget );
+					focusAnimation.active = false;
+
+				}
 
 			}
 
@@ -2100,7 +2619,11 @@
 
 			function animate() {
 
+				if ( isSwappingAsset ) return;
+
+				updateFocusAnimation();
 				controls.update();
+				if ( focusAnimation.active === false ) focusPoint.copy( controls.target );
 
 				camera.updateMatrixWorld();
 
@@ -2112,6 +2635,8 @@
 				projScreenMatrixUniform.value.copy( projScreenMatrix );
 				cameraPos.value.copy( camera.position );
 				cotHalfFovUniform.value = camera.projectionMatrix.elements[ 5 ];
+				cameraWorldMatrixUniform.value.copy( camera.matrixWorld );
+				cameraProjectionInverseUniform.value.copy( camera.projectionMatrixInverse );
 
 				// Pack frustum planes into the uniform array
 				const planes = frustum.planes;
@@ -2131,19 +2656,23 @@
 				renderer.compute( computeHWArgs );
 
 				const rasterMode = options.Rasterizer;
+				renderer.setRenderTarget( null );
 
 				// SW presentation (fullscreen quad reads atomic buffer)
 				if ( rasterMode === 'SW Only' || rasterMode === 'Both' ) {
 
 					quadMesh.render( renderer );
 
+				} else {
+
+					backgroundQuadMesh.render( renderer );
+
 				}
 
 				// HW mesh renders with real depth testing + colors
 				if ( rasterMode === 'HW Only' || rasterMode === 'Both' ) {
 
-					hwScene.background = ( rasterMode === 'HW Only' ) ? background : null;
-					renderer.autoClear = ( rasterMode === 'HW Only' );
+					renderer.autoClear = false;
 					renderer.render( hwScene, camera );
 					renderer.autoClear = true;
 
