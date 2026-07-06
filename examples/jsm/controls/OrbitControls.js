@@ -261,6 +261,23 @@ class OrbitControls extends Controls {
 
 	}
 
+	/**
+	 * Cancels an in-progress zoom-to-cursor gesture. (Needle addition)
+	 *
+	 * With smooth zoom the cursor-zoom state (`_performCursorZoom`) stays active across
+	 * frames until `update()` fully settles, so the damped zoom can converge. External
+	 * code that constrains `target` every frame (e.g. target bounds) prevents `update()`
+	 * from ever settling; the per-frame cursor-zoom target rewrite then fights that
+	 * constraint in a positive feedback loop that moves the camera exponentially far
+	 * away. Such code must call this method whenever it has to override `target`,
+	 * ending the gesture — the next wheel / pinch input starts a new one.
+	 */
+	interruptCursorZoom() {
+
+		this._performCursorZoom = false;
+
+	}
+
 	listenToKeyEvents( domElement ) {
 
 		domElement.addEventListener( 'keydown', this._onKeyDown );
