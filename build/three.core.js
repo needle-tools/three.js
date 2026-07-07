@@ -3,7 +3,7 @@
  * Copyright 2010-2026 Three.js Authors
  * SPDX-License-Identifier: MIT
  */
-const REVISION = '185';
+const REVISION = '185.0';
 
 /**
  * Represents mouse buttons and interaction types in context of controls.
@@ -8018,14 +8018,15 @@ Texture.DEFAULT_IMAGE = null;
  */
 Texture.DEFAULT_MAPPING = UVMapping;
 
+
 /**
  * The default anisotropy value for all textures.
  *
  * @static
  * @type {number}
- * @default 1
+ * @default 4
  */
-Texture.DEFAULT_ANISOTROPY = 1;
+Texture.DEFAULT_ANISOTROPY = 4;
 
 /**
  * Class representing a 4D vector. A 4D vector is an ordered quadruplet of numbers
@@ -20977,6 +20978,10 @@ class Material extends EventDispatcher {
 		this._alphaTest = value;
 
 	}
+
+	onBuild( /* shaderobject, renderer */ ) {}
+
+	// onBeforeRender and onBeforeCompile only supported in WebGLRenderer
 
 	/**
 	 * An optional callback that is executed immediately before the material is used to render a 3D object.
@@ -50929,6 +50934,9 @@ class AudioListener extends Object3D {
 
 		this.matrixWorld.decompose( _position$1, _quaternion$1, _scale$1 );
 
+		if ( ! Number.isFinite( _position$1.x ) || ! Number.isFinite( _position$1.y ) || ! Number.isFinite( _position$1.z ) )
+			return;
+
 		// the initial forward and up directions must be orthogonal
 		_forward.set( 0, 0, -1 ).applyQuaternion( _quaternion$1 );
 		_up.set( 0, 1, 0 ).applyQuaternion( _quaternion$1 );
@@ -51333,7 +51341,7 @@ class Audio extends Object3D {
 
 				// ensure _progress does not exceed duration with looped audios
 
-				this._progress = this._progress % ( this.duration || this.buffer.duration );
+				this._progress = this._progress % ( this.duration || ( this.buffer ? this.buffer.duration : Number.MAX_VALUE ) );
 
 			}
 
@@ -52747,19 +52755,23 @@ class PropertyBinding {
 		// search into node subtree.
 		if ( root.children ) {
 
-			const searchNodeSubtree = function ( children ) {
+			const searchNodeSubtree = function ( children, checkByUserDataName ) {
 
 				for ( let i = 0; i < children.length; i ++ ) {
 
 					const childNode = children[ i ];
 
-					if ( childNode.name === nodeName || childNode.uuid === nodeName ) {
+					if ( ! checkByUserDataName && ( childNode.name === nodeName || childNode.uuid === nodeName ) ) {
+
+						return childNode;
+
+					} else if ( checkByUserDataName && childNode.userData && childNode.userData.name === nodeName ) {
 
 						return childNode;
 
 					}
 
-					const result = searchNodeSubtree( childNode.children );
+					const result = searchNodeSubtree( childNode.children, checkByUserDataName );
 
 					if ( result ) return result;
 
@@ -52774,6 +52786,18 @@ class PropertyBinding {
 			if ( subTreeNode ) {
 
 				return subTreeNode;
+
+			} else {
+
+				// Search again by userData.name, as set by GLTFLoader.
+				// We don't want to do that in a single pass to avoid incorrect matches.
+				const subTreeNode = searchNodeSubtree( root.children, true );
+
+				if ( subTreeNode ) {
+
+					return subTreeNode;
+
+				}
 
 			}
 
@@ -59991,9 +60015,21 @@ if ( typeof __THREE_DEVTOOLS__ !== 'undefined' ) {
 
 if ( typeof window !== 'undefined' ) {
 
+	try {
+
+		if ( import.meta ) {
+
+			if ( ! window.__THREE__IMPORTS__) window.__THREE__IMPORTS__ = [];
+			window.__THREE__IMPORTS__.push( { url: import.meta.url, revision: REVISION } );
+
+		}
+
+	} catch { }
+
 	if ( window.__THREE__ ) {
 
-		warn( 'WARNING: Multiple instances of Three.js being imported.' );
+		warn( 'WARNING: Multiple instances of Three.js being imported. Existing: ' + window.__THREE__ + ', new: ' + REVISION );
+		console.warn( 'THREE imports:', window.__THREE__IMPORTS__ );
 
 	} else {
 
