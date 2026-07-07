@@ -416,9 +416,9 @@ var logdepthbuf_pars_vertex = "#ifdef USE_LOGARITHMIC_DEPTH_BUFFER\n\tvarying fl
 
 var logdepthbuf_vertex = "#ifdef USE_LOGARITHMIC_DEPTH_BUFFER\n\tvFragDepth = 1.0 + gl_Position.w;\n\tvIsPerspective = float( isPerspectiveMatrix( projectionMatrix ) );\n#endif";
 
-var map_fragment = "#ifdef USE_MAP\n\tvec4 sampledDiffuseColor = texture2D( map, vMapUv );\n\t#ifdef DECODE_VIDEO_TEXTURE\n\t\tsampledDiffuseColor = sRGBTransferEOTF( sampledDiffuseColor );\n\t#endif\n\tdiffuseColor *= sampledDiffuseColor;\n#endif";
+var map_fragment = "#ifdef USE_MAP\n#ifdef USE_MIPMAP_BIAS\n    vec4 sampledDiffuseColor = texture2D( map, vMapUv, mipmapBias );\n#else\n\tvec4 sampledDiffuseColor = texture2D( map, vMapUv );\n#endif\n\t#ifdef DECODE_VIDEO_TEXTURE\n\t\tsampledDiffuseColor = sRGBTransferEOTF( sampledDiffuseColor );\n\t#endif\n\tdiffuseColor *= sampledDiffuseColor;\n#endif";
 
-var map_pars_fragment = "#ifdef USE_MAP\n\tuniform sampler2D map;\n#endif";
+var map_pars_fragment = "#ifdef USE_MAP\n\tuniform sampler2D map;\n        \n#ifdef USE_MIPMAP_BIAS\n    uniform float mipmapBias;\n#endif\n#endif";
 
 var map_particle_fragment = "#if defined( USE_MAP ) || defined( USE_ALPHAMAP )\n\t#if defined( USE_POINTS_UV )\n\t\tvec2 uv = vUv;\n\t#else\n\t\tvec2 uv = ( uvTransform * vec3( gl_PointCoord.x, 1.0 - gl_PointCoord.y, 1 ) ).xy;\n\t#endif\n#endif\n#ifdef USE_MAP\n\tdiffuseColor *= texture2D( map, uv );\n#endif\n#ifdef USE_ALPHAMAP\n\tdiffuseColor.a *= texture2D( alphaMap, uv ).g;\n#endif";
 
@@ -2898,6 +2898,10 @@ class PMREMGenerator {
 		};
 
 		const cubeUVRenderTarget = _createRenderTarget( width, height, params );
+
+		// NEEDLE: This was added to work around a caching bug in PMREMGenerator that lead to incorrect results.
+		const { _lodMax } = this;
+		( { sizeLods: this._sizeLods, lodPlanes: this._lodPlanes, sigmas: this._sigmas } = _createPlanes( _lodMax ) );
 
 		if ( this._pingPongRenderTarget === null || this._pingPongRenderTarget.width !== width || this._pingPongRenderTarget.height !== height ) {
 
@@ -8234,6 +8238,8 @@ function WebGLRenderList() {
 
 		const renderItem = getNextRenderItem( object, geometry, material, groupOrder, z, group );
 
+		object.onBeforeRenderListPush?.( object, geometry, material, group );
+
 		if ( material.transmission > 0.0 ) {
 
 			transmissive.push( renderItem );
@@ -8247,6 +8253,8 @@ function WebGLRenderList() {
 			opaque.push( renderItem );
 
 		}
+
+		object.onAfterRenderListPush?.( object, geometry, material, group );
 
 	}
 
@@ -13979,6 +13987,8 @@ class WebXRManager extends EventDispatcher {
 		 */
 		this.isPresenting = false;
 
+		this.controllerAutoUpdate = true;
+
 		/**
 		 * Returns a group representing the `target ray` space of the XR controller.
 		 * Use this space for visualizing 3D objects that support the user in pointing
@@ -14097,7 +14107,7 @@ class WebXRManager extends EventDispatcher {
 
 				controllerInputSources[ i ] = null;
 
-				controllers[ i ].disconnect( inputSource );
+				if ( controllers[ i ] ) controllers[ i ].disconnect( inputSource );
 
 			}
 
@@ -14427,7 +14437,7 @@ class WebXRManager extends EventDispatcher {
 				if ( index >= 0 ) {
 
 					controllerInputSources[ index ] = null;
-					controllers[ index ].disconnect( inputSource );
+					if ( controllers[ index ] ) controllers[ index ].disconnect( inputSource );
 
 				}
 
@@ -14927,14 +14937,18 @@ class WebXRManager extends EventDispatcher {
 
 			//
 
-			for ( let i = 0; i < controllers.length; i ++ ) {
+			if ( scope.controllerAutoUpdate ) {
 
-				const inputSource = controllerInputSources[ i ];
-				const controller = controllers[ i ];
+				for ( let i = 0; i < controllers.length; i ++ ) {
 
-				if ( inputSource !== null && controller !== undefined ) {
+					const inputSource = controllerInputSources[ i ];
+					const controller = controllers[ i ];
 
-					controller.update( inputSource, frame, customReferenceSpace || referenceSpace );
+					if ( inputSource !== null && controller !== undefined ) {
+
+						controller.update( inputSource, frame, customReferenceSpace || referenceSpace );
+
+					}
 
 				}
 
@@ -18207,6 +18221,8 @@ class WebGLRenderer {
 
 				}
 
+				material.onBuild( object, parameters, _this );
+
 				material.onBeforeCompile( parameters, _this );
 
 				program = programCache.acquireProgram( parameters, programCacheKey );
@@ -18527,11 +18543,12 @@ class WebGLRenderer {
 
 			}
 
-			if ( material.id !== _currentMaterialId ) {
+			if ( material.id !== _currentMaterialId || material._forceRefresh ) {
 
 				_currentMaterialId = material.id;
 
 				refreshMaterial = true;
+				material._forceRefresh = false;
 
 			}
 
