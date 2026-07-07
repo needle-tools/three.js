@@ -1578,7 +1578,7 @@ class GLTFWriter {
 
 		const beforeWriteArgs = { keep: true, newTexture: null };
 	
-		this._invokeAll( function ( ext ) {
+		await this._invokeAllAsync( function ( ext ) {
 
 			ext.beforeWriteTexture && ext.beforeWriteTexture( map, beforeWriteArgs );
 
@@ -1848,7 +1848,7 @@ class GLTFWriter {
 
 		const beforeWriteArgs = { keep: true }
 
-		this._invokeAll( function ( ext ) {
+		await this._invokeAllAsync( function ( ext ) {
 
 			ext.beforeWriteMesh && ext.beforeWriteMesh( mesh, beforeWriteArgs );
 
@@ -2472,7 +2472,7 @@ class GLTFWriter {
 
 		const beforeWriteArgs = { keep: true }
 
-		this._invokeAll( function ( ext ) {
+		await this._invokeAllAsync( function ( ext ) {
 
 			ext.beforeWriteNode && ext.beforeWriteNode( object, beforeWriteArgs );
 
