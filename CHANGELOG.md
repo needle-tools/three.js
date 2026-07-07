@@ -4,6 +4,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.185.0] – 2026-07-07
+- update to r185
+- rebased all needle patches from r183
+- removed FBXLoader missing-rotation-curves patch (r185 handles partial rotation curves upstream via `synchronizeCurve`)
+- kept WebGLNodeBuilder / WebGLNodes group (still needed for node materials on the WebGLRenderer; candidate for future removal)
+
 ## [0.183.0] – 2026-03-29
 - update to r183
 - rebased all needle patches from r169
