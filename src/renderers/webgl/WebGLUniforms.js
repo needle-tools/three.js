@@ -806,11 +806,30 @@ function setValueV4uiArray( gl, v ) {
 
 // Array of textures (2D / 3D / Cube / 2DArray)
 
+const _warnedEmptySamplerArray = new Set();
+
 function setValueT1Array( gl, v, textures ) {
 
 	const cache = this.cache;
 
 	const n = v.length;
+
+	// An empty sampler array (`sampler2D x[0]`) has nothing to bind, and Chrome throws
+	// "WebGL: INVALID_VALUE: uniform1iv: no array" on `gl.uniform1iv([])` — every frame.
+	// Skip the upload (a genuine no-op) and warn once per uniform so the source of the
+	// empty array can be tracked down. Seen with empty shadow sampler arrays (ContactShadows).
+	if ( n === 0 ) {
+
+		if ( ! _warnedEmptySamplerArray.has( this.id ) ) {
+
+			_warnedEmptySamplerArray.add( this.id );
+			console.warn( `THREE.WebGLUniforms: skipping empty sampler array uniform '${ this.id }' (nothing to bind).` );
+
+		}
+
+		return;
+
+	}
 
 	const units = allocTexUnits( textures, n );
 
