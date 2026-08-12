@@ -113,28 +113,9 @@ class SceneContext {
 
 	}
 
-	update( object = null ) {
+	update() {
 
-		const { scene, lightsNode } = this;
-
-		// update lighting
-		const sceneLights = [];
-		const collectLight = child => {
-
-			if ( child.isLight ) {
-
-				sceneLights.push( child );
-
-			}
-
-		};
-
-		scene.traverse( collectLight );
-
-		// compile() can receive an object that has not been added to the target scene yet.
-		if ( object !== null && object !== scene ) object.traverse( collectLight );
-
-		lightsNode.setLights( sceneLights );
+		const { scene } = this;
 
 		// update fog
 		if ( this.prevFog !== scene.fog ) {
@@ -422,34 +403,25 @@ export class WebGLNodesHandler {
 
 		}
 
-		sceneContext.update( scene );
+		renderer.lighting.beginRender( targetScene );
+		sceneContext.update();
 		renderStack.push( { sceneContext, camera } );
 
-		// ensure all node material callbacks are initialized before
-		// traversal and build
-		const {
-			customProgramCacheKeyCallback,
-			onBeforeRenderCallback,
-		} = this;
+	}
 
-		scene.traverse( object => {
+	updateLights( lights ) {
 
-			if ( object.material && object.material.isNodeMaterial ) {
-
-				object.material.customProgramCacheKey = customProgramCacheKeyCallback;
-				object.material.onBeforeRender = onBeforeRenderCallback;
-
-			}
-
-		} );
+		const frame = this.renderStack[ this.renderStack.length - 1 ];
+		frame.sceneContext.lightsNode.setLights( lights );
 
 	}
 
 	renderEnd() {
 
-		const { nodeFrame, renderStack } = this;
+		const { nodeFrame, renderer, renderStack } = this;
 
-		renderStack.pop();
+		const { sceneContext } = renderStack.pop();
+		renderer.lighting.finishRender( sceneContext.scene );
 
 		const frame = renderStack[ renderStack.length - 1 ];
 		if ( frame ) {
@@ -462,9 +434,11 @@ export class WebGLNodesHandler {
 
 	}
 
-	prepare( object ) {
+	prepare( material, object ) {
 
 		this.nodeFrame.object = object;
+		material.customProgramCacheKey = this.customProgramCacheKeyCallback;
+		material.onBeforeRender = this.onBeforeRenderCallback;
 
 	}
 
