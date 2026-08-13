@@ -434,7 +434,7 @@ export class WebGLNodesHandler {
 
 	}
 
-	prepare( material, object ) {
+	setObject( object, material ) {
 
 		this.nodeFrame.object = object;
 		material.customProgramCacheKey = this.customProgramCacheKeyCallback;
