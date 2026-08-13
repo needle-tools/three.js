@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.185.2-alpha.3] – 2026-08-13
+- fix WebGL node-material precompilation when meshes receive shadows
+- update node-material program caching when the scene environment changes
+
 ## [0.185.2-alpha.2] – 2026-08-12
 - fix WebGL node-material compilation through `WebGLRenderer.compile()` and `compileAsync()`
 - reuse WebGLRenderer scene analysis for node materials and preserve nested render state
