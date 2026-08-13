@@ -107,7 +107,7 @@ class SceneContext {
 
 		const { lightsNode, environmentNode, fogNode } = this;
 		const lightsHash = lightsNode.getCacheKey();
-		const envHash = environmentNode ? environmentNode.getCacheKey : 0;
+		const envHash = environmentNode ? environmentNode.getCacheKey() : 0;
 		const fogHash = fogNode ? fogNode.getCacheKey() : 0;
 		return NodeUtils.hashArray( [ lightsHash, envHash, fogHash ] );
 

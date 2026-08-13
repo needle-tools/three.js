@@ -1429,6 +1429,7 @@ class WebGLRenderer {
 
 			currentRenderState.setupLights();
 			if ( _nodesHandler !== null ) _nodesHandler.updateLights( currentRenderState.state.lightsArray );
+			if ( _nodesHandler !== null ) shadowMap.setup( currentRenderState.state.shadowsArray, targetScene );
 
 			// Only initialize materials in the new scene, not the targetScene.
 
