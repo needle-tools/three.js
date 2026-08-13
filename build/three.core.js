@@ -3,7 +3,7 @@
  * Copyright 2010-2026 Three.js Authors
  * SPDX-License-Identifier: MIT
  */
-const REVISION = '185.2-alpha.2';
+const REVISION = '185.2-alpha.3';
 
 /**
  * Represents mouse buttons and interaction types in context of controls.
@@ -60020,7 +60020,7 @@ if ( typeof window !== 'undefined' ) {
 
 		if ( import.meta ) {
 
-			if ( ! window.__THREE__IMPORTS__) window.__THREE__IMPORTS__ = [];
+			if ( ! window.__THREE__IMPORTS__ ) window.__THREE__IMPORTS__ = [];
 			window.__THREE__IMPORTS__.push( { url: import.meta.url, revision: REVISION } );
 
 		}
