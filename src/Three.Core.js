@@ -178,7 +178,7 @@ if ( typeof window !== 'undefined' ) {
 
 		if ( import.meta ) {
 
-			if ( ! window.__THREE__IMPORTS__) window.__THREE__IMPORTS__ = [];
+			if ( ! window.__THREE__IMPORTS__ ) window.__THREE__IMPORTS__ = [];
 			window.__THREE__IMPORTS__.push( { url: import.meta.url, revision: REVISION } );
 
 		}
