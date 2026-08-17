@@ -571,11 +571,27 @@
 
 			}
 
+			function resolveJsonPointer( root, pointer ) {
+
+				if ( pointer === '' ) return root;
+				if ( typeof pointer !== 'string' || ! pointer.startsWith( '/' ) ) return undefined;
+
+				return pointer.slice( 1 ).split( '/' ).reduce( ( value, token ) => {
+
+					if ( value === undefined || value === null ) return undefined;
+					return value[ token.replaceAll( '~1', '/' ).replaceAll( '~0', '~' ) ];
+
+				}, root );
+
+			}
+
 			function addEmbeddedImageResources( gltfInfo, resources ) {
 
-				for ( const image of gltfInfo.json.images || [] ) {
+				const imageUrls = new Map();
 
-					if ( image.uri || image.bufferView === undefined || ! image.name ) continue;
+				for ( const [ imageIndex, image ] of ( gltfInfo.json.images || [] ).entries() ) {
+
+					if ( image.uri || image.bufferView === undefined ) continue;
 
 					const bufferView = gltfInfo.json.bufferViews[ image.bufferView ];
 					const byteOffset = bufferView.byteOffset || 0;
@@ -584,7 +600,32 @@
 					const url = URL.createObjectURL( blob );
 
 					resourceUrls.push( url );
-					resources.byName.set( image.name, url );
+					imageUrls.set( imageIndex, url );
+					if ( image.name ) {
+
+						resources.byName.set( image.name, url );
+						resources.byPath.set( image.name, url );
+
+					}
+
+				}
+
+				const materialXDocuments = gltfInfo.json.extensions?.NEEDLE_materials_mtlx?.documents || [];
+
+				for ( const document of materialXDocuments ) {
+
+					for ( const textureReference of document.textures || [] ) {
+
+						if ( ! textureReference.name ) continue;
+
+						const texture = resolveJsonPointer( gltfInfo.json, textureReference.pointer );
+						const url = texture ? imageUrls.get( texture.source ) : undefined;
+						if ( ! url ) continue;
+
+						resources.byName.set( textureReference.name, url );
+						resources.byPath.set( textureReference.name, url );
+
+					}
 
 				}
 
