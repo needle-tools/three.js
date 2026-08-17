@@ -570,7 +570,7 @@ class MaterialXNode {
 
 	get isConst() {
 
-		return this.element === 'input' && this.defaultValue !== null && this.type !== 'filename';
+		return this.element === 'input' && ! this.hasReference && this.defaultValue !== null && this.type !== 'filename';
 
 	}
 
