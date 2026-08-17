@@ -47244,6 +47244,67 @@ const mx_fractal_noise_vec4$1 = /*@__PURE__*/ Fn( ( [ p_immutable, octaves_immut
 	]
 } );
 
+const mx_worley_cell_position_0 = /*@__PURE__*/ Fn( ( [ x_immutable, y_immutable, xoff_immutable, yoff_immutable, jitter_immutable ] ) => {
+
+	const jitter = float( jitter_immutable ).toVar();
+	const yoff = int( yoff_immutable ).toVar();
+	const xoff = int( xoff_immutable ).toVar();
+	const y = int( y_immutable ).toVar();
+	const x = int( x_immutable ).toVar();
+	const tmp = vec3( mx_cell_noise_vec3( vec2( x.add( xoff ), y.add( yoff ) ) ) ).toVar();
+	const off = vec2( tmp.x, tmp.y ).toVar();
+
+	off.subAssign( 0.5 );
+	off.mulAssign( jitter );
+	off.addAssign( 0.5 );
+
+	return vec2( float( x ), float( y ) ).add( off );
+
+} ).setLayout( {
+	name: 'mx_worley_cell_position_0',
+	type: 'vec2',
+	inputs: [
+		{ name: 'x', type: 'int' },
+		{ name: 'y', type: 'int' },
+		{ name: 'xoff', type: 'int' },
+		{ name: 'yoff', type: 'int' },
+		{ name: 'jitter', type: 'float' }
+	]
+} );
+
+const mx_worley_cell_position_1 = /*@__PURE__*/ Fn( ( [ x_immutable, y_immutable, z_immutable, xoff_immutable, yoff_immutable, zoff_immutable, jitter_immutable ] ) => {
+
+	const jitter = float( jitter_immutable ).toVar();
+	const zoff = int( zoff_immutable ).toVar();
+	const yoff = int( yoff_immutable ).toVar();
+	const xoff = int( xoff_immutable ).toVar();
+	const z = int( z_immutable ).toVar();
+	const y = int( y_immutable ).toVar();
+	const x = int( x_immutable ).toVar();
+	const off = vec3( mx_cell_noise_vec3( vec3( x.add( xoff ), y.add( yoff ), z.add( zoff ) ) ) ).toVar();
+
+	off.subAssign( 0.5 );
+	off.mulAssign( jitter );
+	off.addAssign( 0.5 );
+
+	return vec3( float( x ), float( y ), float( z ) ).add( off );
+
+} ).setLayout( {
+	name: 'mx_worley_cell_position_1',
+	type: 'vec3',
+	inputs: [
+		{ name: 'x', type: 'int' },
+		{ name: 'y', type: 'int' },
+		{ name: 'z', type: 'int' },
+		{ name: 'xoff', type: 'int' },
+		{ name: 'yoff', type: 'int' },
+		{ name: 'zoff', type: 'int' },
+		{ name: 'jitter', type: 'float' }
+	]
+} );
+
+const mx_worley_cell_position = /*@__PURE__*/ overloadingFn( [ mx_worley_cell_position_0, mx_worley_cell_position_1 ] );
+
 const mx_worley_distance_0 = /*@__PURE__*/ Fn( ( [ p_immutable, x_immutable, y_immutable, xoff_immutable, yoff_immutable, jitter_immutable, metric_immutable ] ) => {
 
 	const metric = int( metric_immutable ).toVar();
@@ -47339,33 +47400,54 @@ const mx_worley_distance_1 = /*@__PURE__*/ Fn( ( [ p_immutable, x_immutable, y_i
 
 const mx_worley_distance = /*@__PURE__*/ overloadingFn( [ mx_worley_distance_0, mx_worley_distance_1 ] );
 
-const mx_worley_noise_float_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, metric_immutable ] ) => {
+const mx_worley_noise_float_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, style_immutable, metric_immutable ] ) => {
 
 	const metric = int( metric_immutable ).toVar();
+	const style = int( style_immutable ).toVar();
 	const jitter = float( jitter_immutable ).toVar();
 	const p = vec2( p_immutable ).toVar();
 	const X = int().toVar(), Y = int().toVar();
 	const localpos = vec2( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ) ).toVar();
 	const sqdist = float( 1e6 ).toVar();
+	const minpos = vec2( 0, 0 ).toVar();
 
 	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
 		Loop( { start: -1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
 			const dist = float( mx_worley_distance( localpos, x, y, X, Y, jitter, metric ) ).toVar();
-			sqdist.assign( min$1( sqdist, dist ) );
+			const cellpos = vec2( mx_worley_cell_position( x, y, X, Y, jitter ).sub( localpos ) ).toVar();
+
+			If( dist.lessThan( sqdist ), () => {
+
+				sqdist.assign( dist );
+				minpos.assign( cellpos );
+
+			} );
 
 		} );
 
 	} );
 
-	If( metric.equal( int( 0 ) ), () => {
+	const result = float().toVar();
 
-		sqdist.assign( sqrt( sqdist ) );
+	If( style.equal( int( 1 ) ), () => {
+
+		result.assign( mx_cell_noise_float$1( minpos.add( p ) ) );
+
+	} ).Else( () => {
+
+		If( metric.equal( int( 0 ) ), () => {
+
+			sqdist.assign( sqrt( sqdist ) );
+
+		} );
+
+		result.assign( sqdist );
 
 	} );
 
-	return sqdist;
+	return result;
 
 } ).setLayout( {
 	name: 'mx_worley_noise_float_0',
@@ -47373,29 +47455,34 @@ const mx_worley_noise_float_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immuta
 	inputs: [
 		{ name: 'p', type: 'vec2' },
 		{ name: 'jitter', type: 'float' },
+		{ name: 'style', type: 'int' },
 		{ name: 'metric', type: 'int' }
 	]
 } );
 
-const mx_worley_noise_vec2_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, metric_immutable ] ) => {
+const mx_worley_noise_vec2_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, style_immutable, metric_immutable ] ) => {
 
 	const metric = int( metric_immutable ).toVar();
+	const style = int( style_immutable ).toVar();
 	const jitter = float( jitter_immutable ).toVar();
 	const p = vec2( p_immutable ).toVar();
 	const X = int().toVar(), Y = int().toVar();
 	const localpos = vec2( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ) ).toVar();
 	const sqdist = vec2( 1e6, 1e6 ).toVar();
+	const minpos = vec2( 0, 0 ).toVar();
 
 	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
 		Loop( { start: -1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
 			const dist = float( mx_worley_distance( localpos, x, y, X, Y, jitter, metric ) ).toVar();
+			const cellpos = vec2( mx_worley_cell_position( x, y, X, Y, jitter ).sub( localpos ) ).toVar();
 
 			If( dist.lessThan( sqdist.x ), () => {
 
 				sqdist.y.assign( sqdist.x );
 				sqdist.x.assign( dist );
+				minpos.assign( cellpos );
 
 			} ).ElseIf( dist.lessThan( sqdist.y ), () => {
 
@@ -47407,13 +47494,26 @@ const mx_worley_noise_vec2_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 
 	} );
 
-	If( metric.equal( int( 0 ) ), () => {
+	const result = vec2().toVar();
 
-		sqdist.assign( sqrt( sqdist ) );
+	If( style.equal( int( 1 ) ), () => {
+
+		const cellNoise = vec3( mx_cell_noise_vec3( minpos.add( p ) ) ).toVar();
+		result.assign( vec2( cellNoise.x, cellNoise.y ) );
+
+	} ).Else( () => {
+
+		If( metric.equal( int( 0 ) ), () => {
+
+			sqdist.assign( sqrt( sqdist ) );
+
+		} );
+
+		result.assign( sqdist );
 
 	} );
 
-	return sqdist;
+	return result;
 
 } ).setLayout( {
 	name: 'mx_worley_noise_vec2_0',
@@ -47421,30 +47521,35 @@ const mx_worley_noise_vec2_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 	inputs: [
 		{ name: 'p', type: 'vec2' },
 		{ name: 'jitter', type: 'float' },
+		{ name: 'style', type: 'int' },
 		{ name: 'metric', type: 'int' }
 	]
 } );
 
-const mx_worley_noise_vec3_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, metric_immutable ] ) => {
+const mx_worley_noise_vec3_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, style_immutable, metric_immutable ] ) => {
 
 	const metric = int( metric_immutable ).toVar();
+	const style = int( style_immutable ).toVar();
 	const jitter = float( jitter_immutable ).toVar();
 	const p = vec2( p_immutable ).toVar();
 	const X = int().toVar(), Y = int().toVar();
 	const localpos = vec2( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ) ).toVar();
 	const sqdist = vec3( 1e6, 1e6, 1e6 ).toVar();
+	const minpos = vec2( 0, 0 ).toVar();
 
 	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
 		Loop( { start: -1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
 			const dist = float( mx_worley_distance( localpos, x, y, X, Y, jitter, metric ) ).toVar();
+			const cellpos = vec2( mx_worley_cell_position( x, y, X, Y, jitter ).sub( localpos ) ).toVar();
 
 			If( dist.lessThan( sqdist.x ), () => {
 
 				sqdist.z.assign( sqdist.y );
 				sqdist.y.assign( sqdist.x );
 				sqdist.x.assign( dist );
+				minpos.assign( cellpos );
 
 			} ).ElseIf( dist.lessThan( sqdist.y ), () => {
 
@@ -47461,13 +47566,25 @@ const mx_worley_noise_vec3_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 
 	} );
 
-	If( metric.equal( int( 0 ) ), () => {
+	const result = vec3().toVar();
 
-		sqdist.assign( sqrt( sqdist ) );
+	If( style.equal( int( 1 ) ), () => {
+
+		result.assign( mx_cell_noise_vec3( minpos.add( p ) ) );
+
+	} ).Else( () => {
+
+		If( metric.equal( int( 0 ) ), () => {
+
+			sqdist.assign( sqrt( sqdist ) );
+
+		} );
+
+		result.assign( sqdist );
 
 	} );
 
-	return sqdist;
+	return result;
 
 } ).setLayout( {
 	name: 'mx_worley_noise_vec3_0',
@@ -47475,18 +47592,21 @@ const mx_worley_noise_vec3_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 	inputs: [
 		{ name: 'p', type: 'vec2' },
 		{ name: 'jitter', type: 'float' },
+		{ name: 'style', type: 'int' },
 		{ name: 'metric', type: 'int' }
 	]
 } );
 
-const mx_worley_noise_float_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, metric_immutable ] ) => {
+const mx_worley_noise_float_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, style_immutable, metric_immutable ] ) => {
 
 	const metric = int( metric_immutable ).toVar();
+	const style = int( style_immutable ).toVar();
 	const jitter = float( jitter_immutable ).toVar();
 	const p = vec3( p_immutable ).toVar();
 	const X = int().toVar(), Y = int().toVar(), Z = int().toVar();
 	const localpos = vec3( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ), mx_floorfrac( p.z, Z ) ).toVar();
 	const sqdist = float( 1e6 ).toVar();
+	const minpos = vec3( 0, 0, 0 ).toVar();
 
 	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
@@ -47495,7 +47615,14 @@ const mx_worley_noise_float_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immuta
 			Loop( { start: -1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
 
 				const dist = float( mx_worley_distance( localpos, x, y, z, X, Y, Z, jitter, metric ) ).toVar();
-				sqdist.assign( min$1( sqdist, dist ) );
+				const cellpos = vec3( mx_worley_cell_position( x, y, z, X, Y, Z, jitter ).sub( localpos ) ).toVar();
+
+				If( dist.lessThan( sqdist ), () => {
+
+					sqdist.assign( dist );
+					minpos.assign( cellpos );
+
+				} );
 
 			} );
 
@@ -47503,13 +47630,25 @@ const mx_worley_noise_float_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immuta
 
 	} );
 
-	If( metric.equal( int( 0 ) ), () => {
+	const result = float().toVar();
 
-		sqdist.assign( sqrt( sqdist ) );
+	If( style.equal( int( 1 ) ), () => {
+
+		result.assign( mx_cell_noise_float$1( minpos.add( p ) ) );
+
+	} ).Else( () => {
+
+		If( metric.equal( int( 0 ) ), () => {
+
+			sqdist.assign( sqrt( sqdist ) );
+
+		} );
+
+		result.assign( sqdist );
 
 	} );
 
-	return sqdist;
+	return result;
 
 } ).setLayout( {
 	name: 'mx_worley_noise_float_1',
@@ -47517,20 +47656,23 @@ const mx_worley_noise_float_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immuta
 	inputs: [
 		{ name: 'p', type: 'vec3' },
 		{ name: 'jitter', type: 'float' },
+		{ name: 'style', type: 'int' },
 		{ name: 'metric', type: 'int' }
 	]
 } );
 
 const mx_worley_noise_float$1 = /*@__PURE__*/ overloadingFn( [ mx_worley_noise_float_0, mx_worley_noise_float_1 ] );
 
-const mx_worley_noise_vec2_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, metric_immutable ] ) => {
+const mx_worley_noise_vec2_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, style_immutable, metric_immutable ] ) => {
 
 	const metric = int( metric_immutable ).toVar();
+	const style = int( style_immutable ).toVar();
 	const jitter = float( jitter_immutable ).toVar();
 	const p = vec3( p_immutable ).toVar();
 	const X = int().toVar(), Y = int().toVar(), Z = int().toVar();
 	const localpos = vec3( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ), mx_floorfrac( p.z, Z ) ).toVar();
 	const sqdist = vec2( 1e6, 1e6 ).toVar();
+	const minpos = vec3( 0, 0, 0 ).toVar();
 
 	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
@@ -47539,11 +47681,13 @@ const mx_worley_noise_vec2_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 			Loop( { start: -1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
 
 				const dist = float( mx_worley_distance( localpos, x, y, z, X, Y, Z, jitter, metric ) ).toVar();
+				const cellpos = vec3( mx_worley_cell_position( x, y, z, X, Y, Z, jitter ).sub( localpos ) ).toVar();
 
 				If( dist.lessThan( sqdist.x ), () => {
 
 					sqdist.y.assign( sqdist.x );
 					sqdist.x.assign( dist );
+					minpos.assign( cellpos );
 
 				} ).ElseIf( dist.lessThan( sqdist.y ), () => {
 
@@ -47557,13 +47701,26 @@ const mx_worley_noise_vec2_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 
 	} );
 
-	If( metric.equal( int( 0 ) ), () => {
+	const result = vec2().toVar();
 
-		sqdist.assign( sqrt( sqdist ) );
+	If( style.equal( int( 1 ) ), () => {
+
+		const cellNoise = vec3( mx_cell_noise_vec3( minpos.add( p ) ) ).toVar();
+		result.assign( vec2( cellNoise.x, cellNoise.y ) );
+
+	} ).Else( () => {
+
+		If( metric.equal( int( 0 ) ), () => {
+
+			sqdist.assign( sqrt( sqdist ) );
+
+		} );
+
+		result.assign( sqdist );
 
 	} );
 
-	return sqdist;
+	return result;
 
 } ).setLayout( {
 	name: 'mx_worley_noise_vec2_1',
@@ -47571,20 +47728,23 @@ const mx_worley_noise_vec2_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 	inputs: [
 		{ name: 'p', type: 'vec3' },
 		{ name: 'jitter', type: 'float' },
+		{ name: 'style', type: 'int' },
 		{ name: 'metric', type: 'int' }
 	]
 } );
 
 const mx_worley_noise_vec2$1 = /*@__PURE__*/ overloadingFn( [ mx_worley_noise_vec2_0, mx_worley_noise_vec2_1 ] );
 
-const mx_worley_noise_vec3_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, metric_immutable ] ) => {
+const mx_worley_noise_vec3_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, style_immutable, metric_immutable ] ) => {
 
 	const metric = int( metric_immutable ).toVar();
+	const style = int( style_immutable ).toVar();
 	const jitter = float( jitter_immutable ).toVar();
 	const p = vec3( p_immutable ).toVar();
 	const X = int().toVar(), Y = int().toVar(), Z = int().toVar();
 	const localpos = vec3( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ), mx_floorfrac( p.z, Z ) ).toVar();
 	const sqdist = vec3( 1e6, 1e6, 1e6 ).toVar();
+	const minpos = vec3( 0, 0, 0 ).toVar();
 
 	Loop( { start: -1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
@@ -47593,12 +47753,14 @@ const mx_worley_noise_vec3_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 			Loop( { start: -1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
 
 				const dist = float( mx_worley_distance( localpos, x, y, z, X, Y, Z, jitter, metric ) ).toVar();
+				const cellpos = vec3( mx_worley_cell_position( x, y, z, X, Y, Z, jitter ).sub( localpos ) ).toVar();
 
 				If( dist.lessThan( sqdist.x ), () => {
 
 					sqdist.z.assign( sqdist.y );
 					sqdist.y.assign( sqdist.x );
 					sqdist.x.assign( dist );
+					minpos.assign( cellpos );
 
 				} ).ElseIf( dist.lessThan( sqdist.y ), () => {
 
@@ -47617,13 +47779,25 @@ const mx_worley_noise_vec3_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 
 	} );
 
-	If( metric.equal( int( 0 ) ), () => {
+	const result = vec3().toVar();
 
-		sqdist.assign( sqrt( sqdist ) );
+	If( style.equal( int( 1 ) ), () => {
+
+		result.assign( mx_cell_noise_vec3( minpos.add( p ) ) );
+
+	} ).Else( () => {
+
+		If( metric.equal( int( 0 ) ), () => {
+
+			sqdist.assign( sqrt( sqdist ) );
+
+		} );
+
+		result.assign( sqdist );
 
 	} );
 
-	return sqdist;
+	return result;
 
 } ).setLayout( {
 	name: 'mx_worley_noise_vec3_1',
@@ -47631,6 +47805,7 @@ const mx_worley_noise_vec3_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutab
 	inputs: [
 		{ name: 'p', type: 'vec3' },
 		{ name: 'jitter', type: 'float' },
+		{ name: 'style', type: 'int' },
 		{ name: 'metric', type: 'int' }
 	]
 } );
@@ -47664,28 +47839,28 @@ const mx_unifiednoise2d$1 = /*@__PURE__*/ Fn( ( [
 	// Perlin
 	If( noiseType.equal( int( 0 ) ), () => {
 
-		result.assign( mx_perlin_noise_vec3( p ) );
+		result.assign( mx_perlin_noise_float( p ) );
 
 	} );
 
 	// Cell
 	If( noiseType.equal( int( 1 ) ), () => {
 
-		result.assign( mx_cell_noise_vec3( p ) );
+		result.assign( mx_cell_noise_float$1( p ) );
 
 	} );
 
 	// Worley (metric=0 = euclidean)
 	If( noiseType.equal( int( 2 ) ), () => {
 
-		result.assign( mx_worley_noise_vec3$1( p, jitter, int( 0 ) ) );
+		result.assign( mx_worley_noise_float$1( p, jitter, int( 0 ), int( 0 ) ) );
 
 	} );
 
 	// Fractal (use vec3(p, 0.0) for 2D input)
 	If( noiseType.equal( int( 3 ) ), () => {
 
-		result.assign( mx_fractal_noise_vec3$1( vec3( p, 0.0 ), octaves, lacunarity, diminish ) );
+		result.assign( mx_fractal_noise_float$1( vec3( p, 0.0 ), octaves, lacunarity, diminish ) );
 
 	} );
 
@@ -47746,28 +47921,28 @@ const mx_unifiednoise3d$1 = /*@__PURE__*/ Fn( ( [
 	// Perlin
 	If( noiseType.equal( int( 0 ) ), () => {
 
-		result.assign( mx_perlin_noise_vec3( p ) );
+		result.assign( mx_perlin_noise_float( p ) );
 
 	} );
 
 	// Cell
 	If( noiseType.equal( int( 1 ) ), () => {
 
-		result.assign( mx_cell_noise_vec3( p ) );
+		result.assign( mx_cell_noise_float$1( p ) );
 
 	} );
 
 	// Worley (metric=0 = euclidean)
 	If( noiseType.equal( int( 2 ) ), () => {
 
-		result.assign( mx_worley_noise_vec3$1( p, jitter, int( 0 ) ) );
+		result.assign( mx_worley_noise_float$1( p, jitter, int( 0 ), int( 0 ) ) );
 
 	} );
 
 	// Fractal
 	If( noiseType.equal( int( 3 ) ), () => {
 
-		result.assign( mx_fractal_noise_vec3$1( p, octaves, lacunarity, diminish ) );
+		result.assign( mx_fractal_noise_float$1( p, octaves, lacunarity, diminish ) );
 
 	} );
 
@@ -47989,11 +48164,569 @@ const mx_safepower = ( in1, in2 = 1 ) => {
 
 };
 
-const mx_contrast = ( input, amount = 1, pivot = .5 ) => float( input ).sub( pivot ).mul( amount ).add( pivot );
+const mx_contrast = ( input, amount = 1, pivot = .5 ) => add( mul( sub( input, pivot ), amount ), pivot );
 
-const mx_noise_float = ( texcoord = uv$1(), amplitude = 1, pivot = 0 ) => mx_perlin_noise_float( texcoord.convert( 'vec2|vec3' ) ).mul( amplitude ).add( pivot );
+const mx_combine2 = ( in1 = float( 0 ), in2 = float( 0 ) ) => vec2( in1, in2 );
+const mx_combine3 = ( in1 = float( 0 ), in2 = float( 0 ), in3 = float( 0 ) ) => vec3( in1, in2, in3 );
+const mx_combine4 = ( in1 = float( 0 ), in2 = float( 0 ), in3 = float( 0 ), in4 = float( 0 ) ) => vec4( in1, in2, in3, in4 );
+
+const mx_checkerboard = ( texcoord = uv$1(), uvtiling = vec2( 1, 1 ), color1 = float( 0 ), color2 = float( 0 ) ) => {
+
+	const cell = floor( texcoord.mul( uvtiling ) );
+	const mask = mx_modulo( cell.x.add( cell.y ), float( 2 ) ).lessThan( float( 1 ) );
+
+	return mask.select( color1, color2 );
+
+};
+
+const mx_grid = ( texcoord = uv$1(), uvtiling = vec2( 1, 1 ), thickness = float( 0.01 ), staggered = bool( false ) ) => {
+
+	const tiled = texcoord.mul( uvtiling );
+	const row = floor( tiled.y );
+	const offset = staggered.select( mx_modulo( row, float( 2 ) ).mul( 0.5 ), float( 0 ) );
+	const cell = fract( vec2( tiled.x.add( offset ), tiled.y ) );
+	const edgeDistance = min$1( min$1( cell.x, cell.y ), min$1( cell.x.oneMinus(), cell.y.oneMinus() ) );
+	const line = mx_aastep( thickness, edgeDistance ).oneMinus();
+
+	return vec3( line );
+
+};
+
+const mx_crosshatch = ( texcoord = uv$1(), uvtiling = vec2( 1, 1 ), thickness = float( 0.01 ), staggered = bool( false ) ) => {
+
+	const tiled = texcoord.mul( uvtiling );
+	const row = floor( tiled.y );
+	const offset = staggered.select( mx_modulo( row, float( 2 ) ).mul( 0.5 ), float( 0 ) );
+	const cell = fract( vec2( tiled.x.add( offset ), tiled.y ) );
+	const diagonalA = abs( cell.x.sub( cell.y ) );
+	const diagonalB = abs( cell.x.add( cell.y ).sub( 1 ) );
+	const line = mx_aastep( thickness, min$1( diagonalA, diagonalB ) ).oneMinus();
+
+	return vec3( line );
+
+};
+
+const mx_tiledcircles = ( texcoord = uv$1(), uvtiling = vec2( 1, 1 ), uvoffset = vec2( 0, 0 ), size = float( 0.25 ), staggered = bool( false ) ) => {
+
+	const tiled = texcoord.add( uvoffset ).mul( uvtiling );
+	const row = floor( tiled.y );
+	const offset = staggered.select( mx_modulo( row, float( 2 ) ).mul( 0.5 ), float( 0 ) );
+	const cell = fract( vec2( tiled.x.add( offset ), tiled.y ) ).sub( vec2( 0.5 ) );
+	const circle = mx_aastep( size, cell.length() ).oneMinus();
+
+	return vec3( circle );
+
+};
+
+const mx_tiledhexagons = ( texcoord = uv$1(), uvtiling = vec2( 1, 1 ), uvoffset = vec2( 0, 0 ), size = float( 0.5 ), staggered = bool( false ) ) => {
+
+	const tiled = texcoord.add( uvoffset ).mul( uvtiling );
+	const row = floor( tiled.y );
+	const offset = staggered.select( mx_modulo( row, float( 2 ) ).mul( 0.5 ), float( 0 ) );
+	const cell = fract( vec2( tiled.x.add( offset ), tiled.y ) ).sub( vec2( 0.5 ) );
+	const q = abs( cell );
+	const hexDistance = max$1( q.x.mul( 0.8660254 ).add( q.y.mul( 0.5 ) ), q.y );
+	const mask = mx_aastep( size.mul( 0.5 ), hexDistance ).oneMinus();
+
+	return vec3( mask );
+
+};
+
+const mx_tiledcloverleafs = ( texcoord = uv$1(), uvtiling = vec2( 1, 1 ), uvoffset = vec2( 0, 0 ), size = float( 0.5 ), staggered = bool( false ) ) => {
+
+	const tiled = texcoord.add( uvoffset ).mul( uvtiling );
+	const row = floor( tiled.y );
+	const offset = staggered.select( mx_modulo( row, float( 2 ) ).mul( 0.5 ), float( 0 ) );
+	const cell = fract( vec2( tiled.x.add( offset ), tiled.y ) );
+	const radius = size.mul( 0.25 );
+	const d1 = cell.sub( vec2( 0.35, 0.5 ) ).length();
+	const d2 = cell.sub( vec2( 0.65, 0.5 ) ).length();
+	const d3 = cell.sub( vec2( 0.5, 0.35 ) ).length();
+	const d4 = cell.sub( vec2( 0.5, 0.65 ) ).length();
+	const mask = mx_aastep( radius, min$1( min$1( d1, d2 ), min$1( d3, d4 ) ) ).oneMinus();
+
+	return vec3( mask );
+
+};
+
+const mx_screen = ( bg = float( 0 ), fg = float( 0 ), mixAmount = float( 1 ) ) => {
+
+	const screened = float( 1 ).sub( float( 1 ).sub( fg ).mul( float( 1 ).sub( bg ) ) );
+	return mix( bg, screened, mixAmount );
+
+};
+
+const mx_plus = ( bg = float( 0 ), fg = float( 0 ), mixAmount = float( 1 ) ) => bg.add( fg.mul( mixAmount ) );
+const mx_minus = ( bg = float( 0 ), fg = float( 0 ), mixAmount = float( 1 ) ) => bg.sub( fg.mul( mixAmount ) );
+const mx_difference = ( bg = float( 0 ), fg = float( 0 ), mixAmount = float( 1 ) ) => mixAmount.mul( abs( bg.sub( fg ) ) ).add( float( 1 ).sub( mixAmount ).mul( bg ) );
+const mx_passthrough = ( input = float( 0 ) ) => input;
+const mx_not = ( input = bool( false ) ) => not( input );
+const mx_xor = ( in1 = bool( false ), in2 = bool( false ) ) => xor( in1, in2 );
+const mx_blur = ( input = float( 0 )/*, size = float( 0 ), filtertype*/ ) => input;
+
+const mx_unpremult = ( input = vec4( 0, 0, 0, 1 ) ) => {
+
+	input = vec4( input );
+	const safeAlpha = input.a.equal( 0 ).select( float( 1 ), input.a );
+	const rgb = input.a.equal( 0 ).select( input.rgb, input.rgb.div( safeAlpha ) );
+	return vec4( rgb, input.a );
+
+};
+
+const mx_premult = ( input = vec4( 0, 0, 0, 1 ) ) => {
+
+	input = vec4( input );
+	return vec4( input.rgb.mul( input.a ), input.a );
+
+};
+
+const mx_acescg_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => {
+
+	const rgb = vec3( input );
+	const transform = mat3(
+		vec3( 1.705050992658, -0.621792120657, -0.083258872001 ),
+		vec3( -0.130256417507, 1.140804736575, -0.010548319068 ),
+		vec3( -0.024003356805, -0.128968976065, 1.15297233287 )
+	);
+
+	return transform.mul( rgb );
+
+};
+
+const mx_lin_displayp3_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => {
+
+	const rgb = vec3( input );
+	const transform = mat3(
+		vec3( 1.22493029, -0.22492968, 0.00000006 ),
+		vec3( -0.04205868, 1.04205894, -1e-8 ),
+		vec3( -0.01964128, -0.07864794, 1.09828925 )
+	);
+
+	return transform.mul( rgb );
+
+};
+
+const mx_srgb_displayp3_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => mx_lin_displayp3_to_lin_rec709( mx_srgb_texture_to_lin_rec709( input ) );
+
+const mx_lin_adobergb_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => {
+
+	const rgb = vec3( input );
+	const transform = mat3(
+		vec3( 1.39835574, -0.398355744, 0.0 ),
+		vec3( -250233861e-24, 1.0, 0.0 ),
+		vec3( 2.77555756e-17, -0.0429289893, 1.04292899 )
+	);
+
+	return transform.mul( rgb );
+
+};
+
+const mx_adobergb_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => mx_lin_adobergb_to_lin_rec709( max$1( input, vec3( 0 ) ).pow( 563 / 256 ) );
+
+const mx_g22_ap1_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => mx_acescg_to_lin_rec709( max$1( vec3( input ), vec3( 0 ) ).pow( 2.2 ) );
+const mx_g18_rec709_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => max$1( input, vec3( 0 ) ).pow( 1.8 );
+const mx_g22_rec709_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => max$1( input, vec3( 0 ) ).pow( 2.2 );
+
+const mx_rec709_display_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => max$1( input, vec3( 0 ) ).pow( 2.4 );
+const mx_fract = ( input = float( 0 ) ) => fract( input );
+const mx_dodge = ( bg = float( 0 ), fg = float( 0 ), mixAmount = float( 1 ) ) => {
+
+	const denominator = float( 1 ).sub( fg );
+	const safeDenominator = abs( denominator ).lessThan( 1e-6 ).select( float( 1 ), denominator );
+	const dodged = bg.div( safeDenominator );
+	const result = mixAmount.mul( dodged ).add( float( 1 ).sub( mixAmount ).mul( bg ) );
+
+	return abs( denominator ).lessThan( 1e-6 ).select( bg.mul( 0 ), result );
+
+};
+
+const mx_burn = ( bg = float( 0 ), fg = float( 0 ), mixAmount = float( 1 ) ) => {
+
+	const safeFg = abs( fg ).lessThan( 1e-6 ).select( float( 1 ), fg );
+	const burned = float( 1 ).sub( float( 1 ).sub( bg ).div( safeFg ) );
+	const result = mixAmount.mul( burned ).add( float( 1 ).sub( mixAmount ).mul( bg ) );
+
+	return abs( fg ).lessThan( 1e-6 ).select( bg.mul( 0 ), result );
+
+};
+
+const mx_matte = ( bg = vec4( 0, 0, 0, 0 ), fg = vec4( 0, 0, 0, 0 ), mixAmount = float( 1 ) ) => {
+
+	bg = vec4( bg );
+	fg = vec4( fg );
+
+	const matted = vec4(
+		fg.rgb.mul( fg.a ).add( bg.rgb.mul( float( 1 ).sub( fg.a ) ) ),
+		fg.a.add( bg.a.mul( float( 1 ).sub( fg.a ) ) )
+	);
+
+	return matted.mul( mixAmount ).add( bg.mul( float( 1 ).sub( mixAmount ) ) );
+
+};
+
+const mx_mask = ( bg = vec4( 0, 0, 0, 0 ), fg = vec4( 0, 0, 0, 0 ), mixAmount = float( 1 ) ) => {
+
+	bg = vec4( bg );
+	fg = vec4( fg );
+
+	return bg.mul( fg.a ).mul( mixAmount ).add( bg.mul( float( 1 ).sub( mixAmount ) ) );
+
+};
+
+const mx_in = ( bg = vec4( 0, 0, 0, 0 ), fg = vec4( 0, 0, 0, 0 ), mixAmount = float( 1 ) ) => {
+
+	bg = vec4( bg );
+	fg = vec4( fg );
+
+	return fg.mul( bg.a ).mul( mixAmount ).add( bg.mul( float( 1 ).sub( mixAmount ) ) );
+
+};
+
+const mx_out = ( bg = vec4( 0, 0, 0, 0 ), fg = vec4( 0, 0, 0, 0 ), mixAmount = float( 1 ) ) => {
+
+	bg = vec4( bg );
+	fg = vec4( fg );
+
+	return fg.mul( float( 1 ).sub( bg.a ) ).mul( mixAmount ).add( bg.mul( float( 1 ).sub( mixAmount ) ) );
+
+};
+
+const mx_disjointover = ( bg = vec4( 0, 0, 0, 0 ), fg = vec4( 0, 0, 0, 0 ), mixAmount = float( 1 ) ) => {
+
+	bg = vec4( bg );
+	fg = vec4( fg );
+
+	const summedAlpha = fg.a.add( bg.a );
+	const safeBgAlpha = bg.a.equal( 0 ).select( float( 1 ), bg.a );
+	const overRgb = bg.a.equal( 0 ).select( vec3( 0 ), fg.rgb.add( bg.rgb.mul( float( 1 ).sub( fg.a ).div( safeBgAlpha ) ) ) );
+	const rgb = summedAlpha.lessThanEqual( 1 ).select( fg.rgb.add( bg.rgb ), overRgb );
+	const alpha = min$1( summedAlpha, float( 1 ) );
+	const result = vec4( rgb, alpha );
+
+	return result.mul( mixAmount ).add( bg.mul( float( 1 ).sub( mixAmount ) ) );
+
+};
+
+const mx_over = ( bg = vec4( 0, 0, 0, 0 ), fg = vec4( 0, 0, 0, 0 ), mixAmount = float( 1 ) ) => {
+
+	bg = vec4( bg );
+	fg = vec4( fg );
+
+	const over = fg.add( bg.mul( float( 1 ).sub( fg.a ) ) );
+	return over.mul( mixAmount ).add( bg.mul( float( 1 ).sub( mixAmount ) ) );
+
+};
+
+const mx_inside = ( input = float( 0 ), mask = float( 0 ) ) => input.mul( mask );
+const mx_outside = ( input = float( 0 ), mask = float( 0 ) ) => input.mul( float( 1 ).sub( mask ) );
+
+const mx_circle = ( texcoord = uv$1(), center = vec2( 0.5, 0.5 ), radius = float( 0.25 ) ) => {
+
+	const distanceToCenter = vec2( texcoord ).sub( center ).length();
+	return distanceToCenter.greaterThan( radius ).select( float( 0 ), float( 1 ) );
+
+};
+
+const mx_line = ( texcoord = uv$1(), center = vec2( 0.5, 0.5 ), radius = float( 0.25 ), point1 = vec2( 0, 0 ), point2 = vec2( 1, 1 ) ) => {
+
+	const pa = vec2( texcoord ).sub( center ).sub( point1 );
+	const ba = point2.sub( point1 );
+	const h = clamp( pa.dot( ba ).div( ba.dot( ba ) ), 0, 1 );
+	const distanceToLine = pa.sub( ba.mul( h ) ).length();
+
+	return distanceToLine.greaterThan( radius ).select( float( 0 ), float( 1 ) );
+
+};
+
+const mx_cloverleaf = ( texcoord = uv$1(), center = vec2( 0.5, 0.5 ), radius = float( 0.25 ) ) => {
+
+	const sampleDouble = vec2( texcoord ).mul( 2 );
+	const centerDouble = center.mul( 2 );
+	const sampleAdd = sampleDouble.add( radius );
+	const sampleSubtract = sampleDouble.sub( radius );
+	const circle1 = mx_circle( vec2( sampleAdd.x, sampleDouble.y ), centerDouble, radius );
+	const circle2 = mx_circle( vec2( sampleSubtract.x, sampleDouble.y ), centerDouble, radius );
+	const circle3 = mx_circle( vec2( sampleDouble.x, sampleSubtract.y ), centerDouble, radius );
+	const circle4 = mx_circle( vec2( sampleDouble.x, sampleAdd.y ), centerDouble, radius );
+
+	return max$1( max$1( circle1, circle2 ), max$1( circle3, circle4 ) );
+
+};
+
+const mx_hexagon = ( texcoord = uv$1(), center = vec2( 0.5, 0.5 ), radius = float( 0.25 ) ) => {
+
+	const q = abs( vec2( texcoord ).sub( center ) );
+	const hexDistance = max$1( q.x.mul( 0.8660254 ).add( q.y.mul( 0.5 ) ), q.y );
+
+	return hexDistance.greaterThan( radius.mul( 0.8660254 ) ).select( float( 0 ), float( 1 ) );
+
+};
+
+const mx_open_pbr_anisotropy = ( roughness = float( 0 ), anisotropy = float( 0 ) ) => {
+
+	const anisoInvert = float( 1 ).sub( anisotropy );
+	const anisoInvertSq = anisoInvert.mul( anisoInvert );
+	const fraction = float( 2 ).div( anisoInvertSq.add( 1 ) );
+	const sqrtValue = fraction.sqrt();
+	const roughnessSq = roughness.mul( roughness );
+	const alphaX = roughnessSq.mul( sqrtValue );
+	const alphaY = anisoInvert.mul( alphaX );
+
+	return vec2( alphaX, alphaY );
+
+};
+
+const mx_blackbody = ( temperature = float( 6500 ) ) => {
+
+	const temperatureKelvin = clamp( float( temperature ), float( 800 ), float( 25000 ) );
+	const t = float( 1000 ).div( temperatureKelvin );
+	const t2 = t.mul( t );
+	const t3 = t2.mul( t );
+	const xcLow = t3.mul( -0.2661239 ).sub( t2.mul( 0.2343580 ) ).add( t.mul( 0.8776956 ) ).add( 0.179910 );
+	const xcHigh = t3.mul( -3.0258469 ).add( t2.mul( 2.1070379 ) ).add( t.mul( 0.2226347 ) ).add( 0.240390 );
+	const xc = temperatureKelvin.lessThan( 4000 ).select( xcLow, xcHigh );
+	const xc2 = xc.mul( xc );
+	const xc3 = xc2.mul( xc );
+	const ycLow = xc3.mul( -1.1063814 ).sub( xc2.mul( 1.34811020 ) ).add( xc.mul( 2.18555832 ) ).sub( 0.20219683 );
+	const ycMid = xc3.mul( -0.9549476 ).sub( xc2.mul( 1.37418593 ) ).add( xc.mul( 2.09137015 ) ).sub( 0.16748867 );
+	const ycHigh = xc3.mul( 3.0817580 ).sub( xc2.mul( 5.87338670 ) ).add( xc.mul( 3.75112997 ) ).sub( 0.37001483 );
+	const yc = temperatureKelvin.lessThan( 2222 ).select( ycLow, temperatureKelvin.lessThan( 4000 ).select( ycMid, ycHigh ) );
+	const safeY = max$1( yc, float( 0.00001 ) );
+	const xyz = vec3( xc.div( safeY ), float( 1 ), float( 1 ).sub( xc ).sub( yc ).div( safeY ) );
+	const xyzToRgb = mat3(
+		vec3( 3.2406, -0.9689, 0.0557 ),
+		vec3( -1.5372, 1.8758, -0.204 ),
+		vec3( -0.4986, 0.0415, 1.0570 )
+	);
+
+	return max$1( xyzToRgb.mul( xyz ), vec3( 0 ) );
+
+};
+
+const mx_ramp_gradient = (
+	x = float( 0 ),
+	interval1 = float( 0 ),
+	interval2 = float( 1 ),
+	color1 = vec4( 0, 0, 0, 1 ),
+	color2 = vec4( 1, 1, 1, 1 ),
+	interpolation = int( 1 ),
+	prevColor = vec4( 0, 0, 0, 1 ),
+	intervalNum = int( 1 ),
+	numIntervals = int( 2 )
+) => {
+
+	const linearClamped = clamp( x, interval1, interval2 );
+	const linearMix = linearClamped.sub( interval1 ).div( interval2.sub( interval1 ) );
+	const safeInterval2 = interval2.add( interval2.equal( interval1 ).select( float( 1e-6 ), float( 0 ) ) );
+	const smoothMix = smoothstep( interval1, safeInterval2, x );
+	const blend = int( interpolation ).equal( int( 0 ) ).select( linearMix, smoothMix );
+	const mixed = mix( color1, color2, blend );
+	const stepped = interval2.greaterThan( x ).select( color1, color2 );
+	const intervalColor = int( interpolation ).equal( int( 2 ) ).select( stepped, mixed );
+	const activeColor = x.greaterThan( interval1 ).select( intervalColor, prevColor );
+
+	return int( intervalNum ).greaterThanEqual( int( numIntervals ) ).select( prevColor, activeColor );
+
+};
+
+const mx_ramp = (
+	texcoord = uv$1(),
+	type = int( 0 ),
+	interpolation = int( 1 ),
+	numIntervals = int( 2 ),
+	interval1 = float( 0 ),
+	color1 = vec4( 0, 0, 0, 1 ),
+	interval2 = float( 1 ),
+	color2 = vec4( 1, 1, 1, 1 ),
+	interval3 = float( 1 ),
+	color3 = vec4( 1, 1, 1, 1 ),
+	interval4 = float( 1 ),
+	color4 = vec4( 1, 1, 1, 1 ),
+	interval5 = float( 1 ),
+	color5 = vec4( 1, 1, 1, 1 ),
+	interval6 = float( 1 ),
+	color6 = vec4( 1, 1, 1, 1 ),
+	interval7 = float( 1 ),
+	color7 = vec4( 1, 1, 1, 1 ),
+	interval8 = float( 1 ),
+	color8 = vec4( 1, 1, 1, 1 ),
+	interval9 = float( 1 ),
+	color9 = vec4( 1, 1, 1, 1 ),
+	interval10 = float( 1 ),
+	color10 = vec4( 1, 1, 1, 1 )
+) => {
+
+	const centered = vec2( texcoord ).sub( 0.5 );
+	const radial = mx_atan2( centered.x, centered.y ).div( 6.28319 ).add( 0.5 );
+	const circular = centered.mul( 1.414 ).length();
+	const boxAbs = centered.abs();
+	const boxScaled = boxAbs.mul( 2 );
+	const box = boxAbs.x.greaterThan( boxAbs.y ).select( boxScaled.x, boxScaled.y );
+	const rampPosition = int( type ).equal( int( 1 ) ).select(
+		radial,
+		int( type ).equal( int( 2 ) ).select(
+			circular,
+			int( type ).equal( int( 3 ) ).select( box, vec2( texcoord ).x )
+		)
+	);
+
+	let result = mx_ramp_gradient( rampPosition, interval1, interval2, color1, color2, interpolation, color1, int( 1 ), numIntervals );
+	result = mx_ramp_gradient( rampPosition, interval2, interval3, color2, color3, interpolation, result, int( 2 ), numIntervals );
+	result = mx_ramp_gradient( rampPosition, interval3, interval4, color3, color4, interpolation, result, int( 3 ), numIntervals );
+	result = mx_ramp_gradient( rampPosition, interval4, interval5, color4, color5, interpolation, result, int( 4 ), numIntervals );
+	result = mx_ramp_gradient( rampPosition, interval5, interval6, color5, color6, interpolation, result, int( 5 ), numIntervals );
+	result = mx_ramp_gradient( rampPosition, interval6, interval7, color6, color7, interpolation, result, int( 6 ), numIntervals );
+	result = mx_ramp_gradient( rampPosition, interval7, interval8, color7, color8, interpolation, result, int( 7 ), numIntervals );
+	result = mx_ramp_gradient( rampPosition, interval8, interval9, color8, color9, interpolation, result, int( 8 ), numIntervals );
+	result = mx_ramp_gradient( rampPosition, interval9, interval10, color9, color10, interpolation, result, int( 9 ), numIntervals );
+
+	return result;
+
+};
+
+const mx_range = ( input, inlow = float( 0 ), inhigh = float( 1 ), gamma = float( 1 ), outlow = float( 0 ), outhigh = float( 1 ), doclamp = bool( false ) ) => {
+
+	const t = input.sub( inlow ).div( inhigh.sub( inlow ) );
+	const gammaCorrected = max$1( t, float( 0 ) ).pow( gamma );
+	const mapped = outlow.add( outhigh.sub( outlow ).mul( gammaCorrected ) );
+	return doclamp.select( clamp( mapped, outlow, outhigh ), mapped );
+
+};
+
+const mx_trianglewave = ( input = float( 0 ) ) => abs( fract( input ).mul( 2 ).sub( 1 ) ).oneMinus();
+
+const mx_randomcolor = ( input = float( 0 ), hueLow = float( 0 ), hueHigh = float( 1 ), saturationLow = float( 0.825 ), saturationHigh = float( 1 ), brightnessLow = float( 1 ), brightnessHigh = float( 1 ), seed = int( 0 ) ) => {
+
+	const hue = mx_randomfloat( input, hueLow, hueHigh, seed );
+	const saturation = mx_randomfloat( input.add( 17.17 ), saturationLow, saturationHigh, seed.add( int( 11 ) ) );
+	const brightness = mx_randomfloat( input.add( 37.37 ), brightnessLow, brightnessHigh, seed.add( int( 23 ) ) );
+
+	return mx_hsvtorgb( vec3( hue, saturation, brightness ) );
+
+};
+
+const mx_colorcorrect = ( input, hue = float( 0 ), saturationAmount = float( 1 ), gamma = float( 1 ), lift = float( 0 ), gainAmount = float( 1 ), contrastAmount = float( 1 ), contrastPivot = float( 0.5 ), exposure = float( 0 ) ) => {
+
+	const hsv = mx_rgbtohsv( input.rgb || input );
+	let corrected = mx_hsvtorgb( vec3( hsv.x.add( hue ), hsv.y.mul( saturationAmount ), hsv.z ) );
+	corrected = max$1( corrected, vec3( 0 ) ).pow( gamma );
+	corrected = corrected.add( lift.mul( vec3( 1 ).sub( corrected ) ) );
+	corrected = corrected.mul( gainAmount );
+	corrected = mx_contrast( corrected, contrastAmount, contrastPivot );
+	corrected = corrected.mul( float( 2 ).pow( exposure ) );
+
+	return input.a ? vec4( corrected, input.a ) : corrected;
+
+};
+
+const mx_gooch_shade = (
+	warmColor = vec3( 1, 0.45, 0.05 ),
+	coolColor = vec3( 0.02, 0.08, 0.9 ),
+	specularIntensity = float( 0.5 ),
+	shininessValue = float( 64 ),
+	lightDirection = vec3( 0, 0, 1 ),
+	normal = normalWorldGeometry,
+	viewDirection = cameraPosition.sub( positionWorld )
+) => {
+
+	const n = normalize( normal );
+	const l = normalize( lightDirection ).negate();
+	const v = normalize( viewDirection );
+	const shade = n.dot( l ).mul( 0.5 ).add( 0.5 ).clamp();
+	const diffuse = mix( coolColor, warmColor, shade );
+	const reflected = reflect( l.negate(), n );
+	const specular = max$1( reflected.dot( v ), float( 0 ) ).pow( shininessValue ).mul( specularIntensity );
+
+	return diffuse.add( specular );
+
+};
+
+const mx_smoothstep = ( input, low = float( 0 ), high = float( 1 ), edgesEqual = false ) => {
+
+	if ( edgesEqual ) {
+
+		return input.greaterThanEqual( low ).select( input.mul( 0 ).add( 1 ), input.mul( 0 ) );
+
+	}
+
+	return smoothstep( low, high, input );
+
+};
+
+const mx_divide_by_zero = ( numerator = float( 0 ) ) => {
+
+	const maxFloat = float( 3.0e38 );
+
+	return numerator.equal( float( 0 ) ).select(
+		float( 0 ),
+		numerator.lessThan( float( 0 ) ).select( maxFloat.negate(), maxFloat )
+	);
+
+};
+
+const mx_overlay = ( bg = float( 0 ), fg = float( 0 ), mixAmount = float( 1 ) ) => {
+
+	const overlay = bg.lessThan( 0.5 ).select(
+		bg.mul( fg ).mul( 2 ),
+		float( 1 ).sub( bg.oneMinus().mul( fg.oneMinus() ).mul( 2 ) )
+	);
+
+	return mix( bg, overlay, mixAmount );
+
+};
+
+const mx_hsvadjust = ( input, amount = vec3( 0, 1, 1 ) ) => {
+
+	const hsv = mx_rgbtohsv( input.rgb || input );
+	const adjusted = mx_hsvtorgb( vec3( hsv.x.add( amount.x ), hsv.y.mul( amount.y ), hsv.z.mul( amount.z ) ) );
+
+	return input.a ? vec4( adjusted, input.a ) : adjusted;
+
+};
+
+const mx_transform_vector = ( input = vec3( 0, 0, 0 ), fromSpace = '', toSpace = '' ) => {
+
+	input = vec3( input );
+
+	if ( fromSpace === toSpace || fromSpace === '' || toSpace === '' ) return input;
+	if ( ( fromSpace === 'model' || fromSpace === 'object' ) && toSpace === 'world' ) return modelWorldMatrix.mul( vec4( input, 0 ) ).xyz;
+	if ( fromSpace === 'world' && ( toSpace === 'model' || toSpace === 'object' ) ) return modelWorldMatrixInverse.mul( vec4( input, 0 ) ).xyz;
+	if ( fromSpace === 'world' && toSpace === 'tangent' ) return vec3( input.dot( tangentWorld ), input.dot( bitangentWorld ), input.dot( normalWorld ) );
+	if ( fromSpace === 'tangent' && toSpace === 'world' ) return tangentWorld.mul( input.x ).add( bitangentWorld.mul( input.y ) ).add( normalWorld.mul( input.z ) );
+
+	return input;
+
+};
+
+const mx_transform_point = ( input = vec3( 0, 0, 0 ), fromSpace = '', toSpace = '' ) => {
+
+	input = vec3( input );
+
+	if ( fromSpace === toSpace || fromSpace === '' || toSpace === '' ) return input;
+	if ( ( fromSpace === 'model' || fromSpace === 'object' ) && toSpace === 'world' ) return modelWorldMatrix.mul( vec4( input, 1 ) ).xyz;
+	if ( fromSpace === 'world' && ( toSpace === 'model' || toSpace === 'object' ) ) return modelWorldMatrixInverse.mul( vec4( input, 1 ) ).xyz;
+
+	return input;
+
+};
+
+const mx_facingratio = (
+	viewDirection = cameraPosition.sub( positionWorld ),
+	normal = normalWorldGeometry,
+	faceForward = bool( true ),
+	invert = null
+) => {
+
+	const dotValue = normalize( viewDirection ).dot( normalize( normal ) );
+	const facing = faceForward.select( dotValue.abs(), dotValue );
+
+	return invert ? invert.select( mx_invert( facing ), facing ) : facing;
+
+};
+
+const mx_noise_float = ( texcoord = uv$1(), amplitude = 1, pivot = 0 ) => mx_perlin_noise_float( texcoord ).mul( amplitude ).add( pivot );
 //export const mx_noise_vec2 = ( texcoord = uv(), amplitude = 1, pivot = 0 ) => mx_perlin_noise_vec3( texcoord.convert( 'vec2|vec3' ) ).mul( amplitude ).add( pivot );
-const mx_noise_vec3 = ( texcoord = uv$1(), amplitude = 1, pivot = 0 ) => mx_perlin_noise_vec3( texcoord.convert( 'vec2|vec3' ) ).mul( amplitude ).add( pivot );
+const mx_noise_vec3 = ( texcoord = uv$1(), amplitude = 1, pivot = 0 ) => mx_perlin_noise_vec3( texcoord ).mul( amplitude ).add( pivot );
 const mx_noise_vec4 = ( texcoord = uv$1(), amplitude = 1, pivot = 0 ) => {
 
 	texcoord = texcoord.convert( 'vec2|vec3' ); // overloading type
@@ -48004,14 +48737,22 @@ const mx_noise_vec4 = ( texcoord = uv$1(), amplitude = 1, pivot = 0 ) => {
 
 };
 
-const mx_unifiednoise2d = ( noiseType, texcoord = uv$1(), freq = vec2( 1, 1 ), offset = vec2( 0, 0 ), jitter = 1, outmin = 0, outmax = 1, clampoutput = false, octaves = 1, lacunarity = 2, diminish = .5 ) => mx_unifiednoise2d$1( noiseType, texcoord.convert( 'vec2|vec3' ), freq, offset, jitter, outmin, outmax, clampoutput, octaves, lacunarity, diminish );
-const mx_unifiednoise3d = ( noiseType, texcoord = uv$1(), freq = vec2( 1, 1 ), offset = vec2( 0, 0 ), jitter = 1, outmin = 0, outmax = 1, clampoutput = false, octaves = 1, lacunarity = 2, diminish = .5 ) => mx_unifiednoise3d$1( noiseType, texcoord.convert( 'vec2|vec3' ), freq, offset, jitter, outmin, outmax, clampoutput, octaves, lacunarity, diminish );
+const mx_unifiednoise2d = ( noiseType, texcoord = uv$1(), freq = vec2( 1, 1 ), offset = vec2( 0, 0 ), jitter = 1, outmin = 0, outmax = 1, clampoutput = false, octaves = 1, lacunarity = 2, diminish = .5 ) => mx_unifiednoise2d$1( noiseType, vec2( texcoord ), freq, offset, jitter, outmin, outmax, clampoutput, octaves, lacunarity, diminish );
+const mx_unifiednoise3d = ( noiseType, texcoord = uv$1(), freq = vec3( 1, 1, 1 ), offset = vec3( 0, 0, 0 ), jitter = 1, outmin = 0, outmax = 1, clampoutput = false, octaves = 1, lacunarity = 2, diminish = .5 ) => mx_unifiednoise3d$1( noiseType, vec3( texcoord ), freq, offset, jitter, outmin, outmax, clampoutput, octaves, lacunarity, diminish );
 
-const mx_worley_noise_float = ( texcoord = uv$1(), jitter = 1 ) => mx_worley_noise_float$1( texcoord.convert( 'vec2|vec3' ), jitter, int( 1 ) );
-const mx_worley_noise_vec2 = ( texcoord = uv$1(), jitter = 1 ) => mx_worley_noise_vec2$1( texcoord.convert( 'vec2|vec3' ), jitter, int( 1 ) );
-const mx_worley_noise_vec3 = ( texcoord = uv$1(), jitter = 1 ) => mx_worley_noise_vec3$1( texcoord.convert( 'vec2|vec3' ), jitter, int( 1 ) );
+const mx_worley_noise_float = ( texcoord = uv$1(), jitter = 1, style = 0, metric = 0 ) => mx_worley_noise_float$1( texcoord, jitter, int( style ), int( metric ) );
+const mx_worley_noise_vec2 = ( texcoord = uv$1(), jitter = 1, style = 0, metric = 0 ) => mx_worley_noise_vec2$1( texcoord, jitter, int( style ), int( metric ) );
+const mx_worley_noise_vec3 = ( texcoord = uv$1(), jitter = 1, style = 0, metric = 0 ) => mx_worley_noise_vec3$1( texcoord, jitter, int( style ), int( metric ) );
 
-const mx_cell_noise_float = ( texcoord = uv$1() ) => mx_cell_noise_float$1( texcoord.convert( 'vec2|vec3' ) );
+const mx_cell_noise_float = ( texcoord = uv$1() ) => mx_cell_noise_float$1( texcoord );
+
+const mx_randomfloat = ( input = float( 0 ), minval = float( 0 ), maxval = float( 1 ), seed = int( 0 ) ) => {
+
+	const n = float( input ).add( float( seed ).mul( 12.9898 ) );
+	const random = fract( n.sin().mul( 43758.5453 ) );
+	return mix( minval, maxval, random );
+
+};
 
 const mx_fractal_noise_float = ( position = uv$1(), octaves = 3, lacunarity = 2, diminish = .5, amplitude = 1 ) => mx_fractal_noise_float$1( position, int( octaves ), lacunarity, diminish ).mul( amplitude );
 const mx_fractal_noise_vec2 = ( position = uv$1(), octaves = 3, lacunarity = 2, diminish = .5, amplitude = 1 ) => mx_fractal_noise_vec2$1( position, int( octaves ), lacunarity, diminish ).mul( amplitude );
@@ -48025,15 +48766,36 @@ const mx_add = ( in1, in2 = float( 0 ) ) => add( in1, in2 );
 const mx_subtract = ( in1, in2 = float( 0 ) ) => sub( in1, in2 );
 const mx_multiply = ( in1, in2 = float( 1 ) ) => mul( in1, in2 );
 const mx_divide = ( in1, in2 = float( 1 ) ) => div( in1, in2 );
-const mx_modulo = ( in1, in2 = float( 1 ) ) => mod( in1, in2 );
+const mx_modulo = ( in1, in2 = float( 1 ) ) => sub( in1, mul( in2, floor( div( in1, in2 ) ) ) );
 const mx_power = ( in1, in2 = float( 1 ) ) => pow( in1, in2 );
 const mx_atan2 = ( in1 = float( 0 ), in2 = float( 1 ) ) => atan( in1, in2 );
 const mx_timer = () => time;
 const mx_frame = () => frameId;
 const mx_invert = ( in1, amount = float( 1 ) ) => sub( amount, in1 );
-const mx_ifgreater = ( value1, value2, in1, in2 ) => value1.greaterThan( value2 ).mix( in1, in2 );
-const mx_ifgreatereq = ( value1, value2, in1, in2 ) => value1.greaterThanEqual( value2 ).mix( in1, in2 );
-const mx_ifequal = ( value1, value2, in1, in2 ) => value1.equal( value2 ).mix( in1, in2 );
+const mx_clamp = ( input, low = float( 0 ), high = float( 1 ) ) => clamp( input, low, high );
+
+const mx_ifgreater = ( value1, value2 = float( 0 ), in1, in2 ) => {
+
+	const condition = value1.greaterThan( value2 );
+	return in1 === undefined && in2 === undefined ? condition : condition.select( in1, in2 );
+
+};
+
+const mx_ifgreatereq = ( value1, value2 = float( 0 ), in1, in2 ) => {
+
+	const condition = value1.greaterThanEqual( value2 );
+	return in1 === undefined && in2 === undefined ? condition : condition.select( in1, in2 );
+
+};
+
+const mx_ifequal = ( value1, value2 = float( 0 ), in1, in2 ) => {
+
+	const condition = value1.equal( value2 );
+	return in1 === undefined && in2 === undefined ? condition : condition.select( in1, in2 );
+
+};
+
+const mx_ifequal_compare_inputs = ( value1, value2 = float( 0 ), in1, in2 ) => value1.equal( value2 ).select( in1, in2 );
 
 // Enhanced separate node to support multi-output referencing (outx, outy, outz, outw)
 const mx_separate = ( in1, channelOrOut = null ) => {
@@ -48064,29 +48826,17 @@ const mx_separate = ( in1, channelOrOut = null ) => {
 };
 
 const mx_place2d = (
-	texcoord, pivot = vec2( 0.5, 0.5 ), scale = vec2( 1, 1 ), rotate = float( 0 ), offset = vec2( 0, 0 )/*, operationorder = int( 0 )*/
+	texcoord, pivot = vec2( 0.5, 0.5 ), scale = vec2( 1, 1 ), rotate = float( 0 ), offset = vec2( 0, 0 ), operationorder = int( 0 )
 ) => {
 
-	let uv = texcoord;
-	if ( pivot ) uv = uv.sub( pivot );
-	if ( scale ) uv = uv.mul( scale );
-	if ( rotate ) {
-
-		const rad = rotate.mul( Math.PI / 180.0 );
-		const cosR = rad.cos();
-		const sinR = rad.sin();
-		uv = vec2(
-			uv.x.mul( cosR ).sub( uv.y.mul( sinR ) ),
-			uv.x.mul( sinR ).add( uv.y.mul( cosR ) )
-		);
-
-	}
-
-	if ( pivot ) uv = uv.add( pivot );
-	if ( offset ) uv = uv.add( offset );
-	return uv;
+	const centered = vec2( texcoord ).sub( pivot );
+	const srt = mx_rotate2d( centered.div( scale ), rotate ).sub( offset ).add( pivot );
+	const trs = mx_rotate2d( centered.sub( offset ), rotate ).div( scale ).add( pivot );
+	return int( operationorder ).equal( int( 1 ) ).select( trs, srt );
 
 };
+
+const mx_UsdTransform2d = ( input = uv$1(), rotation = float( 0 ), scale = vec2( 1, 1 ), translation = vec2( 0, 0 ) ) => mx_rotate2d( vec2( input ).mul( scale ), float( rotation ).negate() ).add( translation );
 
 const mx_rotate2d = ( input, amount ) => {
 
@@ -48126,6 +48876,19 @@ const mx_heighttonormal = ( input, scale/*, texcoord*/ ) => {
 	return bumpMap( input, scale );
 
 };
+
+const mx_transformmatrix = ( input, matrix ) => {
+
+	const type = input.getNodeType?.();
+
+	if ( type === 'vec2' ) return matrix.mul( vec3( input, 1 ) ).xy;
+	if ( type === 'vec3' && matrix.getNodeType?.() === 'mat4' ) return matrix.mul( vec4( input, 1 ) ).xyz;
+
+	return matrix.mul( input );
+
+};
+
+const mx_latlongimage = ( defaultValue = vec3( 0, 0, 0 )/*, viewdir, rotation*/ ) => defaultValue;
 
 /**
  * This computes a parallax corrected normal which is used for box-projected cube mapping (BPCEM).
@@ -48534,49 +49297,114 @@ var TSL = /*#__PURE__*/Object.freeze({
 	morphReference: morphReference,
 	mrt: mrt,
 	mul: mul,
+	mx_UsdTransform2d: mx_UsdTransform2d,
 	mx_aastep: mx_aastep,
+	mx_acescg_to_lin_rec709: mx_acescg_to_lin_rec709,
 	mx_add: mx_add,
+	mx_adobergb_to_lin_rec709: mx_adobergb_to_lin_rec709,
 	mx_atan2: mx_atan2,
+	mx_blackbody: mx_blackbody,
+	mx_blur: mx_blur,
+	mx_burn: mx_burn,
 	mx_cell_noise_float: mx_cell_noise_float,
+	mx_checkerboard: mx_checkerboard,
+	mx_circle: mx_circle,
+	mx_clamp: mx_clamp,
+	mx_cloverleaf: mx_cloverleaf,
+	mx_colorcorrect: mx_colorcorrect,
+	mx_combine2: mx_combine2,
+	mx_combine3: mx_combine3,
+	mx_combine4: mx_combine4,
 	mx_contrast: mx_contrast,
+	mx_crosshatch: mx_crosshatch,
+	mx_difference: mx_difference,
+	mx_disjointover: mx_disjointover,
 	mx_divide: mx_divide,
+	mx_divide_by_zero: mx_divide_by_zero,
+	mx_dodge: mx_dodge,
+	mx_facingratio: mx_facingratio,
+	mx_fract: mx_fract,
 	mx_fractal_noise_float: mx_fractal_noise_float,
 	mx_fractal_noise_vec2: mx_fractal_noise_vec2,
 	mx_fractal_noise_vec3: mx_fractal_noise_vec3,
 	mx_fractal_noise_vec4: mx_fractal_noise_vec4,
 	mx_frame: mx_frame,
+	mx_g18_rec709_to_lin_rec709: mx_g18_rec709_to_lin_rec709,
+	mx_g22_ap1_to_lin_rec709: mx_g22_ap1_to_lin_rec709,
+	mx_g22_rec709_to_lin_rec709: mx_g22_rec709_to_lin_rec709,
+	mx_gooch_shade: mx_gooch_shade,
+	mx_grid: mx_grid,
 	mx_heighttonormal: mx_heighttonormal,
+	mx_hexagon: mx_hexagon,
+	mx_hsvadjust: mx_hsvadjust,
 	mx_hsvtorgb: mx_hsvtorgb,
 	mx_ifequal: mx_ifequal,
+	mx_ifequal_compare_inputs: mx_ifequal_compare_inputs,
 	mx_ifgreater: mx_ifgreater,
 	mx_ifgreatereq: mx_ifgreatereq,
+	mx_in: mx_in,
+	mx_inside: mx_inside,
 	mx_invert: mx_invert,
+	mx_latlongimage: mx_latlongimage,
+	mx_lin_adobergb_to_lin_rec709: mx_lin_adobergb_to_lin_rec709,
+	mx_lin_displayp3_to_lin_rec709: mx_lin_displayp3_to_lin_rec709,
+	mx_line: mx_line,
+	mx_mask: mx_mask,
+	mx_matte: mx_matte,
+	mx_minus: mx_minus,
 	mx_modulo: mx_modulo,
 	mx_multiply: mx_multiply,
 	mx_noise_float: mx_noise_float,
 	mx_noise_vec3: mx_noise_vec3,
 	mx_noise_vec4: mx_noise_vec4,
+	mx_not: mx_not,
+	mx_open_pbr_anisotropy: mx_open_pbr_anisotropy,
+	mx_out: mx_out,
+	mx_outside: mx_outside,
+	mx_over: mx_over,
+	mx_overlay: mx_overlay,
+	mx_passthrough: mx_passthrough,
 	mx_place2d: mx_place2d,
+	mx_plus: mx_plus,
 	mx_power: mx_power,
+	mx_premult: mx_premult,
+	mx_ramp: mx_ramp,
 	mx_ramp4: mx_ramp4,
+	mx_ramp_gradient: mx_ramp_gradient,
 	mx_ramplr: mx_ramplr,
 	mx_ramptb: mx_ramptb,
+	mx_randomcolor: mx_randomcolor,
+	mx_randomfloat: mx_randomfloat,
+	mx_range: mx_range,
+	mx_rec709_display_to_lin_rec709: mx_rec709_display_to_lin_rec709,
 	mx_rgbtohsv: mx_rgbtohsv,
 	mx_rotate2d: mx_rotate2d,
 	mx_rotate3d: mx_rotate3d,
 	mx_safepower: mx_safepower,
+	mx_screen: mx_screen,
 	mx_separate: mx_separate,
+	mx_smoothstep: mx_smoothstep,
 	mx_splitlr: mx_splitlr,
 	mx_splittb: mx_splittb,
+	mx_srgb_displayp3_to_lin_rec709: mx_srgb_displayp3_to_lin_rec709,
 	mx_srgb_texture_to_lin_rec709: mx_srgb_texture_to_lin_rec709,
 	mx_subtract: mx_subtract,
+	mx_tiledcircles: mx_tiledcircles,
+	mx_tiledcloverleafs: mx_tiledcloverleafs,
+	mx_tiledhexagons: mx_tiledhexagons,
 	mx_timer: mx_timer,
+	mx_transform_point: mx_transform_point,
 	mx_transform_uv: mx_transform_uv,
+	mx_transform_vector: mx_transform_vector,
+	mx_transformmatrix: mx_transformmatrix,
+	mx_trianglewave: mx_trianglewave,
 	mx_unifiednoise2d: mx_unifiednoise2d,
 	mx_unifiednoise3d: mx_unifiednoise3d,
+	mx_unpremult: mx_unpremult,
 	mx_worley_noise_float: mx_worley_noise_float,
 	mx_worley_noise_vec2: mx_worley_noise_vec2,
 	mx_worley_noise_vec3: mx_worley_noise_vec3,
+	mx_xor: mx_xor,
 	negate: negate,
 	negateOnBackSide: negateOnBackSide,
 	neutralToneMapping: neutralToneMapping,
