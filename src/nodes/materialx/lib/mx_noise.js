@@ -4,7 +4,7 @@
 import { int, uint, float, vec3, bool, uvec3, vec2, vec4, If, Fn } from '../../tsl/TSLBase.js';
 import { select } from '../../math/ConditionalNode.js';
 import { sub, mul } from '../../math/OperatorNode.js';
-import { floor, abs, max, dot, min, sqrt, clamp } from '../../math/MathNode.js';
+import { floor, abs, max, dot, sqrt, clamp } from '../../math/MathNode.js';
 import { overloadingFn } from '../../utils/FunctionOverloadingNode.js';
 import { Loop } from '../../utils/LoopNode.js';
 
@@ -933,6 +933,67 @@ export const mx_fractal_noise_vec4 = /*@__PURE__*/ Fn( ( [ p_immutable, octaves_
 	]
 } );
 
+export const mx_worley_cell_position_0 = /*@__PURE__*/ Fn( ( [ x_immutable, y_immutable, xoff_immutable, yoff_immutable, jitter_immutable ] ) => {
+
+	const jitter = float( jitter_immutable ).toVar();
+	const yoff = int( yoff_immutable ).toVar();
+	const xoff = int( xoff_immutable ).toVar();
+	const y = int( y_immutable ).toVar();
+	const x = int( x_immutable ).toVar();
+	const tmp = vec3( mx_cell_noise_vec3( vec2( x.add( xoff ), y.add( yoff ) ) ) ).toVar();
+	const off = vec2( tmp.x, tmp.y ).toVar();
+
+	off.subAssign( 0.5 );
+	off.mulAssign( jitter );
+	off.addAssign( 0.5 );
+
+	return vec2( float( x ), float( y ) ).add( off );
+
+} ).setLayout( {
+	name: 'mx_worley_cell_position_0',
+	type: 'vec2',
+	inputs: [
+		{ name: 'x', type: 'int' },
+		{ name: 'y', type: 'int' },
+		{ name: 'xoff', type: 'int' },
+		{ name: 'yoff', type: 'int' },
+		{ name: 'jitter', type: 'float' }
+	]
+} );
+
+export const mx_worley_cell_position_1 = /*@__PURE__*/ Fn( ( [ x_immutable, y_immutable, z_immutable, xoff_immutable, yoff_immutable, zoff_immutable, jitter_immutable ] ) => {
+
+	const jitter = float( jitter_immutable ).toVar();
+	const zoff = int( zoff_immutable ).toVar();
+	const yoff = int( yoff_immutable ).toVar();
+	const xoff = int( xoff_immutable ).toVar();
+	const z = int( z_immutable ).toVar();
+	const y = int( y_immutable ).toVar();
+	const x = int( x_immutable ).toVar();
+	const off = vec3( mx_cell_noise_vec3( vec3( x.add( xoff ), y.add( yoff ), z.add( zoff ) ) ) ).toVar();
+
+	off.subAssign( 0.5 );
+	off.mulAssign( jitter );
+	off.addAssign( 0.5 );
+
+	return vec3( float( x ), float( y ), float( z ) ).add( off );
+
+} ).setLayout( {
+	name: 'mx_worley_cell_position_1',
+	type: 'vec3',
+	inputs: [
+		{ name: 'x', type: 'int' },
+		{ name: 'y', type: 'int' },
+		{ name: 'z', type: 'int' },
+		{ name: 'xoff', type: 'int' },
+		{ name: 'yoff', type: 'int' },
+		{ name: 'zoff', type: 'int' },
+		{ name: 'jitter', type: 'float' }
+	]
+} );
+
+export const mx_worley_cell_position = /*@__PURE__*/ overloadingFn( [ mx_worley_cell_position_0, mx_worley_cell_position_1 ] );
+
 export const mx_worley_distance_0 = /*@__PURE__*/ Fn( ( [ p_immutable, x_immutable, y_immutable, xoff_immutable, yoff_immutable, jitter_immutable, metric_immutable ] ) => {
 
 	const metric = int( metric_immutable ).toVar();
@@ -1028,33 +1089,54 @@ export const mx_worley_distance_1 = /*@__PURE__*/ Fn( ( [ p_immutable, x_immutab
 
 export const mx_worley_distance = /*@__PURE__*/ overloadingFn( [ mx_worley_distance_0, mx_worley_distance_1 ] );
 
-export const mx_worley_noise_float_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, metric_immutable ] ) => {
+export const mx_worley_noise_float_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, style_immutable, metric_immutable ] ) => {
 
 	const metric = int( metric_immutable ).toVar();
+	const style = int( style_immutable ).toVar();
 	const jitter = float( jitter_immutable ).toVar();
 	const p = vec2( p_immutable ).toVar();
 	const X = int().toVar(), Y = int().toVar();
 	const localpos = vec2( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ) ).toVar();
 	const sqdist = float( 1e6 ).toVar();
+	const minpos = vec2( 0, 0 ).toVar();
 
 	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
 		Loop( { start: - 1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
 			const dist = float( mx_worley_distance( localpos, x, y, X, Y, jitter, metric ) ).toVar();
-			sqdist.assign( min( sqdist, dist ) );
+			const cellpos = vec2( mx_worley_cell_position( x, y, X, Y, jitter ).sub( localpos ) ).toVar();
+
+			If( dist.lessThan( sqdist ), () => {
+
+				sqdist.assign( dist );
+				minpos.assign( cellpos );
+
+			} );
 
 		} );
 
 	} );
 
-	If( metric.equal( int( 0 ) ), () => {
+	const result = float().toVar();
 
-		sqdist.assign( sqrt( sqdist ) );
+	If( style.equal( int( 1 ) ), () => {
+
+		result.assign( mx_cell_noise_float( minpos.add( p ) ) );
+
+	} ).Else( () => {
+
+		If( metric.equal( int( 0 ) ), () => {
+
+			sqdist.assign( sqrt( sqdist ) );
+
+		} );
+
+		result.assign( sqdist );
 
 	} );
 
-	return sqdist;
+	return result;
 
 } ).setLayout( {
 	name: 'mx_worley_noise_float_0',
@@ -1062,29 +1144,34 @@ export const mx_worley_noise_float_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter
 	inputs: [
 		{ name: 'p', type: 'vec2' },
 		{ name: 'jitter', type: 'float' },
+		{ name: 'style', type: 'int' },
 		{ name: 'metric', type: 'int' }
 	]
 } );
 
-export const mx_worley_noise_vec2_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, metric_immutable ] ) => {
+export const mx_worley_noise_vec2_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, style_immutable, metric_immutable ] ) => {
 
 	const metric = int( metric_immutable ).toVar();
+	const style = int( style_immutable ).toVar();
 	const jitter = float( jitter_immutable ).toVar();
 	const p = vec2( p_immutable ).toVar();
 	const X = int().toVar(), Y = int().toVar();
 	const localpos = vec2( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ) ).toVar();
 	const sqdist = vec2( 1e6, 1e6 ).toVar();
+	const minpos = vec2( 0, 0 ).toVar();
 
 	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
 		Loop( { start: - 1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
 			const dist = float( mx_worley_distance( localpos, x, y, X, Y, jitter, metric ) ).toVar();
+			const cellpos = vec2( mx_worley_cell_position( x, y, X, Y, jitter ).sub( localpos ) ).toVar();
 
 			If( dist.lessThan( sqdist.x ), () => {
 
 				sqdist.y.assign( sqdist.x );
 				sqdist.x.assign( dist );
+				minpos.assign( cellpos );
 
 			} ).ElseIf( dist.lessThan( sqdist.y ), () => {
 
@@ -1096,13 +1183,26 @@ export const mx_worley_noise_vec2_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_
 
 	} );
 
-	If( metric.equal( int( 0 ) ), () => {
+	const result = vec2().toVar();
 
-		sqdist.assign( sqrt( sqdist ) );
+	If( style.equal( int( 1 ) ), () => {
+
+		const cellNoise = vec3( mx_cell_noise_vec3( minpos.add( p ) ) ).toVar();
+		result.assign( vec2( cellNoise.x, cellNoise.y ) );
+
+	} ).Else( () => {
+
+		If( metric.equal( int( 0 ) ), () => {
+
+			sqdist.assign( sqrt( sqdist ) );
+
+		} );
+
+		result.assign( sqdist );
 
 	} );
 
-	return sqdist;
+	return result;
 
 } ).setLayout( {
 	name: 'mx_worley_noise_vec2_0',
@@ -1110,30 +1210,35 @@ export const mx_worley_noise_vec2_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_
 	inputs: [
 		{ name: 'p', type: 'vec2' },
 		{ name: 'jitter', type: 'float' },
+		{ name: 'style', type: 'int' },
 		{ name: 'metric', type: 'int' }
 	]
 } );
 
-export const mx_worley_noise_vec3_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, metric_immutable ] ) => {
+export const mx_worley_noise_vec3_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, style_immutable, metric_immutable ] ) => {
 
 	const metric = int( metric_immutable ).toVar();
+	const style = int( style_immutable ).toVar();
 	const jitter = float( jitter_immutable ).toVar();
 	const p = vec2( p_immutable ).toVar();
 	const X = int().toVar(), Y = int().toVar();
 	const localpos = vec2( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ) ).toVar();
 	const sqdist = vec3( 1e6, 1e6, 1e6 ).toVar();
+	const minpos = vec2( 0, 0 ).toVar();
 
 	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
 		Loop( { start: - 1, end: int( 1 ), name: 'y', condition: '<=' }, ( { y } ) => {
 
 			const dist = float( mx_worley_distance( localpos, x, y, X, Y, jitter, metric ) ).toVar();
+			const cellpos = vec2( mx_worley_cell_position( x, y, X, Y, jitter ).sub( localpos ) ).toVar();
 
 			If( dist.lessThan( sqdist.x ), () => {
 
 				sqdist.z.assign( sqdist.y );
 				sqdist.y.assign( sqdist.x );
 				sqdist.x.assign( dist );
+				minpos.assign( cellpos );
 
 			} ).ElseIf( dist.lessThan( sqdist.y ), () => {
 
@@ -1150,13 +1255,25 @@ export const mx_worley_noise_vec3_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_
 
 	} );
 
-	If( metric.equal( int( 0 ) ), () => {
+	const result = vec3().toVar();
 
-		sqdist.assign( sqrt( sqdist ) );
+	If( style.equal( int( 1 ) ), () => {
+
+		result.assign( mx_cell_noise_vec3( minpos.add( p ) ) );
+
+	} ).Else( () => {
+
+		If( metric.equal( int( 0 ) ), () => {
+
+			sqdist.assign( sqrt( sqdist ) );
+
+		} );
+
+		result.assign( sqdist );
 
 	} );
 
-	return sqdist;
+	return result;
 
 } ).setLayout( {
 	name: 'mx_worley_noise_vec3_0',
@@ -1164,18 +1281,21 @@ export const mx_worley_noise_vec3_0 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_
 	inputs: [
 		{ name: 'p', type: 'vec2' },
 		{ name: 'jitter', type: 'float' },
+		{ name: 'style', type: 'int' },
 		{ name: 'metric', type: 'int' }
 	]
 } );
 
-export const mx_worley_noise_float_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, metric_immutable ] ) => {
+export const mx_worley_noise_float_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, style_immutable, metric_immutable ] ) => {
 
 	const metric = int( metric_immutable ).toVar();
+	const style = int( style_immutable ).toVar();
 	const jitter = float( jitter_immutable ).toVar();
 	const p = vec3( p_immutable ).toVar();
 	const X = int().toVar(), Y = int().toVar(), Z = int().toVar();
 	const localpos = vec3( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ), mx_floorfrac( p.z, Z ) ).toVar();
 	const sqdist = float( 1e6 ).toVar();
+	const minpos = vec3( 0, 0, 0 ).toVar();
 
 	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
@@ -1184,7 +1304,14 @@ export const mx_worley_noise_float_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter
 			Loop( { start: - 1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
 
 				const dist = float( mx_worley_distance( localpos, x, y, z, X, Y, Z, jitter, metric ) ).toVar();
-				sqdist.assign( min( sqdist, dist ) );
+				const cellpos = vec3( mx_worley_cell_position( x, y, z, X, Y, Z, jitter ).sub( localpos ) ).toVar();
+
+				If( dist.lessThan( sqdist ), () => {
+
+					sqdist.assign( dist );
+					minpos.assign( cellpos );
+
+				} );
 
 			} );
 
@@ -1192,13 +1319,25 @@ export const mx_worley_noise_float_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter
 
 	} );
 
-	If( metric.equal( int( 0 ) ), () => {
+	const result = float().toVar();
 
-		sqdist.assign( sqrt( sqdist ) );
+	If( style.equal( int( 1 ) ), () => {
+
+		result.assign( mx_cell_noise_float( minpos.add( p ) ) );
+
+	} ).Else( () => {
+
+		If( metric.equal( int( 0 ) ), () => {
+
+			sqdist.assign( sqrt( sqdist ) );
+
+		} );
+
+		result.assign( sqdist );
 
 	} );
 
-	return sqdist;
+	return result;
 
 } ).setLayout( {
 	name: 'mx_worley_noise_float_1',
@@ -1206,20 +1345,23 @@ export const mx_worley_noise_float_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter
 	inputs: [
 		{ name: 'p', type: 'vec3' },
 		{ name: 'jitter', type: 'float' },
+		{ name: 'style', type: 'int' },
 		{ name: 'metric', type: 'int' }
 	]
 } );
 
 export const mx_worley_noise_float = /*@__PURE__*/ overloadingFn( [ mx_worley_noise_float_0, mx_worley_noise_float_1 ] );
 
-export const mx_worley_noise_vec2_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, metric_immutable ] ) => {
+export const mx_worley_noise_vec2_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, style_immutable, metric_immutable ] ) => {
 
 	const metric = int( metric_immutable ).toVar();
+	const style = int( style_immutable ).toVar();
 	const jitter = float( jitter_immutable ).toVar();
 	const p = vec3( p_immutable ).toVar();
 	const X = int().toVar(), Y = int().toVar(), Z = int().toVar();
 	const localpos = vec3( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ), mx_floorfrac( p.z, Z ) ).toVar();
 	const sqdist = vec2( 1e6, 1e6 ).toVar();
+	const minpos = vec3( 0, 0, 0 ).toVar();
 
 	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
@@ -1228,11 +1370,13 @@ export const mx_worley_noise_vec2_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_
 			Loop( { start: - 1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
 
 				const dist = float( mx_worley_distance( localpos, x, y, z, X, Y, Z, jitter, metric ) ).toVar();
+				const cellpos = vec3( mx_worley_cell_position( x, y, z, X, Y, Z, jitter ).sub( localpos ) ).toVar();
 
 				If( dist.lessThan( sqdist.x ), () => {
 
 					sqdist.y.assign( sqdist.x );
 					sqdist.x.assign( dist );
+					minpos.assign( cellpos );
 
 				} ).ElseIf( dist.lessThan( sqdist.y ), () => {
 
@@ -1246,13 +1390,26 @@ export const mx_worley_noise_vec2_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_
 
 	} );
 
-	If( metric.equal( int( 0 ) ), () => {
+	const result = vec2().toVar();
 
-		sqdist.assign( sqrt( sqdist ) );
+	If( style.equal( int( 1 ) ), () => {
+
+		const cellNoise = vec3( mx_cell_noise_vec3( minpos.add( p ) ) ).toVar();
+		result.assign( vec2( cellNoise.x, cellNoise.y ) );
+
+	} ).Else( () => {
+
+		If( metric.equal( int( 0 ) ), () => {
+
+			sqdist.assign( sqrt( sqdist ) );
+
+		} );
+
+		result.assign( sqdist );
 
 	} );
 
-	return sqdist;
+	return result;
 
 } ).setLayout( {
 	name: 'mx_worley_noise_vec2_1',
@@ -1260,20 +1417,23 @@ export const mx_worley_noise_vec2_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_
 	inputs: [
 		{ name: 'p', type: 'vec3' },
 		{ name: 'jitter', type: 'float' },
+		{ name: 'style', type: 'int' },
 		{ name: 'metric', type: 'int' }
 	]
 } );
 
 export const mx_worley_noise_vec2 = /*@__PURE__*/ overloadingFn( [ mx_worley_noise_vec2_0, mx_worley_noise_vec2_1 ] );
 
-export const mx_worley_noise_vec3_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, metric_immutable ] ) => {
+export const mx_worley_noise_vec3_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_immutable, style_immutable, metric_immutable ] ) => {
 
 	const metric = int( metric_immutable ).toVar();
+	const style = int( style_immutable ).toVar();
 	const jitter = float( jitter_immutable ).toVar();
 	const p = vec3( p_immutable ).toVar();
 	const X = int().toVar(), Y = int().toVar(), Z = int().toVar();
 	const localpos = vec3( mx_floorfrac( p.x, X ), mx_floorfrac( p.y, Y ), mx_floorfrac( p.z, Z ) ).toVar();
 	const sqdist = vec3( 1e6, 1e6, 1e6 ).toVar();
+	const minpos = vec3( 0, 0, 0 ).toVar();
 
 	Loop( { start: - 1, end: int( 1 ), name: 'x', condition: '<=' }, ( { x } ) => {
 
@@ -1282,12 +1442,14 @@ export const mx_worley_noise_vec3_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_
 			Loop( { start: - 1, end: int( 1 ), name: 'z', condition: '<=' }, ( { z } ) => {
 
 				const dist = float( mx_worley_distance( localpos, x, y, z, X, Y, Z, jitter, metric ) ).toVar();
+				const cellpos = vec3( mx_worley_cell_position( x, y, z, X, Y, Z, jitter ).sub( localpos ) ).toVar();
 
 				If( dist.lessThan( sqdist.x ), () => {
 
 					sqdist.z.assign( sqdist.y );
 					sqdist.y.assign( sqdist.x );
 					sqdist.x.assign( dist );
+					minpos.assign( cellpos );
 
 				} ).ElseIf( dist.lessThan( sqdist.y ), () => {
 
@@ -1306,13 +1468,25 @@ export const mx_worley_noise_vec3_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_
 
 	} );
 
-	If( metric.equal( int( 0 ) ), () => {
+	const result = vec3().toVar();
 
-		sqdist.assign( sqrt( sqdist ) );
+	If( style.equal( int( 1 ) ), () => {
+
+		result.assign( mx_cell_noise_vec3( minpos.add( p ) ) );
+
+	} ).Else( () => {
+
+		If( metric.equal( int( 0 ) ), () => {
+
+			sqdist.assign( sqrt( sqdist ) );
+
+		} );
+
+		result.assign( sqdist );
 
 	} );
 
-	return sqdist;
+	return result;
 
 } ).setLayout( {
 	name: 'mx_worley_noise_vec3_1',
@@ -1320,6 +1494,7 @@ export const mx_worley_noise_vec3_1 = /*@__PURE__*/ Fn( ( [ p_immutable, jitter_
 	inputs: [
 		{ name: 'p', type: 'vec3' },
 		{ name: 'jitter', type: 'float' },
+		{ name: 'style', type: 'int' },
 		{ name: 'metric', type: 'int' }
 	]
 } );
@@ -1353,28 +1528,28 @@ export const mx_unifiednoise2d = /*@__PURE__*/ Fn( ( [
 	// Perlin
 	If( noiseType.equal( int( 0 ) ), () => {
 
-		result.assign( mx_perlin_noise_vec3( p ) );
+		result.assign( mx_perlin_noise_float( p ) );
 
 	} );
 
 	// Cell
 	If( noiseType.equal( int( 1 ) ), () => {
 
-		result.assign( mx_cell_noise_vec3( p ) );
+		result.assign( mx_cell_noise_float( p ) );
 
 	} );
 
 	// Worley (metric=0 = euclidean)
 	If( noiseType.equal( int( 2 ) ), () => {
 
-		result.assign( mx_worley_noise_vec3( p, jitter, int( 0 ) ) );
+		result.assign( mx_worley_noise_float( p, jitter, int( 0 ), int( 0 ) ) );
 
 	} );
 
 	// Fractal (use vec3(p, 0.0) for 2D input)
 	If( noiseType.equal( int( 3 ) ), () => {
 
-		result.assign( mx_fractal_noise_vec3( vec3( p, 0.0 ), octaves, lacunarity, diminish ) );
+		result.assign( mx_fractal_noise_float( vec3( p, 0.0 ), octaves, lacunarity, diminish ) );
 
 	} );
 
@@ -1435,28 +1610,28 @@ export const mx_unifiednoise3d = /*@__PURE__*/ Fn( ( [
 	// Perlin
 	If( noiseType.equal( int( 0 ) ), () => {
 
-		result.assign( mx_perlin_noise_vec3( p ) );
+		result.assign( mx_perlin_noise_float( p ) );
 
 	} );
 
 	// Cell
 	If( noiseType.equal( int( 1 ) ), () => {
 
-		result.assign( mx_cell_noise_vec3( p ) );
+		result.assign( mx_cell_noise_float( p ) );
 
 	} );
 
 	// Worley (metric=0 = euclidean)
 	If( noiseType.equal( int( 2 ) ), () => {
 
-		result.assign( mx_worley_noise_vec3( p, jitter, int( 0 ) ) );
+		result.assign( mx_worley_noise_float( p, jitter, int( 0 ), int( 0 ) ) );
 
 	} );
 
 	// Fractal
 	If( noiseType.equal( int( 3 ) ), () => {
 
-		result.assign( mx_fractal_noise_vec3( p, octaves, lacunarity, diminish ) );
+		result.assign( mx_fractal_noise_float( p, octaves, lacunarity, diminish ) );
 
 	} );
 
