@@ -5,7 +5,7 @@ import {
 
 import {
 	float, bool, int, vec2, vec3, vec4, color, texture, uniform,
-	positionLocal, positionWorld, uv, vertexColor, attribute,
+	positionLocal, positionWorld, uv, vertexColor,
 	normalLocal, normalWorld, tangentLocal, tangentWorld, bitangentLocal, bitangentWorld,
 	mul, abs, sign, floor, ceil, round, sin, cos, tan,
 	asin, acos, sqrt, exp, clamp, min, max, normalize, length, dot, cross, normalMap,
@@ -716,8 +716,9 @@ class MaterialXNode {
 		} else if ( this.isConst ) {
 
 			const nodeClass = this.getClassFromType( type );
+			const values = type === 'matrix22' || type === 'matrix33' || type === 'matrix44' ? this.getMatrix() : this.getVector();
 
-			node = nodeClass( ...this.getVector() );
+			node = nodeClass( ...values );
 
 			if ( this.isUniform ) {
 
@@ -1925,6 +1926,29 @@ class MaterialXNode {
 
 	}
 
+	getMatrix() {
+
+		const vector = this.getVector();
+		const size = this.type === 'matrix44' ? 4 : this.type === 'matrix33' ? 3 : this.type === 'matrix22' ? 2 : 0;
+
+		if ( size === 0 || vector.length !== size * size ) return vector;
+
+		const matrix = [];
+
+		for ( let column = 0; column < size; column ++ ) {
+
+			for ( let row = 0; row < size; row ++ ) {
+
+				matrix.push( vector[ row * size + column ] );
+
+			}
+
+		}
+
+		return matrix;
+
+	}
+
 	getAttribute( name ) {
 
 		return this.nodeXML.getAttribute( name );
@@ -2016,10 +2040,12 @@ class MaterialXNode {
 
 		if ( inputs.thin_film_thickness ) thinFilmThicknessNode = inputs.thin_film_thickness;
 
-		if ( inputs.thin_film_ior ) {
+		const thinFilmIorInput = inputs.thin_film_ior || inputs.thin_film_IOR;
+
+		if ( thinFilmIorInput ) {
 
 			// Clamp IOR to valid range for Three.js (1.0 to 2.333)
-			thinFilmIorNode = clamp( inputs.thin_film_ior, float( 1.0 ), float( 2.333 ) );
+			thinFilmIorNode = clamp( thinFilmIorInput, float( 1.0 ), float( 2.333 ) );
 
 		}
 
@@ -2076,8 +2102,8 @@ class MaterialXNode {
 
 		if ( anisotropyNode !== null ) {
 
-			material.anisotropyNode = anisotropyNode;
-			material.anisotropyRotationNode = anisotropyRotationNode || float( 0 );
+			const anisotropyRotation = ( anisotropyRotationNode || float( 0 ) ).mul( Math.PI * 2 );
+			material.anisotropyNode = vec2( cos( anisotropyRotation ), sin( anisotropyRotation ) ).mul( anisotropyNode );
 
 		}
 
@@ -2088,13 +2114,17 @@ class MaterialXNode {
 
 		}
 
-		material.thinFilmThicknessNode = thinFilmThicknessNode || float( 0 );
-		material.thinFilmIorNode = thinFilmIorNode || float( 1.5 );
+		if ( thinFilmThicknessNode !== null ) {
+
+			material.iridescenceNode = float( 1 );
+			material.iridescenceThicknessNode = thinFilmThicknessNode;
+			material.iridescenceIORNode = thinFilmIorNode || float( 1.5 );
+
+		}
 
 		if ( sheenNode !== null ) {
 
-			material.sheenNode = sheenNode;
-			material.sheenColorNode = sheenColorNode || color( 1.0, 1.0, 1.0 );
+			material.sheenNode = ( sheenColorNode || color( 1.0, 1.0, 1.0 ) ).mul( sheenNode );
 			material.sheenRoughnessNode = sheenRoughnessNode || float( 0.5 );
 
 		}
@@ -2108,13 +2138,6 @@ class MaterialXNode {
 
 		if ( normalNode ) material.normalNode = normalNode;
 		if ( emissiveNode ) material.emissiveNode = emissiveNode;
-
-		// Auto-enable iridescence when thin film parameters are present
-		if ( thinFilmThicknessNode && thinFilmThicknessNode.value !== undefined && thinFilmThicknessNode.value > 0 ) {
-
-			material.iridescence = 1.0;
-
-		}
 
 		if ( opacityNode !== null ) {
 
@@ -2167,7 +2190,8 @@ class MaterialXNode {
 
 		if ( inputs.anisotropy_strength ) {
 
-			material.anisotropyNode = vec2( inputs.anisotropy_strength, inputs.anisotropy_rotation || float( 0 ) );
+			const anisotropyRotation = ( inputs.anisotropy_rotation || float( 0 ) ).mul( Math.PI * 2 );
+			material.anisotropyNode = vec2( cos( anisotropyRotation ), sin( anisotropyRotation ) ).mul( inputs.anisotropy_strength );
 
 		}
 
@@ -2226,6 +2250,41 @@ class MaterialXNode {
 
 	}
 
+	setDisneyPrincipled( material ) {
+
+		const inputs = this.getNodes();
+		const baseColor = inputs.baseColor || color( 0.16, 0.16, 0.16 );
+		const roughness = inputs.roughness || float( 0.5 );
+		const specularTint = inputs.specularTint || float( 0 );
+		const sheenTint = inputs.sheenTint || float( 0.5 );
+
+		material.colorNode = baseColor;
+		material.metalnessNode = inputs.metallic || float( 0 );
+		material.roughnessNode = roughness;
+		material.specularIntensityNode = inputs.specular || float( 0.5 );
+		material.specularColorNode = mix( color( 1, 1, 1 ), baseColor, specularTint );
+		material.iorNode = inputs.ior || float( 1.5 );
+		material.clearcoatNode = inputs.clearcoat || float( 0 );
+		material.clearcoatRoughnessNode = float( 1 ).sub( inputs.clearcoatGloss || float( 1 ) );
+		material.sheenNode = mix( color( 1, 1, 1 ), baseColor, sheenTint ).mul( inputs.sheen || float( 0 ) );
+		material.sheenRoughnessNode = roughness;
+
+		if ( inputs.anisotropic ) material.anisotropyNode = vec2( inputs.anisotropic, float( 0 ) );
+
+		if ( inputs.specTrans ) {
+
+			material.transmissionNode = inputs.specTrans;
+			material.transmissionColorNode = baseColor;
+			material.thicknessNode = inputs.subsurface || float( 0 );
+			material.attenuationColorNode = inputs.subsurfaceDistance || baseColor;
+			material.side = DoubleSide;
+			material.transparent = true;
+			material.depthWrite = false;
+
+		}
+
+	}
+
 	setOpenPbrSurface( material ) {
 
 		const inputs = this.getNodes();
@@ -2239,11 +2298,15 @@ class MaterialXNode {
 		material.iorNode = inputs.specular_ior || float( 1.5 );
 		material.clearcoatNode = inputs.coat_weight || float( 0 );
 		material.clearcoatRoughnessNode = inputs.coat_roughness || float( 0 );
-		material.sheenNode = inputs.fuzz_weight || float( 0 );
-		material.sheenColorNode = inputs.fuzz_color || color( 1, 1, 1 );
+		material.sheenNode = ( inputs.fuzz_color || color( 1, 1, 1 ) ).mul( inputs.fuzz_weight || float( 0 ) );
 		material.sheenRoughnessNode = inputs.fuzz_roughness || float( 0.5 );
-		material.thinFilmThicknessNode = ( inputs.thin_film_thickness || float( 0.5 ) ).mul( inputs.thin_film_weight || float( 0 ) ).mul( 1000 );
-		material.thinFilmIorNode = inputs.thin_film_ior || float( 1.4 );
+		if ( inputs.thin_film_weight || inputs.thin_film_thickness ) {
+
+			material.iridescenceNode = inputs.thin_film_weight || float( 0 );
+			material.iridescenceThicknessNode = ( inputs.thin_film_thickness || float( 0.5 ) ).mul( 1000 );
+			material.iridescenceIORNode = inputs.thin_film_ior || float( 1.4 );
+
+		}
 
 		if ( inputs.specular_roughness_anisotropy ) material.anisotropyNode = vec2( inputs.specular_roughness_anisotropy, float( 0 ) );
 		if ( inputs.geometry_normal ) material.normalNode = inputs.geometry_normal;
@@ -2516,11 +2579,7 @@ class MaterialXNode {
 		const emissionColor = this.getClosureInputColor( edf, color( 0, 0, 0 ) );
 
 		material.colorNode = volumeColor;
-		material.emissiveNode = emissionColor;
-		material.opacityNode = float( 0.45 );
-		material.transmissionNode = float( 0.55 );
-		material.transparent = true;
-		material.depthWrite = false;
+		material.emissiveNode = volumeColor.mul( emissionColor );
 		material.side = DoubleSide;
 
 	}
@@ -2571,6 +2630,10 @@ class MaterialXNode {
 		} else if ( element === 'UsdPreviewSurface' ) {
 
 			this.setUsdPreviewSurface( material );
+
+		} else if ( element === 'disney_principled' ) {
+
+			this.setDisneyPrincipled( material );
 
 		} else if ( element === 'open_pbr_surface' ) {
 

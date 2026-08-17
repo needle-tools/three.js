@@ -182,9 +182,9 @@ export const mx_acescg_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => {
 
 	const rgb = vec3( input );
 	const transform = mat3(
-		vec3( 1.705050992658, - 0.130256417507, - 0.024003356805 ),
-		vec3( - 0.621792120657, 1.140804736575, - 0.128968976065 ),
-		vec3( - 0.083258872001, - 0.010548319068, 1.15297233287 )
+		vec3( 1.705050992658, - 0.621792120657, - 0.083258872001 ),
+		vec3( - 0.130256417507, 1.140804736575, - 0.010548319068 ),
+		vec3( - 0.024003356805, - 0.128968976065, 1.15297233287 )
 	);
 
 	return transform.mul( rgb );
@@ -195,9 +195,9 @@ export const mx_lin_displayp3_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => {
 
 	const rgb = vec3( input );
 	const transform = mat3(
-		vec3( 1.22493029, - 0.04205868, - 0.01964128 ),
-		vec3( - 0.22492968, 1.04205894, - 0.07864794 ),
-		vec3( 0.00000006, - 0.00000001, 1.09828925 )
+		vec3( 1.22493029, - 0.22492968, 0.00000006 ),
+		vec3( - 0.04205868, 1.04205894, - 0.00000001 ),
+		vec3( - 0.01964128, - 0.07864794, 1.09828925 )
 	);
 
 	return transform.mul( rgb );
@@ -210,9 +210,9 @@ export const mx_lin_adobergb_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => {
 
 	const rgb = vec3( input );
 	const transform = mat3(
-		vec3( 1.39835574, - 2.50233861e-16, 2.77555756e-17 ),
-		vec3( - 0.398355744, 1.0, - 0.0429289893 ),
-		vec3( 0.0, 0.0, 1.04292899 )
+		vec3( 1.39835574, - 0.398355744, 0.0 ),
+		vec3( - 2.50233861e-16, 1.0, 0.0 ),
+		vec3( 2.77555756e-17, - 0.0429289893, 1.04292899 )
 	);
 
 	return transform.mul( rgb );
@@ -225,7 +225,7 @@ export const mx_g22_ap1_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => mx_acescg
 export const mx_g18_rec709_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => max( input, vec3( 0 ) ).pow( 1.8 );
 export const mx_g22_rec709_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => max( input, vec3( 0 ) ).pow( 2.2 );
 
-export const mx_rec709_display_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => mx_srgb_texture_to_lin_rec709( input );
+export const mx_rec709_display_to_lin_rec709 = ( input = vec3( 0, 0, 0 ) ) => max( input, vec3( 0 ) ).pow( 2.4 );
 export const mx_fract = ( input = float( 0 ) ) => fract( input );
 export const mx_dodge = ( bg = float( 0 ), fg = float( 0 ), mixAmount = float( 1 ) ) => {
 
