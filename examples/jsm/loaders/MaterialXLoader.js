@@ -39,8 +39,6 @@ import {
 	mx_blackbody, cameraPosition
 } from 'three/tsl';
 
-import 'three/examples/jsm/renderers/webgl-legacy/nodes/WebGLNodes.js';
-
 const colorSpaceLib = {
 	mx_srgb_texture_to_lin_rec709,
 	mx_acescg_to_lin_rec709,
@@ -605,7 +603,7 @@ class MaterialXNode {
 
 		const texture = new Texture();
 		texture.wrapS = texture.wrapT = RepeatWrapping;
-		texture.flipY = false;
+		texture.flipY = this.materialX.textureFlipY;
 		texture.name = uri;
 
 		this.materialX.textureCache.set( uri, texture );
