@@ -8,7 +8,7 @@ import {
 import { mx_hsvtorgb, mx_rgbtohsv } from './lib/mx_hsv.js';
 import { mx_srgb_texture_to_lin_rec709 } from './lib/mx_transform_color.js';
 
-import { float, bool, vec2, vec3, vec4, int, mat3, add, sub, mul, div, atan, mix, pow, smoothstep, floor, clamp, normalize, fract, abs, min, max, reflect, not as tslNot, xor as tslXor } from '../tsl/TSLBase.js';
+import { float, bool, vec2, vec3, vec4, int, mat3, add, sub, mul, div, atan, mix, pow, smoothstep, step, floor, clamp, normalize, fract, abs, min, max, reflect, not as tslNot, xor as tslXor } from '../tsl/TSLBase.js';
 import { uv } from '../accessors/UV.js';
 import { bumpMap } from '../display/BumpMapNode.js';
 import { rotate } from '../utils/RotateNode.js';
@@ -230,21 +230,28 @@ export const mx_fract = ( input = float( 0 ) ) => fract( input );
 export const mx_dodge = ( bg = float( 0 ), fg = float( 0 ), mixAmount = float( 1 ) ) => {
 
 	const denominator = float( 1 ).sub( fg );
-	const safeDenominator = abs( denominator ).lessThan( 1e-6 ).select( float( 1 ), denominator );
+
+	// per channel, see mx_overlay: 0 where the denominator is too small to divide by
+
+	const usable = step( 1e-6, abs( denominator ) );
+	const safeDenominator = mix( float( 1 ), denominator, usable );
 	const dodged = bg.div( safeDenominator );
 	const result = mixAmount.mul( dodged ).add( float( 1 ).sub( mixAmount ).mul( bg ) );
 
-	return abs( denominator ).lessThan( 1e-6 ).select( bg.mul( 0 ), result );
+	return mix( bg.mul( 0 ), result, usable );
 
 };
 
 export const mx_burn = ( bg = float( 0 ), fg = float( 0 ), mixAmount = float( 1 ) ) => {
 
-	const safeFg = abs( fg ).lessThan( 1e-6 ).select( float( 1 ), fg );
+	// per channel, see mx_overlay
+
+	const usable = step( 1e-6, abs( fg ) );
+	const safeFg = mix( float( 1 ), fg, usable );
 	const burned = float( 1 ).sub( float( 1 ).sub( bg ).div( safeFg ) );
 	const result = mixAmount.mul( burned ).add( float( 1 ).sub( mixAmount ).mul( bg ) );
 
-	return abs( fg ).lessThan( 1e-6 ).select( bg.mul( 0 ), result );
+	return mix( bg.mul( 0 ), result, usable );
 
 };
 
@@ -543,7 +550,9 @@ export const mx_smoothstep = ( input, low = float( 0 ), high = float( 1 ), edges
 
 	if ( edgesEqual ) {
 
-		return input.greaterThanEqual( low ).select( input.mul( 0 ).add( 1 ), input.mul( 0 ) );
+		// the degenerate low == high case is a hard edge, and step() keeps it per channel
+
+		return step( low, input );
 
 	}
 
@@ -564,10 +573,13 @@ export const mx_divide_by_zero = ( numerator = float( 0 ) ) => {
 
 export const mx_overlay = ( bg = float( 0 ), fg = float( 0 ), mixAmount = float( 1 ) ) => {
 
-	const overlay = bg.lessThan( 0.5 ).select(
-		bg.mul( fg ).mul( 2 ),
-		float( 1 ).sub( bg.oneMinus().mul( fg.oneMinus() ).mul( 2 ) )
-	);
+	const lower = bg.mul( fg ).mul( 2 );
+	const upper = float( 1 ).sub( bg.oneMinus().mul( fg.oneMinus() ).mul( 2 ) );
+
+	// step() keeps the choice per channel. select() takes a single boolean, so a color3 would
+	// have every channel decided by the comparison of the first one.
+
+	const overlay = mix( lower, upper, step( 0.5, bg ) );
 
 	return mix( bg, overlay, mixAmount );
 
