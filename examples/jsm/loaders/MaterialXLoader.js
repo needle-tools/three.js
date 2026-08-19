@@ -330,12 +330,36 @@ class MaterialXLoader extends Loader {
 		super( manager );
 		this.textureFlipY = true;
 		this.texCoordFlipY = false;
+		this.textureResolver = null;
 
 	}
 
 	setTextureFlipY( flipY ) {
 
 		this.textureFlipY = flipY;
+		return this;
+
+	}
+
+	/**
+	 * Sets a resolver that supplies textures for the file references in a MaterialX document.
+	 *
+	 * The resolver is called with the resolved URI while the document is parsed and may return a
+	 * texture to use as it is, or `null`/`undefined` to let the loader fetch the file itself. It has
+	 * to answer synchronously, since the returned texture goes straight into the node graph - so any
+	 * texture it hands out must already be loaded, or be one whose contents arrive later on the same
+	 * instance.
+	 *
+	 * This is how a host that already owns the textures - a glTF parser, an asset database - keeps
+	 * them instead of having the loader decode the same image again. It is also the only way to use
+	 * a compressed texture, which the loader cannot produce from a decoded image.
+	 *
+	 * @param {?function(string): ?Texture} textureResolver - The resolver, or null to remove it.
+	 * @return {MaterialXLoader} A reference to this loader.
+	 */
+	setTextureResolver( textureResolver ) {
+
+		this.textureResolver = textureResolver;
 		return this;
 
 	}
@@ -417,7 +441,7 @@ class MaterialXLoader extends Loader {
 	 */
 	parse( text ) {
 
-		return new MaterialX( this.manager, this.path, this.textureFlipY, this.texCoordFlipY ).parse( text );
+		return new MaterialX( this.manager, this.path, this.textureFlipY, this.texCoordFlipY, this.textureResolver ).parse( text );
 
 	}
 
@@ -589,6 +613,23 @@ class MaterialXNode {
 		if ( this.materialX.textureCache.has( uri ) ) {
 
 			return this.materialX.textureCache.get( uri );
+
+		}
+
+		// A resolver may already hold this texture - a glTF parser handing over the texture it
+		// decoded for the same image, for example. Using it as it is keeps whatever the loader
+		// cannot rebuild from a decoded image: compressed mip data (KTX2/Basis), the source's
+		// color space, and its sampler state.
+
+		const resolvedTexture = this.materialX.textureResolver !== null && uri
+			? this.materialX.textureResolver( uri )
+			: null;
+
+		if ( resolvedTexture !== null && resolvedTexture !== undefined ) {
+
+			this.materialX.textureCache.set( uri, resolvedTexture );
+
+			return resolvedTexture;
 
 		}
 
@@ -2808,13 +2849,14 @@ class MaterialXNode {
 
 class MaterialX {
 
-	constructor( manager, path, textureFlipY = true, texCoordFlipY = false ) {
+	constructor( manager, path, textureFlipY = true, texCoordFlipY = false, textureResolver = null ) {
 
 		this.manager = manager;
 		this.path = path;
 		this.resourcePath = '';
 		this.textureFlipY = textureFlipY;
 		this.texCoordFlipY = texCoordFlipY;
+		this.textureResolver = textureResolver;
 
 		this.nodesXLib = new Map();
 		this.nodeDefsByNode = new Map();
