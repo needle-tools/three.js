@@ -374,7 +374,7 @@ class FBXTreeParser {
 		} else { // Binary Format
 
 			const array = new Uint8Array( content );
-			return window.URL.createObjectURL( new Blob( [ array ], { type: type } ) );
+			return URL.createObjectURL( new Blob( [ array ], { type: type } ) );
 
 		}
 
