@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.185.2-alpha.5] – 2026-09-09
+- fix disposed WebGL renderers being retained by the shared DFG lookup texture; each renderer now owns and disposes its texture while sharing the pixel data
+- fix FBXLoader embedded texture loading in web workers
+
 ## [0.185.2-alpha.3] – 2026-08-13
 - fix WebGL node-material precompilation when meshes receive shadows
 - update node-material program caching when the scene environment changes
