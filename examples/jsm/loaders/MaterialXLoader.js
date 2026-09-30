@@ -1961,9 +1961,7 @@ class MaterialXNode {
 
 		for ( const input of this.children ) {
 
-			const node = input.getNode();
-
-			nodes[ node.name ] = node;
+			nodes[ input.name ] = input.getNode();
 
 		}
 
