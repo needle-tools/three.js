@@ -331,6 +331,7 @@ class MaterialXLoader extends Loader {
 		this.textureFlipY = true;
 		this.texCoordFlipY = false;
 		this.textureResolver = null;
+		this.nodeResolver = null;
 
 	}
 
@@ -360,6 +361,27 @@ class MaterialXLoader extends Loader {
 	setTextureResolver( textureResolver ) {
 
 		this.textureResolver = textureResolver;
+		return this;
+
+	}
+
+	/**
+	 * Sets a resolver that builds nodes for MaterialX node categories.
+	 *
+	 * The resolver is called for every node of a document before the loader's own handlers, with
+	 * the node being resolved and the name of the requested output. It may return a node to use
+	 * as it is, or `null`/`undefined` to let the loader resolve the node itself.
+	 *
+	 * This is how a host brings its own node library into a document - nodedefs whose
+	 * implementation is a TSL function rather than a MaterialX node graph, for example. The
+	 * resolver reads the node's inputs through `getNodeByName()` and `getChildByName()`.
+	 *
+	 * @param {?function(Object, ?string): ?Node} nodeResolver - The resolver, or null to remove it.
+	 * @return {MaterialXLoader} A reference to this loader.
+	 */
+	setNodeResolver( nodeResolver ) {
+
+		this.nodeResolver = nodeResolver;
 		return this;
 
 	}
@@ -441,7 +463,7 @@ class MaterialXLoader extends Loader {
 	 */
 	parse( text ) {
 
-		return new MaterialX( this.manager, this.path, this.textureFlipY, this.texCoordFlipY, this.textureResolver ).parse( text );
+		return new MaterialX( this.manager, this.path, this.textureFlipY, this.texCoordFlipY, this.textureResolver, this.nodeResolver ).parse( text );
 
 	}
 
@@ -789,8 +811,13 @@ class MaterialXNode {
 		} else {
 
 			const element = this.element;
+			const resolvedNode = this.materialX.nodeResolver !== null ? this.materialX.nodeResolver( this, out ) : null;
 
-			if ( element === 'convert' ) {
+			if ( resolvedNode !== null && resolvedNode !== undefined ) {
+
+				node = resolvedNode;
+
+			} else if ( element === 'convert' ) {
 
 				const nodeClass = this.getClassFromType( type );
 
@@ -2849,7 +2876,7 @@ class MaterialXNode {
 
 class MaterialX {
 
-	constructor( manager, path, textureFlipY = true, texCoordFlipY = false, textureResolver = null ) {
+	constructor( manager, path, textureFlipY = true, texCoordFlipY = false, textureResolver = null, nodeResolver = null ) {
 
 		this.manager = manager;
 		this.path = path;
@@ -2857,6 +2884,7 @@ class MaterialX {
 		this.textureFlipY = textureFlipY;
 		this.texCoordFlipY = texCoordFlipY;
 		this.textureResolver = textureResolver;
+		this.nodeResolver = nodeResolver;
 
 		this.nodesXLib = new Map();
 		this.nodeDefsByNode = new Map();
