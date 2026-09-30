@@ -332,6 +332,7 @@ class MaterialXLoader extends Loader {
 		this.texCoordFlipY = false;
 		this.textureResolver = null;
 		this.nodeResolver = null;
+		this.valuesAsUniforms = false;
 
 	}
 
@@ -382,6 +383,24 @@ class MaterialXLoader extends Loader {
 	setNodeResolver( nodeResolver ) {
 
 		this.nodeResolver = nodeResolver;
+		return this;
+
+	}
+
+	/**
+	 * Whether every authored input value becomes a uniform, not only the inputs marked with
+	 * `uniform="true"`.
+	 *
+	 * The uniforms are listed in `material.userData.materialXUniforms` with the path of the input
+	 * they belong to (`nodegraph/node/input`), so a host such as an editor can change any value
+	 * without building a new material. Boolean and string inputs stay constant.
+	 *
+	 * @param {boolean} valuesAsUniforms - Whether authored values become uniforms.
+	 * @return {MaterialXLoader} A reference to this loader.
+	 */
+	setValuesAsUniforms( valuesAsUniforms ) {
+
+		this.valuesAsUniforms = valuesAsUniforms;
 		return this;
 
 	}
@@ -463,7 +482,10 @@ class MaterialXLoader extends Loader {
 	 */
 	parse( text ) {
 
-		return new MaterialX( this.manager, this.path, this.textureFlipY, this.texCoordFlipY, this.textureResolver, this.nodeResolver ).parse( text );
+		const materialX = new MaterialX( this.manager, this.path, this.textureFlipY, this.texCoordFlipY, this.textureResolver, this.nodeResolver );
+		materialX.valuesAsUniforms = this.valuesAsUniforms;
+
+		return materialX.parse( text );
 
 	}
 
@@ -781,7 +803,7 @@ class MaterialXNode {
 
 			node = nodeClass( ...values );
 
-			if ( this.isUniform ) {
+			if ( this.isUniform || ( this.materialX.valuesAsUniforms && type !== 'boolean' && type !== 'string' ) ) {
 
 				node = this.materialX.getUniformNode( this, node );
 
@@ -1127,7 +1149,11 @@ class MaterialXNode {
 
 		const nodeToTypeClass = this.getClassFromType( type );
 
-		if ( nodeToTypeClass !== null ) {
+		if ( node.isUniformNode ) {
+
+			// Uniforms are typed by their value and named by their input path.
+
+		} else if ( nodeToTypeClass !== null ) {
 
 			node = nodeToTypeClass( node );
 
@@ -1142,7 +1168,7 @@ class MaterialXNode {
 
 		}
 
-		node.name = this.name;
+		if ( ! node.isUniformNode ) node.name = this.name;
 
 		if ( out !== null ) {
 
@@ -2885,6 +2911,7 @@ class MaterialX {
 		this.texCoordFlipY = texCoordFlipY;
 		this.textureResolver = textureResolver;
 		this.nodeResolver = nodeResolver;
+		this.valuesAsUniforms = false;
 
 		this.nodesXLib = new Map();
 		this.nodeDefsByNode = new Map();
@@ -2937,21 +2964,24 @@ class MaterialX {
 
 	getUniformNode( materialXNode, valueNode ) {
 
+		// Keyed by path: inputs of different nodes often share a name ("in2", "amount") but not a value.
 		const name = materialXNode.name;
 		const type = materialXNode.type;
-		const key = `${ name }:${ type }`;
-		let uniformInfo = this.uniforms.get( key );
+		const path = materialXNode.nodePath;
+		let uniformInfo = this.uniforms.get( path );
 
 		if ( uniformInfo === undefined ) {
 
-			const node = uniform( valueNode ).setName( name );
+			// The path makes the shader declaration unique, like the key.
+			const node = uniform( valueNode ).setName( path.replace( /[^A-Za-z0-9_]/g, '_' ) );
 			uniformInfo = {
 				name,
 				type,
+				path,
 				label: materialXNode.getAttribute( 'uiname' ) || name,
 				node
 			};
-			this.uniforms.set( key, uniformInfo );
+			this.uniforms.set( path, uniformInfo );
 
 		}
 
