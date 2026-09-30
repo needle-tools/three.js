@@ -13,6 +13,8 @@ import {
 	mix, saturation, transpose, determinant, inverse, log, reflect, refract, element,
 	mx_ramplr, mx_ramptb, mx_splitlr, mx_splittb,
 	mx_fractal_noise_float, mx_noise_float, mx_cell_noise_float, mx_worley_noise_float,
+	mx_fractal_noise_vec2, mx_fractal_noise_vec3, mx_fractal_noise_vec4, mx_noise_vec3, mx_noise_vec4,
+	mx_worley_noise_vec2, mx_worley_noise_vec3,
 	mx_transform_uv,
 	mx_safepower, mx_contrast,
 	mx_srgb_texture_to_lin_rec709,
@@ -54,11 +56,18 @@ const colorSpaceLib = {
 
 class MXElement {
 
-	constructor( name, nodeFunc, params = [] ) {
+	constructor( name, nodeFunc, params = [], nodeFuncsByType = {} ) {
 
 		this.name = name;
 		this.nodeFunc = nodeFunc;
 		this.params = params;
+		this.nodeFuncsByType = nodeFuncsByType;
+
+	}
+
+	getNodeFunc( type ) {
+
+		return this.nodeFuncsByType[ type ] || this.nodeFunc;
 
 	}
 
@@ -92,6 +101,11 @@ class FallbackAttributeNode extends AttributeNode {
 // Enhanced separate node to support multi-output referencing (outx, outy, outz, outw)
 
 // Type/arity-aware MaterialX node wrappers
+
+// Noise nodes return one channel per output component (Worley F1/F2 distances, vector noise).
+const noiseFuncsByType = { color3: mx_noise_vec3, vector3: mx_noise_vec3, color4: mx_noise_vec4, vector4: mx_noise_vec4 };
+const fractalNoiseFuncsByType = { vector2: mx_fractal_noise_vec2, color3: mx_fractal_noise_vec3, vector3: mx_fractal_noise_vec3, color4: mx_fractal_noise_vec4, vector4: mx_fractal_noise_vec4 };
+const worleyNoiseFuncsByType = { vector2: mx_worley_noise_vec2, vector3: mx_worley_noise_vec3 };
 
 const MXElements = [
 
@@ -168,14 +182,14 @@ const MXElements = [
 	new MXElement( 'ramp4', mx_ramp4, [ 'valuetl', 'valuetr', 'valuebl', 'valuebr', 'texcoord' ] ),
 	new MXElement( 'splitlr', mx_splitlr, [ 'valuel', 'valuer', 'center', 'texcoord' ] ),
 	new MXElement( 'splittb', mx_splittb, [ 'valuet', 'valueb', 'center', 'texcoord' ] ),
-	new MXElement( 'noise2d', mx_noise_float, [ 'texcoord', 'amplitude', 'pivot' ] ),
-	new MXElement( 'noise3d', mx_noise_float, [ 'position', 'amplitude', 'pivot' ] ),
-	new MXElement( 'fractal2d', mx_fractal_noise_float, [ 'texcoord', 'octaves', 'lacunarity', 'diminish', 'amplitude' ] ),
-	new MXElement( 'fractal3d', mx_fractal_noise_float, [ 'position', 'octaves', 'lacunarity', 'diminish', 'amplitude' ] ),
+	new MXElement( 'noise2d', mx_noise_float, [ 'texcoord', 'amplitude', 'pivot' ], noiseFuncsByType ),
+	new MXElement( 'noise3d', mx_noise_float, [ 'position', 'amplitude', 'pivot' ], noiseFuncsByType ),
+	new MXElement( 'fractal2d', mx_fractal_noise_float, [ 'texcoord', 'octaves', 'lacunarity', 'diminish', 'amplitude' ], fractalNoiseFuncsByType ),
+	new MXElement( 'fractal3d', mx_fractal_noise_float, [ 'position', 'octaves', 'lacunarity', 'diminish', 'amplitude' ], fractalNoiseFuncsByType ),
 	new MXElement( 'cellnoise2d', mx_cell_noise_float, [ 'texcoord' ] ),
 	new MXElement( 'cellnoise3d', mx_cell_noise_float, [ 'position' ] ),
-	new MXElement( 'worleynoise2d', mx_worley_noise_float, [ 'texcoord', 'jitter', 'style' ] ),
-	new MXElement( 'worleynoise3d', mx_worley_noise_float, [ 'position', 'jitter', 'style' ] ),
+	new MXElement( 'worleynoise2d', mx_worley_noise_float, [ 'texcoord', 'jitter', 'style' ], worleyNoiseFuncsByType ),
+	new MXElement( 'worleynoise3d', mx_worley_noise_float, [ 'position', 'jitter', 'style' ], worleyNoiseFuncsByType ),
 	new MXElement( 'unifiednoise2d', mx_unifiednoise2d, [ 'type', 'texcoord', 'freq', 'offset', 'jitter', 'outmin', 'outmax', 'clampoutput', 'octaves', 'lacunarity', 'diminish' ] ),
 	new MXElement( 'unifiednoise3d', mx_unifiednoise3d, [ 'type', 'position', 'freq', 'offset', 'jitter', 'outmin', 'outmax', 'clampoutput', 'octaves', 'lacunarity', 'diminish' ] ),
 	new MXElement( 'grid', mx_grid, [ 'texcoord', 'uvtiling', 'thickness', 'staggered' ] ),
@@ -1121,13 +1135,15 @@ class MaterialXNode {
 
 				}
 
+				const nodeFunc = nodeElement.getNodeFunc( this.type );
+
 				if ( out !== null && this.type === 'multioutput' ) {
 
-					node = nodeElement.nodeFunc( ...this.getNodesByNamesPreserveMissing( ...nodeElement.params ), out );
+					node = nodeFunc( ...this.getNodesByNamesPreserveMissing( ...nodeElement.params ), out );
 
 				} else {
 
-					node = nodeElement.nodeFunc( ...this.getNodesByNamesPreserveMissing( ...nodeElement.params ) );
+					node = nodeFunc( ...this.getNodesByNamesPreserveMissing( ...nodeElement.params ) );
 
 				}
 
