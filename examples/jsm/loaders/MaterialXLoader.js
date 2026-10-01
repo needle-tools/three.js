@@ -984,7 +984,7 @@ class MaterialXNode {
 
 					node = texture( textureFile, uvTiling );
 
-					node = this.applyTextureColorSpace( node, file );
+					node = this.matchTextureChannels( this.applyTextureColorSpace( node, file ) );
 
 				}
 
@@ -1008,7 +1008,7 @@ class MaterialXNode {
 
 					node = texture( textureFile, uvNode );
 
-					node = this.applyTextureColorSpace( node, file );
+					node = this.matchTextureChannels( this.applyTextureColorSpace( node, file ) );
 
 				}
 
@@ -1720,6 +1720,17 @@ class MaterialXNode {
 		if ( out === 'rgb' ) return biased.rgb;
 
 		return biased;
+
+	}
+
+	/** Images narrower than RGBA read their first channels, as in MaterialX. */
+	matchTextureChannels( node ) {
+
+		if ( this.type === 'float' ) return node.x;
+		if ( this.type === 'vector2' ) return node.xy;
+		if ( this.type === 'vector3' || this.type === 'color3' ) return node.xyz;
+
+		return node;
 
 	}
 
