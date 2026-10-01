@@ -287,6 +287,19 @@ const closureElements = new Set( [
 	'light', 'point_light', 'directional_light', 'spot_light'
 ] );
 
+// Default geometric properties (MaterialX `defaultgeomprop`) of inputs a document leaves out.
+const geomPropNodes = {
+	Pobject: () => positionLocal,
+	Pworld: () => positionWorld,
+	Nobject: () => normalLocal,
+	Nworld: () => normalWorld,
+	Tobject: () => tangentLocal,
+	Tworld: () => tangentWorld,
+	Bobject: () => bitangentLocal,
+	Bworld: () => bitangentWorld,
+	Vworld: () => normalize( positionWorld.sub( cameraPosition ) ),
+};
+
 const getNodeSpace = ( node ) => {
 
 	const spaceInput = node.getChildByName( 'space' );
@@ -347,6 +360,7 @@ class MaterialXLoader extends Loader {
 		this.textureResolver = null;
 		this.nodeResolver = null;
 		this.valuesAsUniforms = false;
+		this.library = null;
 
 	}
 
@@ -397,6 +411,24 @@ class MaterialXLoader extends Loader {
 	setNodeResolver( nodeResolver ) {
 
 		this.nodeResolver = nodeResolver;
+		return this;
+
+	}
+
+	/**
+	 * Sets MaterialX library documents, such as the standard library definitions, whose nodedefs
+	 * supply the inputs a document leaves out: their default values and default geometric
+	 * properties (`defaultgeomprop`). Without a library, missing inputs fall back to the defaults
+	 * of the TSL functions, which can differ from MaterialX's (3D noise reads UVs, not positions).
+	 *
+	 * The library is parsed once; documents only wrap the nodedefs of the node types they use.
+	 *
+	 * @param {?string} text - The library as MaterialX XML, or null to remove it.
+	 * @return {MaterialXLoader} A reference to this loader.
+	 */
+	setLibrary( text ) {
+
+		this.library = text ? MaterialXLibrary.parse( text ) : null;
 		return this;
 
 	}
@@ -498,6 +530,7 @@ class MaterialXLoader extends Loader {
 
 		const materialX = new MaterialX( this.manager, this.path, this.textureFlipY, this.texCoordFlipY, this.textureResolver, this.nodeResolver );
 		materialX.valuesAsUniforms = this.valuesAsUniforms;
+		materialX.library = this.library;
 
 		return materialX.parse( text );
 
@@ -766,11 +799,20 @@ class MaterialXNode {
 
 		}
 
+		// Inputs without a value read their default geometric property (`defaultgeomprop`).
+		const defaultGeomProp = this.element === 'input' && ! this.hasReference && this.defaultValue === null ? this.getAttribute( 'defaultgeomprop' ) : null;
+
+		if ( node === null && defaultGeomProp && geomPropNodes[ defaultGeomProp ] ) {
+
+			node = geomPropNodes[ defaultGeomProp ]();
+
+		}
+
 		// Handle <input name="texcoord" type="vector2" ... />
 		if ( node === null &&
 				(
 					this.element === 'input' &&
-				this.name === 'texcoord' &&
+				( this.name === 'texcoord' || /^UV\d+$/.test( defaultGeomProp || '' ) ) &&
 				( this.type === 'vector2' || this.type === 'vector3' || this.type === 'vector4' ) &&
 				! this.hasReference
 				)
@@ -1972,8 +2014,21 @@ class MaterialXNode {
 	getNodeByName( name ) {
 
 		const child = this.getChildByName( name );
+		if ( child ) return child.getNode( child.output );
 
-		return child ? child.getNode( child.output ) : undefined;
+		// An input the node leaves out takes the default of its nodedef.
+		const nodeDefInput = this.getNodeDefInput( name );
+		return nodeDefInput ? nodeDefInput.getNode() : undefined;
+
+	}
+
+	getNodeDefInput( name ) {
+
+		if ( this.element === 'input' || this.element === 'output' || this.element === 'nodedef' ) return null;
+
+		const nodeDef = this.materialX.getNodeDef( this.element, this );
+		const input = nodeDef ? nodeDef.getChildByName( name ) : undefined;
+		return input && input.element === 'input' ? input : null;
 
 	}
 
@@ -2914,6 +2969,36 @@ class MaterialXNode {
 
 }
 
+/** The nodedefs of a MaterialX library document, indexed by node category. */
+class MaterialXLibrary {
+
+	constructor( nodeDefsByNode ) {
+
+		this.nodeDefsByNode = nodeDefsByNode;
+
+	}
+
+	static parse( text ) {
+
+		const rootXML = new DOMParser().parseFromString( text, 'application/xml' ).documentElement;
+		const nodeDefsByNode = new Map();
+
+		for ( const elementXML of rootXML.children ) {
+
+			if ( elementXML.nodeName !== 'nodedef' ) continue;
+
+			const node = elementXML.getAttribute( 'node' );
+			if ( ! nodeDefsByNode.has( node ) ) nodeDefsByNode.set( node, [] );
+			nodeDefsByNode.get( node ).push( elementXML );
+
+		}
+
+		return new MaterialXLibrary( nodeDefsByNode );
+
+	}
+
+}
+
 class MaterialX {
 
 	constructor( manager, path, textureFlipY = true, texCoordFlipY = false, textureResolver = null, nodeResolver = null ) {
@@ -2926,6 +3011,8 @@ class MaterialX {
 		this.textureResolver = textureResolver;
 		this.nodeResolver = nodeResolver;
 		this.valuesAsUniforms = false;
+		this.library = null;
+		this.libraryNodes = new Set();
 
 		this.nodesXLib = new Map();
 		this.nodeDefsByNode = new Map();
@@ -3031,6 +3118,19 @@ class MaterialX {
 
 	getNodeDef( nodeName, materialXNode = null ) {
 
+		// Nodedefs of the document win; the library fills in the node types it does not define.
+		if ( this.library !== null && ! this.nodeDefsByNode.has( nodeName ) && ! this.libraryNodes.has( nodeName ) ) {
+
+			this.libraryNodes.add( nodeName );
+
+			for ( const nodeDefXML of this.library.nodeDefsByNode.get( nodeName ) || [] ) {
+
+				this.parseNode( nodeDefXML );
+
+			}
+
+		}
+
 		const nodeDefs = this.nodeDefsByNode.get( nodeName );
 		if ( nodeDefs === undefined || nodeDefs.length === 0 ) return null;
 		if ( materialXNode === null || nodeDefs.length === 1 ) return nodeDefs[ 0 ];
@@ -3047,7 +3147,7 @@ class MaterialX {
 				if ( defChild.element !== 'input' ) continue;
 
 				const inputChild = materialXNode.getChildByName( defChild.name );
-				if ( inputChild === null ) continue;
+				if ( ! inputChild ) continue;
 
 				if ( inputChild.type === defChild.type ) {
 
@@ -3096,7 +3196,7 @@ class MaterialX {
 	getImplementationGraph( nodeName, materialXNode = null ) {
 
 		const nodeDef = this.getNodeDef( nodeName, materialXNode );
-		return nodeDef ? this.implementationGraphsByNodeDef.get( nodeDef.name ) : null;
+		return ( nodeDef && this.implementationGraphsByNodeDef.get( nodeDef.name ) ) || null;
 
 	}
 
