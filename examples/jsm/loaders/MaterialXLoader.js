@@ -148,7 +148,6 @@ const MXElements = [
 	new MXElement( 'transpose', transpose, [ 'in' ] ),
 	new MXElement( 'determinant', determinant, [ 'in' ] ),
 	new MXElement( 'invertmatrix', inverse, [ 'in' ] ),
-	new MXElement( 'creatematrix', mat3, [ 'in1', 'in2', 'in3' ] ),
 	//new MtlXElement( 'rotate2d', rotateUV, [ 'in', radians( 'amount' )** ] ),
 	//new MtlXElement( 'rotate3d', ... ),
 	//new MtlXElement( 'arrayappend', ... ),
@@ -895,6 +894,10 @@ class MaterialXNode {
 
 				node = resolvedNode;
 
+			} else if ( element === 'creatematrix' ) {
+
+				node = this.getCreateMatrixNode();
+
 			} else if ( element === 'convert' ) {
 
 				const nodeClass = this.getClassFromType( type );
@@ -1243,6 +1246,39 @@ class MaterialXNode {
 		}
 
 		return node;
+
+	}
+
+	/**
+	 * Matches MaterialX's GLSL: the inputs are the columns, and vector3 columns of a matrix44 are
+	 * padded with 0 and the last one with 1, so the fourth input is the translation.
+	 */
+	getCreateMatrixNode() {
+
+		const is44 = this.type === 'matrix44';
+		const inputType = ( this.getChildByName( 'in1' ) || this.getNodeDefInput( 'in1' ) )?.type || 'vector3';
+		const size = is44 ? 4 : 3;
+		const columns = [ 'in1', 'in2', 'in3', 'in4' ].slice( 0, size ).map( ( name, index ) => {
+
+			const column = this.getNodeByName( name );
+			if ( column ) return column;
+
+			// Missing columns are identity columns.
+			const identity = [ 0, 0, 0, 0 ];
+			identity[ index ] = 1;
+			return inputType === 'vector4' ? vec4( ...identity ) : vec3( ...identity.slice( 0, 3 ) );
+
+		} );
+
+		if ( ! is44 ) return mat3( columns[ 0 ], columns[ 1 ], columns[ 2 ] );
+		if ( inputType === 'vector4' ) return mat4( columns[ 0 ], columns[ 1 ], columns[ 2 ], columns[ 3 ] );
+
+		return mat4(
+			vec4( columns[ 0 ], 0 ),
+			vec4( columns[ 1 ], 0 ),
+			vec4( columns[ 2 ], 0 ),
+			vec4( columns[ 3 ], 1 )
+		);
 
 	}
 
