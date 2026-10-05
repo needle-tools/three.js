@@ -444,7 +444,7 @@ const getHextileLuminanceWeights = ( nodeX, c0, c1, c2 ) => {
 	const falloffContrast = nodeX.getNodeByName( 'falloffcontrast' );
 	let lumaCoeffs = nodeX.getNodeByName( 'lumacoeffs' );
 	const lumaCoeffsInput = nodeX.getChildByName( 'lumacoeffs' );
-	if ( lumaCoeffsInput && lumaCoeffsInput.isConst ) {
+	if ( lumaCoeffsInput && lumaCoeffsInput.isConst && nodeX.materialX.valuesAsUniforms !== true ) {
 
 		const lumaCoeffValues = lumaCoeffsInput.getVector();
 		if ( lumaCoeffValues.length === 3 ) {
@@ -886,7 +886,8 @@ const compileInvertMatrixNode = ( nodeX, compileContext ) => {
 	const matrixType = inInput ? inInput.type : null;
 	const isMatrixType = matrixType === 'matrix33' || matrixType === 'matrix44';
 
-	if ( inInput && inInput.isConst && isMatrixType ) {
+	// Uniform matrices must be inverted in the shader so edits update the inverse.
+	if ( inInput && inInput.isConst && isMatrixType && nodeX.materialX.valuesAsUniforms !== true ) {
 
 		const size = matrixType === 'matrix33' ? 3 : 4;
 		const identityValues = size === 3 ? compileContext.IDENTITY_MAT3_VALUES : compileContext.IDENTITY_MAT4_VALUES;
