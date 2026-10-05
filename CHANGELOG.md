@@ -4,6 +4,15 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.185.2-alpha.6] – 2026-10-05
+- add `MaterialXLoader.setNodeResolver()` so a host can build nodes of its own node library (e.g. the three.js TSL nodes)
+- add `MaterialXLoader.setLibrary()`: inputs a document leaves out take their nodedef defaults, including `defaultgeomprop` geometry such as `position` or `normal`
+- add `MaterialXLoader.setValuesAsUniforms()` to expose every authored value as a uniform; uniforms are keyed and named by input path, so they no longer collide
+- fix noise, fractal and Worley noise nodes always using the float variant; vector and color outputs now get one channel per component
+- fix shader inputs being read by node name instead of input name
+- fix matrix44 `creatematrix`, which built a mat3 and produced invalid shaders
+- fix float, vector2 and color3 images converting the texture's vec4 instead of reading its first channels
+
 ## [0.185.2-alpha.5] – 2026-09-09
 - fix disposed WebGL renderers being retained by the shared DFG lookup texture; each renderer now owns and disposes its texture while sharing the pixel data
 - fix FBXLoader embedded texture loading in web workers
