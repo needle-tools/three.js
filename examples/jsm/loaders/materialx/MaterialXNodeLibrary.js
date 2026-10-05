@@ -646,7 +646,8 @@ const MXElements = [
 		bitangent: () => bitangentWorld,
 	} ),
 	createMXElement( 'transpose', transpose, [ 'in' ] ),
-	createMXElement( 'determinant', determinant, [ 'in' ] ),
+	// The identity matrix of either size has the determinant 1, the MaterialX default.
+	createMXElement( 'determinant', determinant, [ 'in' ], { in: () => mat3( 1, 0, 0, 0, 1, 0, 0, 0, 1 ) } ),
 	createMXElement( 'invertmatrix', inverse, [ 'in' ] ),
 	createMXElement( 'creatematrix', mat3, [ 'in1', 'in2', 'in3' ], {
 		in1: defaultVec3( 1, 0, 0 ),
@@ -959,8 +960,8 @@ const MXElements = [
 	createMXElement( 'separate2', element, [ 'in' ], { in: defaultVec2( 0, 0 ) } ),
 	createMXElement( 'separate3', element, [ 'in' ], { in: defaultVec3( 0, 0, 0 ) } ),
 	createMXElement( 'separate4', element, [ 'in' ], { in: defaultVec4( 0, 0, 0, 0 ) } ),
-	createMXElement( 'reflect', reflect, [ 'in', 'normal' ], { in: defaultVec3( 1, 0, 0 ) } ),
-	createMXElement( 'refract', refract, [ 'in', 'normal', 'ior' ], { in: defaultVec3( 1, 0, 0 ), ior: defaultFloat( 1 ) } ),
+	createMXElement( 'reflect', reflect, [ 'in', 'normal' ], { in: defaultVec3( 1, 0, 0 ), normal: () => normalWorld } ),
+	createMXElement( 'refract', refract, [ 'in', 'normal', 'ior' ], { in: defaultVec3( 1, 0, 0 ), normal: () => normalWorld, ior: defaultFloat( 1 ) } ),
 	createMXElement( 'time', mx_timer ),
 	createMXElement( 'frame', mx_frame ),
 	createMXElement( 'ifgreater', mx_ifgreater, [ 'value1', 'value2', 'in1', 'in2' ], {

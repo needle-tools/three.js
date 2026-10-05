@@ -100,11 +100,67 @@ function findTexture( object, image, visited = new WeakSet(), depth = 0 ) {
 
 }
 
+function parseNodeGraph( body, type ) {
+
+	const text = `<?xml version="1.0"?>
+<materialx version="1.39">
+	<nodegraph name="test_graph">
+		${ body }
+		<output name="out" type="${ type }" nodename="test_node" />
+	</nodegraph>
+</materialx>`;
+
+	return new MaterialXLoader().parse( text, { throwOnErrors: false } );
+
+}
+
+function collectConstValues( object, values = [], visited = new WeakSet(), depth = 0 ) {
+
+	if ( object === null || typeof object !== 'object' || depth > 24 || visited.has( object ) ) return values;
+
+	visited.add( object );
+	if ( object.isConstNode === true ) values.push( object.value );
+
+	for ( const key of Object.keys( object ) ) collectConstValues( object[ key ], values, visited, depth + 1 );
+
+	return values;
+
+}
+
 export default QUnit.module( 'Addons', () => {
 
 	QUnit.module( 'Loaders', () => {
 
 		QUnit.module( 'MaterialXLoader', () => {
+
+			QUnit.test( 'gives unconnected inputs their MaterialX defaults', ( assert ) => {
+
+				// Inputs whose nodedef default is a geometric property or an identity matrix.
+				const nodes = [
+					[ 'circle', 'float' ],
+					[ 'ramp', 'color4' ],
+					[ 'determinant', 'float', 'ND_determinant_matrix33' ],
+					[ 'determinant', 'float', 'ND_determinant_matrix44' ],
+					[ 'reflect', 'vector3' ],
+					[ 'refract', 'vector3' ],
+				];
+
+				for ( const [ category, type, nodedef ] of nodes ) {
+
+					const nodedefAttribute = nodedef ? ` nodedef="${ nodedef }"` : '';
+					const result = parseNodeGraph( `<${ category } name="test_node" type="${ type }"${ nodedefAttribute } />`, type );
+					assert.deepEqual( result.errors.map( ( error ) => error.message ), [], `An unconnected ${ nodedef || category } has no missing inputs.` );
+
+				}
+
+				// ifequal compares value1 = 1 with value2 = 0 unless it compares booleans (false and false).
+				const ifequal = parseNodeGraph( '<ifequal name="test_node" type="boolean" />', 'boolean' );
+				assert.true( collectConstValues( ifequal.materials.test_graph.colorNode ).includes( 1 ), 'ifequal defaults value1 to 1.' );
+
+				const ifequalBooleans = parseNodeGraph( '<ifequal name="test_node" type="boolean" nodedef="ND_ifequal_booleanB" />', 'boolean' );
+				assert.false( collectConstValues( ifequalBooleans.materials.test_graph.colorNode ).includes( 1 ), 'ifequal on booleans defaults both values to false.' );
+
+			} );
 
 			QUnit.test( 'maps <displacement> onto vertex displacement instead of failing', ( assert ) => {
 

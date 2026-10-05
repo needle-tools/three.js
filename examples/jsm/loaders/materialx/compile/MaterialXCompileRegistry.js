@@ -54,7 +54,7 @@ const register = ( registry, categories, handler ) => {
 
 };
 
-const UV_FALLBACK_CATEGORIES = new Set( [ 'checkerboard', 'noise2d', 'fractal2d', 'cellnoise2d', 'worleynoise2d', 'unifiednoise2d', 'heighttonormal' ] );
+const UV_FALLBACK_CATEGORIES = new Set( [ 'checkerboard', 'circle', 'ramp', 'noise2d', 'fractal2d', 'cellnoise2d', 'worleynoise2d', 'unifiednoise2d', 'heighttonormal' ] );
 const SCALAR_TYPES = new Set( [ 'boolean', 'integer', 'float' ] );
 const THREE_COMPONENT_TYPES = new Set( [ 'vector2', 'vector3', 'vector4', 'color3', 'color4' ] );
 const SWITCH_MIN_INDEX = 1;
@@ -220,11 +220,21 @@ const compileArtisticIorNode = ( nodeX, out ) => {
 
 };
 
+const compareBooleans = ( nodeX ) => {
+
+	if ( nodeX.getAttribute( 'nodedef' ) === 'ND_ifequal_booleanB' ) return true;
+	const value1 = nodeX.getChildByName( 'value1' );
+	const value2 = nodeX.getChildByName( 'value2' );
+	return ( value1 && value1.type === 'boolean' ) || ( value2 && value2.type === 'boolean' );
+
+};
+
 const compileBooleanConditionalNode = ( nodeX ) => {
 
 	if ( nodeX.type !== 'boolean' ) return null;
 
-	const value1Default = nodeX.element === 'ifequal' ? float( 0 ) : float( 1 );
+	// MaterialX defaults value1 to 1 and value2 to 0, except for ifequal on booleans (false and false).
+	const value1Default = nodeX.element === 'ifequal' && compareBooleans( nodeX ) ? float( 0 ) : float( 1 );
 	const value2Default = float( 0 );
 	const value1 = nodeX.getNodeByName( 'value1' ) || value1Default;
 	const value2 = nodeX.getNodeByName( 'value2' ) || value2Default;
@@ -695,7 +705,8 @@ const compileGltfIridescenceThicknessNode = ( nodeX, compileContext ) => {
 const compileTransformMatrixNode = ( nodeX, compileContext ) => {
 
 	const nodeDefName = nodeX.getAttribute( 'nodedef' );
-	const inNode = nodeX.getNodeByName( 'in' ) || float( 0 );
+	// The input has the type of the output; MaterialX defaults it to zero.
+	const inNode = nodeX.getNodeByName( 'in' ) || getZeroNodeForType( nodeX.type );
 	const matrixNode =
     nodeX.getNodeByName( 'mat' ) ||
     ( nodeDefName === 'ND_transformmatrix_vector2M3' || nodeDefName === 'ND_transformmatrix_vector3'
