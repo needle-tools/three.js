@@ -1,10 +1,14 @@
 import {
+	Color,
 	Texture,
 	ImageLoader,
 	ImageBitmapLoader,
 	LoaderUtils,
 	Matrix3,
 	Matrix4,
+	Vector2,
+	Vector3,
+	Vector4,
 	MeshBasicNodeMaterial,
 	MeshPhysicalNodeMaterial,
 } from 'three/webgpu';
@@ -23,6 +27,7 @@ import {
 	mat3,
 	mat4,
 	element,
+	uniform,
 	mx_transform_uv,
 	mx_srgb_texture_to_lin_rec709,
 	positionLocal,
@@ -142,6 +147,9 @@ function createValueNode( type, value ) {
 
 }
 
+// Authored values of these types become uniforms with the valuesAsUniforms parse option.
+// Integers stay constants: they select modes and counts (alpha_mode, octaves, upaxis) that shape the material.
+const UNIFORM_TYPES = new Set( [ 'float', 'vector2', 'vector3', 'vector4', 'color3', 'color4', 'matrix33', 'matrix44' ] );
 const OUTPUT_CHANNELS = {
 	outx: 0,
 	outr: 0,
@@ -196,7 +204,7 @@ function invertConstantMatrixValues( values, size ) {
 
 	if ( size === 3 ) {
 
-		const matrix = new Matrix3().setFromArray( values );
+		const matrix = new Matrix3().fromArray( values );
 		if ( Math.abs( matrix.determinant() ) < MATRIX_INVERSE_EPSILON ) return null;
 		matrix.invert();
 		// Convert Three.js internal column-major storage back to row-major literal order.
@@ -206,7 +214,7 @@ function invertConstantMatrixValues( values, size ) {
 
 	if ( size === 4 ) {
 
-		const matrix = new Matrix4().setFromArray( values );
+		const matrix = new Matrix4().fromArray( values );
 		if ( Math.abs( matrix.determinant() ) < MATRIX_INVERSE_EPSILON ) return null;
 		matrix.invert();
 		// Convert Three.js internal column-major storage back to row-major literal order.
@@ -569,7 +577,15 @@ class MaterialXNode {
 
 		if ( this.isConst ) {
 
-			node = createValueNode( type, this.getValue() );
+			if ( this.materialX.valuesAsUniforms && UNIFORM_TYPES.has( type ) ) {
+
+				node = this.materialX.getUniform( this );
+
+			} else {
+
+				node = createValueNode( type, this.getValue() );
+
+			}
 
 		} else if ( this.hasReference ) {
 
@@ -757,6 +773,28 @@ class MaterialXNode {
 
 	}
 
+	getUniformValue() {
+
+		const vector = this.getVector();
+		switch ( this.type ) {
+
+			case 'float': return vector[ 0 ] ?? 0;
+			case 'vector2': return new Vector2().fromArray( vector );
+			case 'vector3': return new Vector3().fromArray( vector );
+			case 'color3': return new Color().fromArray( vector );
+			case 'vector4':
+			case 'color4': return new Vector4().fromArray( vector );
+			// MaterialX serializes matrices in column-major order, the order of Matrix3/Matrix4.elements;
+			// createMatrixNode() builds the same matrix for the constant path.
+			case 'matrix33': return vector.length === 9 ? new Matrix3().fromArray( vector ) : new Matrix3();
+			case 'matrix44': return vector.length === 16 ? new Matrix4().fromArray( vector ) : new Matrix4();
+
+		}
+
+		return null;
+
+	}
+
 	getAttribute( name ) {
 
 		const value = this.nodeXML.getAttribute( name );
@@ -940,6 +978,9 @@ class MaterialXDocument {
 		this.pendingResources = [];
 		this.nodeResolver = null;
 		this.documentNodeDefs = null;
+		this.valuesAsUniforms = false;
+		this.uniforms = {};
+		this.uniformNames = new Set();
 		const bottomLeftUvSpaceHelpers = getBottomLeftUvSpaceHelpers( this.uvSpace );
 
 		this.compileContext = {
@@ -974,6 +1015,27 @@ class MaterialXDocument {
 		}
 
 		return uri;
+
+	}
+
+	getUniform( materialXNode ) {
+
+		const path = materialXNode.nodePath;
+		let uniformNode = this.uniforms[ path ];
+
+		if ( uniformNode === undefined ) {
+
+			uniformNode = uniform( materialXNode.getUniformValue() );
+			// Input names repeat across nodes ("in1", "amount"); the path keeps the declarations unique.
+			let name = 'mx_' + path.replace( /[^A-Za-z0-9_]/g, '_' );
+			while ( this.uniformNames.has( name ) ) name += '_';
+			this.uniformNames.add( name );
+			uniformNode.setName( name );
+			this.uniforms[ path ] = uniformNode;
+
+		}
+
+		return uniformNode;
 
 	}
 
@@ -1053,6 +1115,7 @@ class MaterialXDocument {
 
 		this.nodeResolver = options.nodeResolver || null;
 		this.documentNodeDefs = null;
+		this.valuesAsUniforms = options.valuesAsUniforms === true;
 
 		const rootNode = parseMaterialXText(
 			text,
@@ -1069,6 +1132,7 @@ class MaterialXDocument {
 		const materials = rootNode.toMaterials( materialName );
 		return {
 			materials,
+			uniforms: this.uniforms,
 			log: this.log.entries,
 			errors: this.log.errors,
 			warnings: this.log.warnings,

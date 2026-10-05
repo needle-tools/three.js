@@ -128,6 +128,8 @@ function getConstNumber( node ) {
 
 		if ( visited.has( cursor ) ) break;
 		visited.add( cursor );
+		// A uniform can change after loading, so its current value decides nothing.
+		if ( cursor.isUniformNode === true ) return null;
 		if ( typeof cursor.value === 'number' ) return cursor.value;
 		if ( cursor.value && cursor.value.isColor && cursor.value.r === cursor.value.g && cursor.value.g === cursor.value.b ) return cursor.value.r;
 		cursor = cursor.node;

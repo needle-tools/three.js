@@ -225,8 +225,9 @@ class MaterialXLoader extends Loader {
 	 * @param {string} [options.uvSpace='bottom-left'] - The UV space of the document's textures, `'bottom-left'` or `'top-left'`.
 	 * @param {Function} [options.interfaceValidator] - Validates node interfaces, see `createStrictInterfaceValidator()` in `MaterialXInterfaceValidation.js`.
 	 * @param {function(Object, ?string): ?Node} [options.nodeResolver] - Builds the TSL node of a MaterialX node before the built-in node library. Called with the node and the requested output (`null` for the default output); returns the node, or `null` to leave it to the loader. For channel outputs such as `outx`, the loader takes the channel of the returned node.
+	 * @param {boolean} [options.valuesAsUniforms=false] - Whether the authored values of float, vector, color and matrix inputs become uniforms instead of constants, so they can be changed without building a new material. Integer inputs stay constants. Values that otherwise switch material features off (a lobe weight of 0, an opacity of 1) leave those features on.
 	 * @param {boolean} [options.throwOnErrors=true] - Whether translation errors throw or are only reported in the log.
-	 * @return {{materials: Object<string,NodeMaterial>, log: Array<Object>, errors: Array<Object>, warnings: Array<Object>}} The materials keyed by name and the translation log.
+	 * @return {{materials: Object<string,NodeMaterial>, uniforms: Object<string,UniformNode>, log: Array<Object>, errors: Array<Object>, warnings: Array<Object>}} The materials keyed by name, the uniforms of authored values keyed by input path (`nodegraph/node/input`, with `options.valuesAsUniforms`) and the translation log.
 	 */
 	parse( text, options = {} ) {
 
@@ -244,6 +245,7 @@ class MaterialXLoader extends Loader {
 		const result = document.parse( text, options.materialName || null, {
 			interfaceValidator: options.interfaceValidator,
 			nodeResolver: options.nodeResolver,
+			valuesAsUniforms: options.valuesAsUniforms,
 		} );
 
 		return { document, log, result };

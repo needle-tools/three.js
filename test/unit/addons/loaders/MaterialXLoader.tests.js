@@ -1,4 +1,4 @@
-import { ClampToEdgeWrapping, CompressedTexture, DataTexture, HalfFloatType, LinearFilter, LinearSRGBColorSpace, LoadingManager, NearestFilter, RedFormat, RepeatWrapping, RGB_S3TC_DXT1_Format, SRGBColorSpace } from 'three';
+import { Color, Vector2, Matrix3, Matrix4, ClampToEdgeWrapping, CompressedTexture, DataTexture, HalfFloatType, LinearFilter, LinearSRGBColorSpace, LoadingManager, NearestFilter, RedFormat, RepeatWrapping, RGB_S3TC_DXT1_Format, SRGBColorSpace } from 'three';
 import { mul, vec3 } from 'three/tsl';
 import { MaterialXLoader } from '../../../../examples/jsm/loaders/MaterialXLoader.js';
 import { MtlXLibrary } from '../../../../examples/jsm/loaders/materialx/MaterialXNodeLibrary.js';
@@ -158,6 +158,20 @@ function parseNodeGraph( body, type ) {
 	return new MaterialXLoader().parse( text, { throwOnErrors: false } );
 
 }
+
+function collectUniformNodes( object, nodes = new Set(), visited = new WeakSet(), depth = 0 ) {
+
+	if ( object === null || typeof object !== 'object' || depth > 24 || visited.has( object ) ) return nodes;
+
+	visited.add( object );
+	if ( object.isUniformNode === true ) nodes.add( object );
+
+	for ( const key of Object.keys( object ) ) collectUniformNodes( object[ key ], nodes, visited, depth + 1 );
+
+	return nodes;
+
+}
+
 
 export default QUnit.module( 'Addons', () => {
 
@@ -638,6 +652,117 @@ export default QUnit.module( 'Addons', () => {
 				}
 
 				assert.deepEqual( problems, [], 'Every library parameter name matches a nodedef input of its category.' );
+
+			} );
+
+			QUnit.test( 'makes authored values uniforms keyed by input path', ( assert ) => {
+
+				const text = `<?xml version="1.0"?>
+<materialx version="1.39">
+	<nodegraph name="test_graph">
+		<input name="tint" type="color3" value="0.2, 0.4, 0.6" />
+		<multiply name="scaled" type="color3">
+			<input name="in1" type="color3" interfacename="tint" />
+			<input name="in2" type="float" value="0.5" />
+		</multiply>
+		<multiply name="again" type="color3">
+			<input name="in1" type="color3" nodename="scaled" />
+			<input name="in2" type="float" value="2" />
+		</multiply>
+		<place2d name="placed" type="vector2">
+			<input name="offset" type="vector2" value="0.25, 0.75" />
+		</place2d>
+		<transformmatrix name="transformed" type="vector3">
+			<input name="in" type="vector3" value="1, 2, 3" />
+			<input name="mat" type="matrix33" value="1, 2, 3, 4, 5, 6, 7, 8, 9" />
+		</transformmatrix>
+		<output name="out" type="color3" nodename="again" />
+		<output name="uv_out" type="vector2" nodename="placed" />
+		<output name="vector_out" type="vector3" nodename="transformed" />
+	</nodegraph>
+</materialx>`;
+
+				const constants = new MaterialXLoader().parse( text );
+				assert.deepEqual( Object.keys( constants.uniforms ), [], 'Values stay constants by default.' );
+
+				const result = new MaterialXLoader().parse( text, { valuesAsUniforms: true } );
+				const { uniforms } = result;
+
+				// Two inputs named "in2" keep their own values.
+				assert.strictEqual( uniforms[ 'test_graph/scaled/in2' ].value, 0.5, 'The value of scaled/in2 is a uniform.' );
+				assert.strictEqual( uniforms[ 'test_graph/again/in2' ].value, 2, 'The value of again/in2 is another uniform.' );
+				assert.true( uniforms[ 'test_graph/tint' ].value.equals( new Color( 0.2, 0.4, 0.6 ) ), 'A graph interface value is a uniform, shared by the inputs bound to it.' );
+				assert.notOk( uniforms[ 'test_graph/scaled/in1' ], 'An input bound to an interface has no uniform of its own.' );
+
+				// The color graph of the basic material uses the first output; the other uniforms exist once their graphs are built.
+				const graphUniforms = collectUniformNodes( result.materials.test_graph.colorNode );
+				assert.true( graphUniforms.has( uniforms[ 'test_graph/scaled/in2' ] ) && graphUniforms.has( uniforms[ 'test_graph/tint' ] ), 'The material graph uses the uniforms.' );
+				assert.strictEqual( uniforms[ 'test_graph/scaled/in2' ].name, 'mx_test_graph_scaled_in2', 'A uniform is named by its input path.' );
+
+				const offsetMaterial = new MaterialXLoader().parse( text.replace( 'nodename="again" />', 'nodename="placed" />' ).replace( 'type="color3" nodename="placed"', 'type="vector2" nodename="placed"' ), { valuesAsUniforms: true } );
+				assert.true( offsetMaterial.uniforms[ 'test_graph/placed/offset' ].value.equals( new Vector2( 0.25, 0.75 ) ), 'A vector2 value is a Vector2 uniform.' );
+
+				// The uniform holds the matrix the constant path builds.
+				const matrixText = text.replace( 'type="color3" nodename="again"', 'type="vector3" nodename="transformed"' );
+				const constantMatrix = collectConstValues( new MaterialXLoader().parse( matrixText ).materials.test_graph.colorNode ).find( ( value ) => value && value.isMatrix3 );
+				const matrixMaterial = new MaterialXLoader().parse( matrixText, { valuesAsUniforms: true } );
+				assert.true( matrixMaterial.uniforms[ 'test_graph/transformed/mat' ].value.equals( constantMatrix ), 'A matrix33 uniform equals the constant matrix.' );
+				assert.false( constantMatrix.equals( constantMatrix.clone().transpose() ), 'The authored matrix is not symmetric, so the order is checked.' );
+
+			} );
+
+			QUnit.test( 'inverts authored constant matrices in column-major order', ( assert ) => {
+
+				for ( const [ type, MatrixClass, values ] of [
+					[ 'matrix33', Matrix3, [ 1, 0, 0, 2, 1, 0, 0, 0, 1 ]],
+					[ 'matrix44', Matrix4, [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 2, 3, 4, 1 ]]
+				] ) {
+
+					const text = `<materialx version="1.39">
+	<nodegraph name="NG">
+		<invertmatrix name="inverse" type="${ type }"><input name="in" type="${ type }" value="${ values.join( ', ' ) }" /></invertmatrix>
+		<transformmatrix name="transformed" type="vector3"><input name="in" type="vector3" value="3, 4, 5" /><input name="mat" type="${ type }" nodename="inverse" /></transformmatrix>
+		<output name="out" type="vector3" nodename="transformed" />
+	</nodegraph>
+</materialx>`;
+
+					const result = new MaterialXLoader().parse( text );
+					const inverse = collectConstValues( result.materials.NG.colorNode ).find( ( value ) => value instanceof MatrixClass );
+					assert.strictEqual( result.errors.length, 0, `${ type }: constant inversion translates.` );
+					assert.true( inverse.equals( new MatrixClass().fromArray( values ).invert() ), `${ type }: the inverse preserves the authored matrix order.` );
+
+				}
+
+			} );
+
+			QUnit.test( 'keeps integer inputs constant with values as uniforms', ( assert ) => {
+
+				const text = `<?xml version="1.0"?>
+<materialx version="1.39">
+	<nodegraph name="test_graph">
+		<fractal3d name="test_node" type="float">
+			<input name="octaves" type="integer" value="5" />
+			<input name="amplitude" type="float" value="0.5" />
+		</fractal3d>
+		<output name="out" type="float" nodename="test_node" />
+	</nodegraph>
+</materialx>`;
+				const { uniforms } = new MaterialXLoader().parse( text, { valuesAsUniforms: true } );
+				assert.ok( uniforms[ 'test_graph/test_node/amplitude' ], 'A float value is a uniform.' );
+				assert.notOk( uniforms[ 'test_graph/test_node/octaves' ], 'An integer selects a count or mode and stays constant.' );
+
+			} );
+
+			QUnit.test( 'keeps material features that uniforms can switch on', ( assert ) => {
+
+				const text = MATERIAL_X_DISPLACEMENT.replace( '<input name="base_color" type="color3" value="0.5, 0.5, 0.5" />', '<input name="base_color" type="color3" value="0.5, 0.5, 0.5" />\n\t\t<input name="transmission" type="float" value="0" />' );
+
+				const constants = new MaterialXLoader().parse( text ).materials.test_material;
+				assert.strictEqual( constants.transmissionNode, null, 'A constant transmission of 0 leaves transmission off.' );
+
+				const result = new MaterialXLoader().parse( text, { valuesAsUniforms: true } );
+				const transmission = result.materials.test_material.transmissionNode;
+				assert.true( transmission !== null && collectUniformNodes( transmission ).has( result.uniforms[ 'test_surface/transmission' ] ), 'A transmission uniform of 0 keeps transmission on, so changing it shows.' );
 
 			} );
 
