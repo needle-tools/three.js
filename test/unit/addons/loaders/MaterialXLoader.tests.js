@@ -366,6 +366,24 @@ export default QUnit.module( 'Addons', () => {
 
 			} );
 
+			QUnit.test( 'maps Disney principled inputs and reports unsupported subsurface scattering', ( assert ) => {
+
+				const text = ( inputs ) => `<materialx version="1.39">
+ <disney_principled name="surface" type="surfaceshader">${ inputs }</disney_principled>
+ <surfacematerial name="Material" type="material"><input name="surfaceshader" type="surfaceshader" nodename="surface" /></surfacematerial>
+</materialx>`;
+				const result = new MaterialXLoader().parse( text( '<input name="specularTint" type="float" value="0.7" /><input name="anisotropic" type="float" value="0.8" /><input name="clearcoat" type="float" value="1" />' ) );
+				const material = result.materials.Material;
+				assert.deepEqual( result.errors, [] );
+				assert.deepEqual( result.warnings, [] );
+				assert.ok( material.specularF0Node, 'Specular strength is independent of refraction IOR.' );
+				assert.ok( material.anisotropyNode, 'Anisotropic roughness controls both GGX axes.' );
+				assert.ok( material.clearcoatF0Node.isNode, 'Coat reflectance is independent of its weight.' );
+				const unsupported = new MaterialXLoader().parse( text( '<input name="subsurface" type="float" value="0.5" />' ) );
+				assert.ok( unsupported.warnings.some( warning => warning.message.includes( 'subsurface' ) ), 'Subsurface scattering is not silently treated as transmission.' );
+
+			} );
+
 			QUnit.test( 'renders <surface_unlit> without lighting', ( assert ) => {
 
 				const text = ( inputs ) => `<?xml version="1.0"?>

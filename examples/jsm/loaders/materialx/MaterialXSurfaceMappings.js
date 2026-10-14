@@ -1,6 +1,7 @@
 import { AddEquation, CustomBlending, DoubleSide, OneFactor, OneMinusSrcAlphaFactor } from 'three/webgpu';
 import { MaterialXLogCodes } from './MaterialXLog.js';
 import { applyUsdPreviewSurface } from './MaterialXUsd.js';
+import { applyDisneyPrincipled } from './MaterialXDisney.js';
 import { Fn, float, vec3, mul, sub, dot, clamp, vec2, cos, sin, pow, mix, element, transformNormalToView, positionLocal, normalLocal, tangentLocal, bitangentLocal } from 'three/tsl';
 
 const mappedStandardSurfaceInputs = new Set( [
@@ -526,6 +527,7 @@ function applySurfaceUnlit( material, inputs, log, nodeName, authored ) {
 }
 
 const MaterialXSurfaceMappings = {
+	disney_principled: applyDisneyPrincipled,
 	UsdPreviewSurface: applyUsdPreviewSurface,
 	surface_unlit: applySurfaceUnlit,
 	standard_surface: applyStandardSurface,
