@@ -233,6 +233,8 @@ export const clearcoat = /*@__PURE__*/ nodeImmutable( PropertyNode, 'float', 'Cl
  */
 export const clearcoatRoughness = /*@__PURE__*/ nodeImmutable( PropertyNode, 'float', 'ClearcoatRoughness' );
 
+export const clearcoatF0 = /*@__PURE__*/ nodeImmutable( PropertyNode, 'vec3', 'ClearcoatF0' );
+
 /**
  * TSL object that represents the shader variable `Sheen`.
  *
@@ -325,9 +327,9 @@ export const specularColorBlended = /*@__PURE__*/ nodeImmutable( PropertyNode, '
  * TSL object that represents the shader variable `SpecularF90`.
  *
  * @tsl
- * @type {PropertyNode<float>}
+ * @type {PropertyNode<vec3>}
  */
-export const specularF90 = /*@__PURE__*/ nodeImmutable( PropertyNode, 'float', 'SpecularF90' );
+export const specularF90 = /*@__PURE__*/ nodeImmutable( PropertyNode, 'vec3', 'SpecularF90' );
 
 /**
  * TSL object that represents the shader variable `Shininess`.

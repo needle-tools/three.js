@@ -8,7 +8,7 @@ import Schlick_to_F0 from './BSDF/Schlick_to_F0.js';
 import BRDF_Sheen from './BSDF/BRDF_Sheen.js';
 import { LTC_Evaluate, LTC_Uv } from './BSDF/LTC.js';
 import LightingModel from '../core/LightingModel.js';
-import { diffuseColor, diffuseContribution, diffuseRoughness, specularColor, specularColorBlended, specularF90, roughness, metalness, clearcoat, clearcoatRoughness, sheen, sheenRoughness, iridescence, iridescenceIOR, iridescenceThickness, ior, thickness, transmission, attenuationDistance, attenuationColor, dispersion, retroreflectivity } from '../core/PropertyNode.js';
+import { diffuseColor, diffuseContribution, diffuseRoughness, specularColor, specularColorBlended, specularF90, roughness, metalness, clearcoat, clearcoatRoughness, clearcoatF0, sheen, sheenRoughness, iridescence, iridescenceIOR, iridescenceThickness, ior, thickness, transmission, attenuationDistance, attenuationColor, dispersion, retroreflectivity } from '../core/PropertyNode.js';
 import { normalView, clearcoatNormalView, normalWorld } from '../accessors/Normal.js';
 import { positionViewDirection, positionView, positionWorld } from '../accessors/Position.js';
 import { Fn, float, vec2, vec3, vec4, mat3, If } from '../tsl/TSLBase.js';
@@ -91,7 +91,7 @@ const volumeAttenuation = /*@__PURE__*/ Fn( ( [ transmissionDistance, attenuatio
 
 }, { transmissionDistance: 'float', attenuationColor: 'vec3', attenuationDistance: 'float', return: 'vec3' } );
 
-const getIBLVolumeRefraction = /*@__PURE__*/ Fn( ( [ n, v, roughness, diffuseColor, specularColor, specularF90, position, modelMatrix, viewMatrix, projMatrix, ior, thickness, attenuationColor, attenuationDistance, dispersion ] ) => {
+const getIBLVolumeRefraction = /*@__PURE__*/ Fn( ( [ n, v, roughness, diffuseColor, specularColor, specularF90, position, modelMatrix, viewMatrix, projMatrix, ior, thickness, attenuationColor, attenuationDistance, dispersion, refractionRoughness ] ) => {
 
 	let transmittedLight, transmittance;
 
@@ -118,7 +118,7 @@ const getIBLVolumeRefraction = /*@__PURE__*/ Fn( ( [ n, v, roughness, diffuseCol
 			refractionCoords.assign( vec2( refractionCoords.x, refractionCoords.y.oneMinus() ) ); // webgpu
 
 			// Sample framebuffer to get pixel the refracted ray hits.
-			const transmissionSample = getTransmissionSample( refractionCoords, roughness, ior );
+			const transmissionSample = getTransmissionSample( refractionCoords, refractionRoughness, ior );
 
 			transmittedLight.element( i ).assign( transmissionSample.element( i ) );
 			transmittedLight.a.addAssign( transmissionSample.a );
@@ -142,7 +142,7 @@ const getIBLVolumeRefraction = /*@__PURE__*/ Fn( ( [ n, v, roughness, diffuseCol
 		refractionCoords.assign( vec2( refractionCoords.x, refractionCoords.y.oneMinus() ) ); // webgpu
 
 		// Sample framebuffer to get pixel the refracted ray hits.
-		transmittedLight = getTransmissionSample( refractionCoords, roughness, ior );
+		transmittedLight = getTransmissionSample( refractionCoords, refractionRoughness, ior );
 		transmittance = diffuseColor.mul( volumeAttenuation( length( transmissionRay ), attenuationColor, attenuationDistance ) );
 
 	}
@@ -307,7 +307,6 @@ const IBLSheenBRDF = /*@__PURE__*/ Fn( ( { normal, viewDir, roughness } ) => {
 
 }, { normal: 'vec3', viewDir: 'vec3', roughness: 'float', return: 'float' } );
 
-const clearcoatF0 = vec3( 0.04 );
 const clearcoatF90 = float( 1 );
 
 
@@ -512,6 +511,13 @@ class PhysicalLightingModel extends LightingModel {
 	 */
 	start( builder ) {
 
+		if ( this.clearcoat ) {
+
+			const f0 = builder.material.clearcoatF0Node;
+			clearcoatF0.assign( f0 ? vec3( f0 ) : vec3( 0.04 ) );
+
+		}
+
 		if ( this.clearcoat === true ) {
 
 			this.clearcoatRadiance = vec3().toVar( 'clearcoatRadiance' );
@@ -566,7 +572,7 @@ class PhysicalLightingModel extends LightingModel {
 				n,
 				v,
 				roughness,
-				diffuseContribution,
+				builder.material.transmissionColorNode ? vec3( builder.material.transmissionColorNode ) : diffuseContribution,
 				specularColorBlended,
 				specularF90, // specularF90
 				position, // positionWorld
@@ -577,7 +583,8 @@ class PhysicalLightingModel extends LightingModel {
 				thickness,
 				attenuationColor,
 				attenuationDistance,
-				this.dispersion ? dispersion : null
+				this.dispersion ? dispersion : null,
+				builder.material.transmissionRoughnessNode ? float( builder.material.transmissionRoughnessNode ) : roughness
 			);
 
 			context.backdropAlpha = transmission;

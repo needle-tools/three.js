@@ -70,6 +70,13 @@ class MeshPhysicalNodeMaterial extends MeshStandardNodeMaterial {
 		this.clearcoatRoughnessNode = null;
 
 		/**
+		 * Overrides the clearcoat Fresnel reflectance at normal incidence.
+		 * @type {?Node<vec3>}
+		 * @default null
+		 */
+		this.clearcoatF0Node = null;
+
+		/**
 		 * The diffuse roughness of physical materials is by default inferred from the
 		 * `diffuseRoughness` and `diffuseRoughnessMap` properties. This node property allows to overwrite the
 		 * default and define the diffuse roughness with a node instead.
@@ -187,6 +194,20 @@ class MeshPhysicalNodeMaterial extends MeshStandardNodeMaterial {
 		this.specularColorNode = null;
 
 		/**
+		 * Overrides the dielectric Fresnel reflectance at normal incidence, before metalness blending.
+		 * @type {?Node<vec3>}
+		 * @default null
+		 */
+		this.specularF0Node = null;
+
+		/**
+		 * Overrides the Fresnel reflectance at grazing incidence, after metalness blending.
+		 * @type {?Node<vec3>}
+		 * @default null
+		 */
+		this.specularF90Node = null;
+
+		/**
 		 * The ior of physical materials is by default inferred from the `ior`
 		 * property. This node property allows to overwrite the default
 		 * and define the ior with a node instead.
@@ -211,6 +232,20 @@ class MeshPhysicalNodeMaterial extends MeshStandardNodeMaterial {
 		 * @default null
 		 */
 		this.transmissionNode = null;
+
+		/**
+		 * Overrides the transmitted color, otherwise taken from the diffuse contribution.
+		 * @type {?Node<vec3>}
+		 * @default null
+		 */
+		this.transmissionColorNode = null;
+
+		/**
+		 * Overrides refraction roughness without changing the reflected specular lobe.
+		 * @type {?Node<float>}
+		 * @default null
+		 */
+		this.transmissionRoughnessNode = null;
 
 		/**
 		 * The thickness of physical materials is by default inferred from the `thickness` and
@@ -402,9 +437,9 @@ class MeshPhysicalNodeMaterial extends MeshStandardNodeMaterial {
 		const specularIntensityNode = this.specularIntensityNode ? float( this.specularIntensityNode ) : materialSpecularIntensity;
 
 		ior.assign( iorNode );
-		specularColor.assign( min( pow2( ior.sub( 1.0 ).div( ior.add( 1.0 ) ) ).mul( specularColorNode ), vec3( 1.0 ) ).mul( specularIntensityNode ) );
+		specularColor.assign( this.specularF0Node ? vec3( this.specularF0Node ) : min( pow2( ior.sub( 1.0 ).div( ior.add( 1.0 ) ) ).mul( specularColorNode ), vec3( 1.0 ) ).mul( specularIntensityNode ) );
 		specularColorBlended.assign( mix( specularColor, diffuseColor.rgb, metalness ) );
-		specularF90.assign( mix( specularIntensityNode, 1.0, metalness ) );
+		specularF90.assign( this.specularF90Node ? vec3( this.specularF90Node ) : vec3( mix( specularIntensityNode, 1.0, metalness ) ) );
 
 	}
 

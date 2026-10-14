@@ -42,6 +42,7 @@ import {
 	toVec3Channels,
 } from '../MaterialXUtils.js';
 import { MaterialXLogCodes } from '../MaterialXLog.js';
+import { compileUsdUVTexture, compileUsdPrimvarReader, compileUsdTransform2d } from '../MaterialXUsd.js';
 
 const register = ( registry, categories, handler ) => {
 
@@ -924,6 +925,9 @@ function createMaterialXCompileRegistry() {
 	const registry = new Map();
 	register( registry, [ 'convert' ], ( nodeX ) => compileConvertNode( nodeX ) );
 	register( registry, [ 'constant' ], ( nodeX ) => compileConstantNode( nodeX ) );
+	register( registry, [ 'UsdUVTexture' ], compileUsdUVTexture );
+	register( registry, [ 'UsdPrimvarReader' ], compileUsdPrimvarReader );
+	register( registry, [ 'UsdTransform2d' ], compileUsdTransform2d );
 	register( registry, [ 'artistic_ior' ], ( nodeX, out ) => compileArtisticIorNode( nodeX, out ) );
 	register( registry, [ 'clamp' ], ( nodeX ) => compileClampNode( nodeX ) );
 	register( registry, [ 'normalize' ], ( nodeX ) => compileNormalizeNode( nodeX ) );

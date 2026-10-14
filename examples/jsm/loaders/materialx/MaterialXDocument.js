@@ -10,6 +10,7 @@ import {
 } from 'three/webgpu';
 
 import {
+	uniform,
 	float,
 	texture,
 	int,
@@ -447,6 +448,7 @@ class MaterialXNode {
 		if ( this.declaresInput( inputName ) === false ) return 'periodic';
 
 		const rawMode = this.getNodeByName( inputName );
+		if ( this.element === 'UsdUVTexture' && rawMode === 'black' ) return 'constant';
 		const mode = resolveTextureAddressMode( rawMode );
 		if ( mode ) return mode;
 
@@ -460,6 +462,12 @@ class MaterialXNode {
 	}
 
 	getTextureAddressModes() {
+
+		if ( this.element === 'UsdUVTexture' ) {
+
+			return { u: this.getTextureAddressMode( 'wrapS' ), v: this.getTextureAddressMode( 'wrapT' ) };
+
+		}
 
 		return {
 			u: this.getTextureAddressMode( 'uaddressmode' ),
@@ -500,6 +508,7 @@ class MaterialXNode {
 		}
 
 		const textureNode = texture( new Texture() );
+		textureNode.materialXLoadedNode = uniform( false );
 		textureNode.value.wrapS = TEXTURE_ADDRESS_MODE_WRAPPING[ addressModes.u ];
 		textureNode.value.wrapT = TEXTURE_ADDRESS_MODE_WRAPPING[ addressModes.v ];
 		textureNode.value.flipY = false;
@@ -531,6 +540,7 @@ class MaterialXNode {
 				}
 
 				textureNode.value.needsUpdate = true;
+				textureNode.materialXLoadedNode.value = true;
 				resolveLoad();
 
 			}, undefined, () => {

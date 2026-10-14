@@ -293,6 +293,79 @@ export default QUnit.module( 'Addons', () => {
 
 			} );
 
+			QUnit.test( 'loads USD preview surfaces with absolute Fresnel inputs', ( assert ) => {
+
+				const text = `<materialx version="1.39">
+ <UsdPreviewSurface name="surface" type="surfaceshader">
+  <input name="useSpecularWorkflow" type="integer" value="1" />
+  <input name="specularColor" type="color3" value="0.2, 0.4, 0.6" />
+  <input name="ior" type="float" value="1" />
+  <input name="normal" type="vector3" value="0, 0, 1" />
+  <input name="opacity" type="float" value="0.5" />
+ </UsdPreviewSurface>
+ <surfacematerial name="Material" type="material"><input name="surfaceshader" type="surfaceshader" nodename="surface" /></surfacematerial>
+</materialx>`;
+				const result = new MaterialXLoader().parse( text );
+				const material = result.materials.Material;
+				assert.deepEqual( result.errors, [] );
+				assert.ok( material.specularF0Node, 'Absolute reflectance does not depend on IOR.' );
+				assert.ok( material.specularF90Node, 'Grazing reflectance can be colored.' );
+				assert.ok( material.clearcoatF0Node, 'The coat uses the authored IOR.' );
+				assert.ok( material.normalNode.constructor.type === 'NormalMapNode', 'USD normals are tangent-space normals.' );
+				assert.strictEqual( material.clearcoatNormalNode, material.normalNode );
+				assert.ok( material.transmissionNode, 'Transparent opacity preserves reflection.' );
+				assert.ok( material.transmissionRoughnessNode.isNode, 'Refraction roughness has its own node input.' );
+				assert.ok( material.transmissionColorNode.isNode, 'Transmission color has its own node input.' );
+				assert.ok( material.clone().specularF0Node, 'Cloning preserves the node overrides.' );
+
+			} );
+
+			QUnit.test( 'USD textures keep their fallback until loading succeeds', ( assert ) => {
+
+				const manager = new LoadingManager();
+				const handler = new ControlledTextureLoader( manager );
+				manager.addHandler( /\.test$/, handler );
+				const loader = new MaterialXLoader( manager );
+				const text = `<materialx version="1.39"><nodegraph name="NG">
+<UsdUVTexture name="image" type="multioutput"><input name="file" type="filename" value="missing.test" /><input name="fallback" type="color4" value="0.2,0.3,0.4,0.7" /></UsdUVTexture>
+<output name="out" type="color3" nodename="image" output="rgb" /></nodegraph></materialx>`;
+				const result = loader.parse( text );
+				const textures = [];
+				result.materials.NG.colorNode.traverse( ( node ) => {
+
+					if ( node.isTextureNode && node.materialXLoadedNode ) textures.push( node );
+
+				} );
+				assert.strictEqual( textures[ 0 ].materialXLoadedNode.value, false, 'An unresolved texture uses the fallback.' );
+				handler.fail( new Error( 'Missing texture' ) );
+				assert.strictEqual( textures[ 0 ].materialXLoadedNode.value, false, 'A failed load keeps the fallback.' );
+				assert.ok( result.log.some( ( warning ) => warning.code === 'texture-load-failed' ), 'The load failure remains visible.' );
+				const loaded = loader.parse( text.replace( 'missing.test', 'present.test' ) );
+				handler.succeed( new DataTexture( new Uint8Array( [ 255, 0, 0, 255 ] ), 1, 1 ) );
+				loaded.materials.NG.colorNode.traverse( ( node ) => {
+
+					if ( node.materialXLoadedNode ) assert.strictEqual( node.materialXLoadedNode.value, true, 'A successful load enables sampling.' );
+
+				} );
+
+			} );
+
+			QUnit.test( 'USD texture readers preserve fallback, channels and black addressing', ( assert ) => {
+
+				const text = `<materialx version="1.39"><nodegraph name="NG">
+ <UsdUVTexture name="image" type="multioutput">
+  <input name="fallback" type="color4" value="0.1, 0.3, 0.5, 0.7" />
+  <input name="wrapS" type="string" value="black" />
+ </UsdUVTexture>
+ <output name="out" type="float" nodename="image" output="a" />
+</nodegraph></materialx>`;
+				const result = new MaterialXLoader().parse( text );
+				assert.deepEqual( result.errors, [] );
+				assert.deepEqual( result.warnings, [] );
+				assert.ok( result.materials.NG.colorNode, 'The alpha output can feed a graph material.' );
+
+			} );
+
 			QUnit.test( 'renders <surface_unlit> without lighting', ( assert ) => {
 
 				const text = ( inputs ) => `<?xml version="1.0"?>
