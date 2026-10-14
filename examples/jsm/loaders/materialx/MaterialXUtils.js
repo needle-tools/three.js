@@ -5,11 +5,18 @@ import {
 } from 'three/webgpu';
 
 import {
+	Fn,
+	positionLocal,
+	positionWorld,
 	bool,
 	element,
 	float,
 	vec3,
 } from 'three/tsl';
+
+// Volume coefficients are evaluated at ray samples rather than mesh vertices.
+const materialXPositionLocal = Fn( ( _inputs, builder ) => builder.context.materialXPositionLocal || positionLocal )();
+const materialXPositionWorld = Fn( ( _inputs, builder ) => builder.context.materialXPositionWorld || positionWorld )();
 
 const BOOLEAN_OPERATOR_OPS = new Set( [ '&&', '||', '^^', '!', '==', '!=', '<', '>', '<=', '>=' ] );
 const TEXTURE_ADDRESS_MODE_WRAPPING = {
@@ -72,6 +79,8 @@ function resolveTextureAddressMode( value ) {
 }
 
 export {
+	materialXPositionLocal,
+	materialXPositionWorld,
 	getComponentCountForType,
 	isBooleanNode,
 	normalizeSpaceName,

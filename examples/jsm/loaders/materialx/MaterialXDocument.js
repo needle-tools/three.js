@@ -25,8 +25,6 @@ import {
 	element,
 	mx_transform_uv,
 	mx_srgb_texture_to_lin_rec709,
-	positionLocal,
-	positionWorld,
 	normalLocal,
 	normalWorld,
 	tangentLocal,
@@ -35,6 +33,8 @@ import {
 	bitangentWorld,
 } from 'three/tsl';
 
+import BoundedVolumeNodeMaterial from '../../materials/BoundedVolumeNodeMaterial.js';
+import { configureVolumeMaterial } from './MaterialXVolume.js';
 import { MaterialXLogCodes } from './MaterialXLog.js';
 import { createMaterialXCompileRegistry, compileNodeFromRegistry } from './compile/MaterialXCompileRegistry.js';
 import { parseMaterialXNodeTree, parseMaterialXText } from './parse/MaterialXParser.js';
@@ -42,7 +42,7 @@ import { getSurfaceMapper } from './MaterialXSurfaceMappings.js';
 import { MtlXLibrary } from './MaterialXNodeLibrary.js';
 import { resolveNodeDef } from './MaterialXNodeDefs.js';
 import { mxHextileCoord, mxHextileComputeBlendWeights } from './MaterialXHextile.js';
-import { resolveTextureAddressMode, TEXTURE_ADDRESS_MODE_WRAPPING, toBooleanNode } from './MaterialXUtils.js';
+import { materialXPositionLocal as positionLocal, materialXPositionWorld as positionWorld, resolveTextureAddressMode, TEXTURE_ADDRESS_MODE_WRAPPING, toBooleanNode } from './MaterialXUtils.js';
 
 const colorSpaceLib = {
 	mx_srgb_texture_to_lin_rec709,
@@ -799,6 +799,13 @@ class MaterialXNode {
 
 	setMaterial( material ) {
 
+		if ( this.element === 'volume' ) {
+
+			configureVolumeMaterial( material, this );
+			return;
+
+		}
+
 		const mapper = getSurfaceMapper( this.element );
 		if ( mapper ) {
 
@@ -833,7 +840,7 @@ class MaterialXNode {
 
 	}
 
-	resolveSurfaceShaderNode( nodeX ) {
+	resolveShaderNode( nodeX ) {
 
 		const visited = new Set();
 		let shader = nodeX || null;
@@ -853,7 +860,7 @@ class MaterialXNode {
 
 	toSurfaceMaterial() {
 
-		const surfaceShader = this.resolveSurfaceShaderNode( this.getChildByName( 'surfaceshader' ) );
+		const surfaceShader = this.resolveShaderNode( this.getChildByName( 'surfaceshader' ) );
 		const material = surfaceShader?.nodeDef?.name === 'ND_surface_unlit' ? new MeshBasicNodeMaterial() : new MeshPhysicalNodeMaterial();
 		material.name = this.name;
 
@@ -877,7 +884,7 @@ class MaterialXNode {
 
 			}
 
-			const shaderProperties = this.resolveSurfaceShaderNode( nodeX );
+			const shaderProperties = this.resolveShaderNode( nodeX );
 			if ( shaderProperties === null ) {
 
 				this.materialX.log.add(
@@ -897,30 +904,41 @@ class MaterialXNode {
 
 	}
 
+	toVolumeMaterial() {
+
+		const material = new BoundedVolumeNodeMaterial();
+		material.name = this.name;
+		const shader = this.resolveShaderNode( this.getChildByName( 'volumeshader' ) );
+		if ( shader ) shader.setMaterial( material );
+		else this.materialX.log.add( MaterialXLogCodes.MISSING_REFERENCE, 'Missing volumeshader reference.', this.name );
+		return material;
+
+	}
+
 	toMaterials( materialName = null ) {
 
 		const materials = {};
-		const surfaceMaterials = this.children.filter( ( nodeX ) => nodeX.element === 'surfacematerial' );
+		const materialNodes = this.children.filter( ( nodeX ) => nodeX.element === 'surfacematerial' || nodeX.element === 'volumematerial' );
 
-		let selectedSurfaceMaterials = surfaceMaterials;
+		let selectedMaterialNodes = materialNodes;
 		if ( materialName ) {
 
-			selectedSurfaceMaterials = surfaceMaterials.filter( ( nodeX ) => nodeX.name === materialName );
+			selectedMaterialNodes = materialNodes.filter( ( nodeX ) => nodeX.name === materialName );
 
-			if ( selectedSurfaceMaterials.length === 0 ) {
+			if ( selectedMaterialNodes.length === 0 ) {
 
 				this.materialX.log.add(
 					MaterialXLogCodes.MISSING_MATERIAL,
-					`Could not find surfacematerial named "${materialName}".`,
+					`Could not find material named "${materialName}".`,
 				);
 
 			}
 
 		}
 
-		for ( const nodeX of selectedSurfaceMaterials ) {
+		for ( const nodeX of selectedMaterialNodes ) {
 
-			const material = nodeX.toSurfaceMaterial();
+			const material = nodeX.element === 'volumematerial' ? nodeX.toVolumeMaterial() : nodeX.toSurfaceMaterial();
 			materials[ material.name ] = material;
 
 		}

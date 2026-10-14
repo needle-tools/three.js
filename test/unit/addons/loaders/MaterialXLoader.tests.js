@@ -293,6 +293,35 @@ export default QUnit.module( 'Addons', () => {
 
 			} );
 
+			QUnit.test( 'builds bounded volume materials and reports unsupported closures', ( assert ) => {
+
+				const text = ( closure ) => `<materialx version="1.39">
+<${ closure } name="VDF" type="VDF"><input name="scattering" type="vector3" value="0.2,0.5,1" /></${ closure }>
+<uniform_edf name="EDF" type="EDF" />
+<volume name="V" type="volumeshader"><input name="vdf" type="VDF" nodename="VDF" /><input name="edf" type="EDF" nodename="EDF" /></volume>
+<volumematerial name="M" type="material"><input name="volumeshader" type="volumeshader" nodename="V" /></volumematerial>
+</materialx>`;
+				const result = new MaterialXLoader().parse( text( 'anisotropic_vdf' ) );
+				const material = result.materials.M;
+				assert.strictEqual( result.errors.length, 0, 'Volume closures are supported.' );
+				assert.true( material.isBoundedVolumeNodeMaterial, 'A volume uses a bounded medium.' );
+				assert.ok( material.extinctionNode && material.scatteringNode && material.emissionNode, 'Transport callbacks are present.' );
+				material.steps = 80;
+				material.shadowSteps = 24;
+				const clone = material.clone();
+				assert.strictEqual( clone.steps, 80, 'Clone preserves integration quality.' );
+				assert.strictEqual( clone.shadowSteps, 24, 'Clone preserves shadow integration quality.' );
+				assert.strictEqual( clone.extinctionNode, material.extinctionNode, 'Clone keeps the coefficient graph.' );
+				clone.extinctionNode = () => vec3( 1 );
+				assert.notEqual( material.customProgramCacheKey(), clone.customProgramCacheKey(), 'Plain callback functions also have their own shader identity.' );
+				assert.notEqual( material.customProgramCacheKey(), new MaterialXLoader().parse( text( 'anisotropic_vdf' ) ).materials.M.customProgramCacheKey(), 'Different coefficient graphs use different shaders.' );
+				const unknown = new MaterialXLoader().parse( text( 'unknown_vdf' ), { throwOnErrors: false } );
+				assert.true( unknown.errors.some( ( error ) => error.code === 'unsupported-node' ), 'Unknown closures produce a diagnostic.' );
+				const selected = new MaterialXLoader().parse( text( 'anisotropic_vdf' ), { materialName: 'M' } );
+				assert.true( selected.materials.M.isBoundedVolumeNodeMaterial, 'Selection includes volume materials.' );
+
+			} );
+
 			QUnit.test( 'renders <surface_unlit> without lighting', ( assert ) => {
 
 				const text = ( inputs ) => `<?xml version="1.0"?>

@@ -11,8 +11,6 @@ import {
 	vec3,
 	vec4,
 	vertexColor,
-	positionLocal,
-	positionWorld,
 	normalLocal,
 	normalWorld,
 	tangentLocal,
@@ -36,6 +34,8 @@ import {
 	sign,
 } from 'three/tsl';
 import {
+	materialXPositionLocal as positionLocal,
+	materialXPositionWorld as positionWorld,
 	getComponentCountForType,
 	normalizeSpaceName,
 	toBooleanNode,

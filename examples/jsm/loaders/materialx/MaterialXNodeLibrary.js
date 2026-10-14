@@ -70,7 +70,6 @@ import {
 	mx_ifgreatereq,
 	mx_ifequal,
 	mx_atan2,
-	positionWorld,
 	cameraPosition,
 	mx_heighttonormal,
 	float,
@@ -91,7 +90,7 @@ import {
 	Fn,
 	Loop,
 } from 'three/tsl';
-import { normalizeSpaceName, toBooleanNode, toVec3Channels } from './MaterialXUtils.js';
+import { materialXPositionWorld as positionWorld, normalizeSpaceName, toBooleanNode, toVec3Channels } from './MaterialXUtils.js';
 
 const createMXElement = ( name, nodeFunc, params = [], usesNode = false ) => ( { name, nodeFunc, params, usesNode } );
 
