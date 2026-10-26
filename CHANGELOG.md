@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.185.2-alpha.7] – 2026-10-26
+- fix WebGPU material `onBeforeRender` receiving the material instead of the rendered object
+
 ## [0.185.2-alpha.6] – 2026-10-05
 - add `MaterialXLoader.setNodeResolver()` so a host can build nodes of its own node library (e.g. the three.js TSL nodes)
 - add `MaterialXLoader.setLibrary()`: inputs a document leaves out take their nodedef defaults, including `defaultgeomprop` geometry such as `position` or `normal`
