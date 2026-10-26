@@ -3557,7 +3557,7 @@ class Renderer {
 
 		object.onBeforeRender( this, scene, camera, geometry, material, group );
 
-		material.onBeforeRender( this, scene, camera, geometry, material, group );
+		material.onBeforeRender( this, scene, camera, geometry, object, group );
 
 		//
 
