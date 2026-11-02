@@ -6,7 +6,7 @@
 'use strict';
 
 var _documentCurrentScript = typeof document !== 'undefined' ? document.currentScript : null;
-const REVISION = '185.2-alpha.7';
+const REVISION = '185.2-alpha.8';
 
 /**
  * Represents mouse buttons and interaction types in context of controls.

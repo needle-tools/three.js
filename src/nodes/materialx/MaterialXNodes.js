@@ -1,17 +1,21 @@
 import {
 	mx_perlin_noise_float, mx_perlin_noise_vec3,
-	mx_worley_noise_float as worley_noise_float, mx_worley_noise_vec2 as worley_noise_vec2, mx_worley_noise_vec3 as worley_noise_vec3,
-	mx_cell_noise_float as cell_noise_float,
+	mx_worley_noise_float_2d as worley_noise_float_2d, mx_worley_noise_float_3d as worley_noise_float_3d,
+	mx_worley_noise_vec2 as worley_noise_vec2, mx_worley_noise_vec3 as worley_noise_vec3,
+	mx_worley_noise_vec3_style as worley_noise_vec3_style,
+	mx_cell_noise_float as cell_noise_float, mx_cell_noise_vec3 as cell_noise_vec3,
 	mx_unifiednoise2d as unifiednoise2d, mx_unifiednoise3d as unifiednoise3d,
+	mx_fractal_noise_float_2d as fractal_noise_float_2d,
 	mx_fractal_noise_float as fractal_noise_float, mx_fractal_noise_vec2 as fractal_noise_vec2, mx_fractal_noise_vec3 as fractal_noise_vec3, mx_fractal_noise_vec4 as fractal_noise_vec4
-} from './lib/mx_noise.js';
+} from './MaterialXNoise.js';
+import { mx_rotate2d, mx_rotate3d } from './MaterialXCore.js';
 import { mx_hsvtorgb, mx_rgbtohsv } from './lib/mx_hsv.js';
 import { mx_srgb_texture_to_lin_rec709 } from './lib/mx_transform_color.js';
 
-import { float, bool, vec2, vec3, vec4, int, mat3, add, sub, mul, div, atan, mix, pow, smoothstep, step, floor, clamp, normalize, fract, abs, min, max, reflect, not as tslNot, xor as tslXor } from '../tsl/TSLBase.js';
+import { Fn, float, bool, vec2, vec3, vec4, int, mat3, add, sub, mul, div, atan, mix, pow, smoothstep, step, floor, clamp, normalize, fract, abs, min, max, reflect, not as tslNot, xor as tslXor } from '../tsl/TSLBase.js';
 import { uv } from '../accessors/UV.js';
+import { overloadingFn } from '../utils/FunctionOverloadingNode.js';
 import { bumpMap } from '../display/BumpMapNode.js';
-import { rotate } from '../utils/RotateNode.js';
 import { frameId, time } from '../utils/Timer.js';
 import { cameraPosition } from '../accessors/Camera.js';
 import { modelWorldMatrix, modelWorldMatrixInverse } from '../accessors/ModelNode.js';
@@ -634,27 +638,35 @@ export const mx_facingratio = (
 
 };
 
-export const mx_noise_float = ( texcoord = uv(), amplitude = 1, pivot = 0 ) => mx_perlin_noise_float( texcoord ).mul( amplitude ).add( pivot );
+export const mx_noise_float = ( texcoord = uv(), amplitude = 1, pivot = 0 ) => mx_perlin_noise_float( texcoord.convert( 'vec2|vec3' ) ).mul( amplitude ).add( pivot );
 //export const mx_noise_vec2 = ( texcoord = uv(), amplitude = 1, pivot = 0 ) => mx_perlin_noise_vec3( texcoord.convert( 'vec2|vec3' ) ).mul( amplitude ).add( pivot );
-export const mx_noise_vec3 = ( texcoord = uv(), amplitude = 1, pivot = 0 ) => mx_perlin_noise_vec3( texcoord ).mul( amplitude ).add( pivot );
-export const mx_noise_vec4 = ( texcoord = uv(), amplitude = 1, pivot = 0 ) => {
+export const mx_noise_vec3 = ( texcoord = uv(), amplitude = 1, pivot = 0 ) => mx_perlin_noise_vec3( texcoord.convert( 'vec2|vec3' ) ).mul( amplitude ).add( pivot );
+const mx_perlin_noise_vec4_0 = /*@__PURE__*/ Fn( ( [ p ] ) => vec4( mx_perlin_noise_vec3( p ), mx_perlin_noise_float( p.add( vec2( 19, 73 ) ) ) ), { p: 'vec2', return: 'vec4' } );
+const mx_perlin_noise_vec4_1 = /*@__PURE__*/ Fn( ( [ p ] ) => vec4( mx_perlin_noise_vec3( p ), mx_perlin_noise_float( p.add( vec3( 19, 73, 29 ) ) ) ), { p: 'vec3', return: 'vec4' } );
+const mx_perlin_noise_vec4 = /*@__PURE__*/ overloadingFn( [ mx_perlin_noise_vec4_0, mx_perlin_noise_vec4_1 ] );
 
-	texcoord = texcoord.convert( 'vec2|vec3' ); // overloading type
+export const mx_noise_vec4 = ( texcoord = uv(), amplitude = 1, pivot = 0 ) => mx_perlin_noise_vec4( texcoord.convert( 'vec2|vec3' ) ).mul( amplitude ).add( pivot );
 
-	const noise_vec4 = vec4( mx_perlin_noise_vec3( texcoord ), mx_perlin_noise_float( texcoord.add( vec2( 19, 73 ) ) ) );
+export const mx_cell_noise_vec3 = ( texcoord = uv() ) => cell_noise_vec3( texcoord.convert( 'vec2|vec3' ) );
+export const mx_worley_noise_float_2d = ( texcoord = uv(), jitter = 1, style = 0 ) => worley_noise_float_2d( texcoord, jitter, style );
+export const mx_worley_noise_float_3d = ( texcoord = uv(), jitter = 1, style = 0 ) => worley_noise_float_3d( texcoord, jitter, style );
+export const mx_unifiednoise2d = ( noiseType, texcoord = uv(), freq = vec2( 1, 1 ), offset = vec2( 0, 0 ), jitter = 1, outmin = 0, outmax = 1, clampoutput = false, octaves = 1, lacunarity = 2, diminish = .5, style = 0 ) => unifiednoise2d( noiseType, texcoord, freq, offset, jitter, outmin, outmax, clampoutput, octaves, lacunarity, diminish, style );
+export const mx_unifiednoise3d = ( noiseType, texcoord = uv(), freq = vec3( 1, 1, 1 ), offset = vec3( 0, 0, 0 ), jitter = 1, outmin = 0, outmax = 1, clampoutput = false, octaves = 1, lacunarity = 2, diminish = .5, style = 0 ) => unifiednoise3d( noiseType, texcoord, freq, offset, jitter, outmin, outmax, clampoutput, octaves, lacunarity, diminish, style );
 
-	return noise_vec4.mul( amplitude ).add( pivot );
+export const mx_worley_noise_float = ( texcoord = uv(), jitter = 1, style = 0 ) => mx_worley_noise_float_3d( texcoord.convert( 'vec2|vec3' ), jitter, style );
+export const mx_worley_noise_vec2 = ( texcoord = uv(), jitter = 1 ) => worley_noise_vec2( texcoord.convert( 'vec2|vec3' ), jitter, int( 1 ) );
+export const mx_worley_noise_vec3 = ( texcoord = uv(), jitter = 1, metric = 1 ) => worley_noise_vec3( texcoord.convert( 'vec2|vec3' ), jitter, int( metric ) );
+export const mx_worley_noise_vec3_style = ( texcoord = uv(), jitter = 1, style = 0, metric = 0 ) => worley_noise_vec3_style( texcoord.convert( 'vec2|vec3' ), jitter, int( style ), int( metric ) );
 
-};
+export const mx_cell_noise_float = ( texcoord = uv() ) => cell_noise_float( texcoord.convert( 'vec2|vec3' ) );
 
-export const mx_unifiednoise2d = ( noiseType, texcoord = uv(), freq = vec2( 1, 1 ), offset = vec2( 0, 0 ), jitter = 1, outmin = 0, outmax = 1, clampoutput = false, octaves = 1, lacunarity = 2, diminish = .5 ) => unifiednoise2d( noiseType, vec2( texcoord ), freq, offset, jitter, outmin, outmax, clampoutput, octaves, lacunarity, diminish );
-export const mx_unifiednoise3d = ( noiseType, texcoord = uv(), freq = vec3( 1, 1, 1 ), offset = vec3( 0, 0, 0 ), jitter = 1, outmin = 0, outmax = 1, clampoutput = false, octaves = 1, lacunarity = 2, diminish = .5 ) => unifiednoise3d( noiseType, vec3( texcoord ), freq, offset, jitter, outmin, outmax, clampoutput, octaves, lacunarity, diminish );
+export const mx_fractal_noise_float_2d = ( texcoord = uv(), octaves = 3, lacunarity = 2, diminish = .5, amplitude = 1 ) => fractal_noise_float_2d( texcoord, int( octaves ), lacunarity, diminish ).mul( amplitude );
+export const mx_fractal_noise_float = ( position = uv(), octaves = 3, lacunarity = 2, diminish = .5, amplitude = 1 ) => fractal_noise_float( position, int( octaves ), lacunarity, diminish ).mul( amplitude );
+export const mx_fractal_noise_vec2 = ( position = uv(), octaves = 3, lacunarity = 2, diminish = .5, amplitude = 1 ) => fractal_noise_vec2( position, int( octaves ), lacunarity, diminish ).mul( amplitude );
+export const mx_fractal_noise_vec3 = ( position = uv(), octaves = 3, lacunarity = 2, diminish = .5, amplitude = 1 ) => fractal_noise_vec3( position, int( octaves ), lacunarity, diminish ).mul( amplitude );
+export const mx_fractal_noise_vec4 = ( position = uv(), octaves = 3, lacunarity = 2, diminish = .5, amplitude = 1 ) => fractal_noise_vec4( position, int( octaves ), lacunarity, diminish ).mul( amplitude );
 
-export const mx_worley_noise_float = ( texcoord = uv(), jitter = 1, style = 0, metric = 0 ) => worley_noise_float( texcoord, jitter, int( style ), int( metric ) );
-export const mx_worley_noise_vec2 = ( texcoord = uv(), jitter = 1, style = 0, metric = 0 ) => worley_noise_vec2( texcoord, jitter, int( style ), int( metric ) );
-export const mx_worley_noise_vec3 = ( texcoord = uv(), jitter = 1, style = 0, metric = 0 ) => worley_noise_vec3( texcoord, jitter, int( style ), int( metric ) );
-
-export const mx_cell_noise_float = ( texcoord = uv() ) => cell_noise_float( texcoord );
+export { mx_hsvtorgb, mx_rgbtohsv, mx_srgb_texture_to_lin_rec709 };
 
 export const mx_randomfloat = ( input = float( 0 ), minval = float( 0 ), maxval = float( 1 ), seed = int( 0 ) ) => {
 
@@ -663,15 +675,6 @@ export const mx_randomfloat = ( input = float( 0 ), minval = float( 0 ), maxval 
 	return mix( minval, maxval, random );
 
 };
-
-export const mx_fractal_noise_float = ( position = uv(), octaves = 3, lacunarity = 2, diminish = .5, amplitude = 1 ) => fractal_noise_float( position, int( octaves ), lacunarity, diminish ).mul( amplitude );
-export const mx_fractal_noise_vec2 = ( position = uv(), octaves = 3, lacunarity = 2, diminish = .5, amplitude = 1 ) => fractal_noise_vec2( position, int( octaves ), lacunarity, diminish ).mul( amplitude );
-export const mx_fractal_noise_vec3 = ( position = uv(), octaves = 3, lacunarity = 2, diminish = .5, amplitude = 1 ) => fractal_noise_vec3( position, int( octaves ), lacunarity, diminish ).mul( amplitude );
-export const mx_fractal_noise_vec4 = ( position = uv(), octaves = 3, lacunarity = 2, diminish = .5, amplitude = 1 ) => fractal_noise_vec4( position, int( octaves ), lacunarity, diminish ).mul( amplitude );
-
-export { mx_hsvtorgb, mx_rgbtohsv, mx_srgb_texture_to_lin_rec709 };
-
-// === Moved from MaterialXLoader.js ===
 
 // Math ops
 export const mx_add = ( in1, in2 = float( 0 ) ) => add( in1, in2 );
@@ -750,35 +753,7 @@ export const mx_place2d = (
 
 export const mx_UsdTransform2d = ( input = uv(), rotation = float( 0 ), scale = vec2( 1, 1 ), translation = vec2( 0, 0 ) ) => mx_rotate2d( vec2( input ).mul( scale ), float( rotation ).negate() ).add( translation );
 
-export const mx_rotate2d = ( input, amount ) => {
-
-	input = vec2( input );
-	amount = float( amount );
-
-	const radians = amount.mul( Math.PI / 180.0 );
-	return rotate( input, radians );
-
-};
-
-export const mx_rotate3d = ( input, amount, axis ) => {
-
-	input = vec3( input );
-	amount = float( amount );
-	axis = vec3( axis );
-
-
-	const radians = amount.mul( Math.PI / 180.0 );
-	const nAxis = axis.normalize();
-	const cosA = radians.cos();
-	const sinA = radians.sin();
-	const oneMinusCosA = float( 1 ).sub( cosA );
-	const rot =
-		input.mul( cosA )
-			.add( nAxis.cross( input ).mul( sinA ) )
-			.add( nAxis.mul( nAxis.dot( input ) ).mul( oneMinusCosA ) );
-	return rot;
-
-};
+export { mx_rotate2d, mx_rotate3d };
 
 export const mx_heighttonormal = ( input, scale/*, texcoord*/ ) => {
 

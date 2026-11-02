@@ -1,4 +1,4 @@
-export const REVISION = '185.2-alpha.7';
+export const REVISION = '185.2-alpha.8';
 
 /**
  * Represents mouse buttons and interaction types in context of controls.
