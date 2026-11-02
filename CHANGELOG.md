@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [0.185.2-alpha.8] – 2026-11-02
+- Fix `viewportSafeUV()` using zero coordinates when its optional UV input is omitted.
 - Integrate the MaterialX loader with nodegraph implementations, TSL resolvers, editable uniforms, USD Preview Surface, Disney principled and bounded volumes.
 - Preserve the rendered object argument in material `onBeforeRender` callbacks.
 

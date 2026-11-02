@@ -37400,6 +37400,8 @@ const billboarding = /*@__PURE__*/ Fn( ( { position = null, horizontal = true, v
  */
 const viewportSafeUV = /*@__PURE__*/ Fn( ( [ uv = null ] ) => {
 
+	uv = uv || screenUV;
+
 	const depth = linearDepth();
 	const depthDiff = linearDepth( viewportDepthTexture( uv ) ).sub( depth );
 	const finalUV = depthDiff.lessThan( 0 ).select( screenUV, uv );
