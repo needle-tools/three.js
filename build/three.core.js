@@ -28821,6 +28821,16 @@ class FramebufferTexture extends Texture {
 
 	}
 
+	copy( source ) {
+
+		super.copy( source );
+
+		this.source = new Source( Object.assign( {}, source.image ) );
+
+		return this;
+
+	}
+
 }
 
 /**
