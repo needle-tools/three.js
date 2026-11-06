@@ -735,6 +735,46 @@ export default QUnit.module( 'Addons', () => {
 
 			} );
 
+			QUnit.test( 'converts color values and files from their color spaces', ( assert ) => {
+
+				const documentWith = ( graphColorSpace, valueColorSpace ) => `<?xml version="1.0"?>
+<materialx version="1.39">
+	<nodegraph name="test_graph"${ graphColorSpace ? ` colorspace="${ graphColorSpace }"` : '' }>
+		<constant name="value" type="color3">
+			<input name="value" type="color3" value="0.5, 0.25, 0.75"${ valueColorSpace ? ` colorspace="${ valueColorSpace }"` : '' } />
+		</constant>
+		<output name="out" type="color3" nodename="value" />
+	</nodegraph>
+</materialx>`;
+				const countNodes = ( root ) => {
+
+					let count = 0;
+					hasNode( root, () => {
+
+						count ++;
+						return false;
+
+					} );
+					return count;
+
+				};
+
+				const plain = new MaterialXLoader().parse( documentWith( null, null ) );
+				const linear = new MaterialXLoader().parse( documentWith( null, 'lin_rec709_scene' ) );
+				const own = new MaterialXLoader().parse( documentWith( null, 'srgb_p3d65_scene' ) );
+				const inherited = new MaterialXLoader().parse( documentWith( 'acescg', null ) );
+				const plainCount = countNodes( plain.materials.test_graph.colorNode );
+
+				for ( const result of [ plain, linear, own, inherited ] ) assert.strictEqual( result.log.length, 0, 'Known color spaces translate without log entries.' );
+				assert.strictEqual( countNodes( linear.materials.test_graph.colorNode ), plainCount, 'lin_rec709 values are used as they are.' );
+				assert.true( countNodes( own.materials.test_graph.colorNode ) > plainCount, 'A value is converted from its own color space.' );
+				assert.true( countNodes( inherited.materials.test_graph.colorNode ) > plainCount, 'A value is converted from the color space of its node graph.' );
+
+				const unknown = new MaterialXLoader().parse( documentWith( null, 'not_a_color_space' ), { throwOnErrors: false } );
+				assert.true( unknown.log.some( ( entry ) => entry.code === 'invalid-value' && entry.message.includes( 'not_a_color_space' ) ), 'Unknown color spaces are reported.' );
+
+			} );
+
 			QUnit.test( 'supports hsvadjust, facingratio and triplanarprojection', ( assert ) => {
 
 				const nodes = [

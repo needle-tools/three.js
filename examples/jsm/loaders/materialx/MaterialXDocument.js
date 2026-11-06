@@ -24,7 +24,6 @@ import {
 	mat4,
 	element,
 	mx_transform_uv,
-	mx_srgb_texture_to_lin_rec709,
 	positionLocal,
 	positionWorld,
 	normalLocal,
@@ -37,6 +36,7 @@ import {
 } from 'three/tsl';
 
 import { MaterialXLogCodes } from './MaterialXLog.js';
+import { getColorSpaceTransform, isKnownColorSpace } from './MaterialXColorManagement.js';
 import { createMaterialXCompileRegistry, compileNodeFromRegistry } from './compile/MaterialXCompileRegistry.js';
 import { parseMaterialXNodeTree, parseMaterialXText } from './parse/MaterialXParser.js';
 import { getSurfaceMapper } from './MaterialXSurfaceMappings.js';
@@ -44,10 +44,6 @@ import { MtlXLibrary } from './MaterialXNodeLibrary.js';
 import { resolveNodeDef } from './MaterialXNodeDefs.js';
 import { mxHextileCoord, mxHextileComputeBlendWeights } from './MaterialXHextile.js';
 import { resolveTextureAddressMode, TEXTURE_ADDRESS_MODE_WRAPPING, toBooleanNode } from './MaterialXUtils.js';
-
-const colorSpaceLib = {
-	mx_srgb_texture_to_lin_rec709,
-};
 
 const DEFAULT_DOCUMENT_COLOR_SPACE = 'lin_rec709';
 const IDENTITY_MAT3_VALUES = [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ];
@@ -424,11 +420,24 @@ class MaterialXNode {
 
 	getColorSpaceNode() {
 
-		const csSource = this.getValueInput().getAttribute( 'colorspace' ) || this.getAttribute( 'colorspace' );
-		const csTarget = this.getRoot().getAttribute( 'colorspace' );
-		if ( ! csSource || ! csTarget ) return null;
-		const nodeName = `mx_${csSource}_to_${csTarget}`;
-		return colorSpaceLib[ nodeName ] || null;
+		return this.getColorSpaceTransform( this.getValueInput().getRecursiveAttribute( 'colorspace' ) );
+
+	}
+
+	getColorSpaceTransform( name ) {
+
+		if ( name && ! isKnownColorSpace( name ) ) {
+
+			this.materialX.log.add(
+				MaterialXLogCodes.INVALID_VALUE,
+				`Unsupported MaterialX color space "${ name }"; its values are used without conversion.`,
+				this.name,
+			);
+			return null;
+
+		}
+
+		return getColorSpaceTransform( name );
 
 	}
 
@@ -604,6 +613,13 @@ class MaterialXNode {
 		if ( this.isConst ) {
 
 			node = createValueNode( type, this.getValue() );
+
+			if ( type === 'color3' || type === 'color4' ) {
+
+				const transform = this.getColorSpaceTransform( this.getRecursiveAttribute( 'colorspace' ) );
+				if ( transform ) node = transform( node );
+
+			}
 
 		} else if ( this.hasReference ) {
 
