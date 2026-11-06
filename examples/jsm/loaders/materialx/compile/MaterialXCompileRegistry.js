@@ -112,20 +112,21 @@ const applyTextureAddressModeDefault = ( node, uvNode, addressModes, defaultNode
 
 };
 
-const sampleTexture = ( textureFile, uvNode, compileContext, fallback, addressModes = null, defaultNode = fallback ) => {
-
-	if ( ! textureFile ) return fallback;
-
-	const textureUvNode = compileContext.mxFromBottomLeftUvSpace( uvNode );
-	const sampled = texture( textureFile, textureUvNode );
-	return addressModes ? applyTextureAddressModeDefault( sampled, textureUvNode, addressModes, defaultNode ) : sampled;
-
-};
-
 const applyTextureColorSpace = ( node, file ) => {
 
 	const colorSpaceNode = file ? file.getColorSpaceNode() : null;
 	return colorSpaceNode ? colorSpaceNode( node ) : node;
+
+};
+
+// The default has its own color space, so it is selected after the file's conversion.
+const sampleTexture = ( textureFile, uvNode, compileContext, fallback, addressModes = null, defaultNode = fallback, file = null ) => {
+
+	if ( ! textureFile ) return fallback;
+
+	const textureUvNode = compileContext.mxFromBottomLeftUvSpace( uvNode );
+	const sampled = applyTextureColorSpace( texture( textureFile, textureUvNode ), file );
+	return addressModes ? applyTextureAddressModeDefault( sampled, textureUvNode, addressModes, defaultNode ) : sampled;
 
 };
 
@@ -337,8 +338,7 @@ const compileImageLikeNode = ( nodeX, compileContext ) => {
 
 	const { file, uvNode, textureFile, defaultNode, addressModes } = getTextureInputs( nodeX );
 	const textureDefault = toTextureDefaultNode( defaultNode, nodeX.type );
-	const node = sampleTexture( textureFile, uvNode, compileContext, textureDefault, addressModes, textureDefault );
-	return applyTextureColorSpace( node, file );
+	return sampleTexture( textureFile, uvNode, compileContext, textureDefault, addressModes, textureDefault, file );
 
 };
 
@@ -355,8 +355,7 @@ const compileTiledImageNode = ( nodeX, compileContext ) => {
 	const uvTiling = nodeX.getNodeByName( 'uvtiling' );
 	const uvOffset = nodeX.getNodeByName( 'uvoffset' );
 	const transformedUv = compileContext.mxTransformUv( uvTiling, uvOffset, uvNode );
-	const node = sampleTexture( textureFile, transformedUv, compileContext, textureDefault, addressModes, textureDefault );
-	return applyTextureColorSpace( node, file );
+	return sampleTexture( textureFile, transformedUv, compileContext, textureDefault, addressModes, textureDefault, file );
 
 };
 
@@ -386,7 +385,7 @@ const compileTriplanarProjectionNode = ( nodeX, compileContext ) => {
 
 		const file = nodeX.getChildByName( fileInput );
 		const textureFile = file && file.getValue() !== '' ? file.getTexture() : null;
-		const sample = applyTextureColorSpace( sampleTexture( textureFile, texcoord, compileContext, textureDefault ), file );
+		const sample = sampleTexture( textureFile, texcoord, compileContext, textureDefault, null, textureDefault, file );
 		return fourChannels ? sample : toVec3Channels( sample );
 
 	} );
@@ -618,7 +617,7 @@ const compileGltfTextureNode = ( nodeX, compileContext, category ) => {
 
 	}
 
-	const node = applyTextureColorSpace( sampleTexture( textureFile, transformedUv, compileContext, fallback, addressModes, fallback ), file );
+	const node = sampleTexture( textureFile, transformedUv, compileContext, fallback, addressModes, fallback, file );
 
 	if ( category === 'gltf_normalmap' ) {
 
@@ -672,8 +671,7 @@ const compileGltfColorImageNode = ( nodeX, out, compileContext ) => {
 
 	const defaultInput = nodeX.getNodeByName( 'default' );
 	const fallback = vec4( defaultInput );
-	const sampled = sampleTexture( textureFile, transformedUv, compileContext, fallback, addressModes, fallback );
-	const converted = applyTextureColorSpace( sampled, file );
+	const converted = sampleTexture( textureFile, transformedUv, compileContext, fallback, addressModes, fallback, file );
 	const color = nodeX.getNodeByName( 'color' );
 	const geomcolor = nodeX.getNodeByName( 'geomcolor' );
 	const modulated = mul( mul( converted, color ), geomcolor );
