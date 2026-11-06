@@ -125,7 +125,8 @@ const sampleTexture = ( textureFile, uvNode, compileContext, fallback, addressMo
 	if ( ! textureFile ) return fallback;
 
 	const textureUvNode = compileContext.mxFromBottomLeftUvSpace( uvNode );
-	const sampled = applyTextureColorSpace( texture( textureFile, textureUvNode ), file );
+	let sampled = applyTextureColorSpace( texture( textureFile, textureUvNode ), file );
+	if ( textureFile.materialXLoadedNode ) sampled = textureFile.materialXLoadedNode.select( sampled, defaultNode );
 	return addressModes ? applyTextureAddressModeDefault( sampled, textureUvNode, addressModes, defaultNode ) : sampled;
 
 };

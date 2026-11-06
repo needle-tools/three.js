@@ -33,6 +33,7 @@ import {
 	tangentWorld,
 	bitangentLocal,
 	bitangentWorld,
+	uniform,
 } from 'three/tsl';
 
 import { MaterialXLogCodes } from './MaterialXLog.js';
@@ -512,6 +513,8 @@ class MaterialXNode {
 		}
 
 		const textureNode = texture( new Texture() );
+		// Image nodes return their default until the file has loaded.
+		textureNode.materialXLoadedNode = uniform( false );
 		textureNode.value.wrapS = TEXTURE_ADDRESS_MODE_WRAPPING[ addressModes.u ];
 		textureNode.value.wrapT = TEXTURE_ADDRESS_MODE_WRAPPING[ addressModes.v ];
 		textureNode.value.flipY = false;
@@ -543,6 +546,7 @@ class MaterialXNode {
 				}
 
 				textureNode.value.needsUpdate = true;
+				textureNode.materialXLoadedNode.value = true;
 				resolveLoad();
 
 			}, undefined, () => {
