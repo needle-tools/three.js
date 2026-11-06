@@ -1,4 +1,6 @@
 import {
+	NoColorSpace,
+	SRGBColorSpace,
 	Texture,
 	ImageLoader,
 	ImageBitmapLoader,
@@ -547,6 +549,9 @@ class MaterialXNode {
 					// bottom-first (flipY = false), so invert the loader's orientation to match.
 					// flipY has no meaning for compressed textures.
 					if ( imageData.isCompressedTexture !== true ) textureNode.value.flipY = ! imageData.flipY;
+
+					// The file's colorspace is applied in the shader, so sRGB must not also be decoded on the GPU.
+					if ( textureNode.value.colorSpace === SRGBColorSpace ) textureNode.value.colorSpace = NoColorSpace;
 
 				} else {
 

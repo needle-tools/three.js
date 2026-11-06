@@ -1,4 +1,4 @@
-import { CustomBlending, OneFactor, OneMinusSrcAlphaFactor, ClampToEdgeWrapping, CompressedTexture, DataTexture, HalfFloatType, LinearFilter, LinearSRGBColorSpace, LoadingManager, NearestFilter, RedFormat, RepeatWrapping, RGB_S3TC_DXT1_Format, SRGBColorSpace } from 'three';
+import { NoColorSpace, CustomBlending, OneFactor, OneMinusSrcAlphaFactor, ClampToEdgeWrapping, CompressedTexture, DataTexture, HalfFloatType, LinearFilter, LinearSRGBColorSpace, LoadingManager, NearestFilter, RedFormat, RepeatWrapping, RGB_S3TC_DXT1_Format, SRGBColorSpace } from 'three';
 import { mul, vec3 } from 'three/tsl';
 import { MaterialXLoader } from '../../../../examples/jsm/loaders/MaterialXLoader.js';
 import { MtlXLibrary } from '../../../../examples/jsm/loaders/materialx/MaterialXNodeLibrary.js';
@@ -1191,6 +1191,29 @@ export default QUnit.module( 'Addons', () => {
 
 			} );
 
+			QUnit.test( 'samples sRGB handler textures as stored, so the file color space applies once', async ( assert ) => {
+
+				const manager = new LoadingManager();
+				const textureLoader = new ControlledTextureLoader( manager );
+				manager.addHandler( /\.test$/i, textureLoader );
+
+				const documentURL = createDocumentURL();
+				const loadPromise = new MaterialXLoader( manager ).loadAsync( documentURL );
+				await textureLoader.started;
+
+				const source = new DataTexture( new Uint8Array( 4 ), 1, 1 );
+				source.colorSpace = SRGBColorSpace;
+				textureLoader.succeed( source );
+
+				const result = await loadPromise;
+				URL.revokeObjectURL( documentURL );
+
+				const loaded = findTexture( result.materials.test_material, source.image );
+				assert.strictEqual( loaded.colorSpace, NoColorSpace, 'The GPU does not decode the texture.' );
+				assert.strictEqual( source.colorSpace, SRGBColorSpace, 'The handler texture is unchanged.' );
+
+			} );
+
 			QUnit.test( 'shares loaded textures by URI and address modes without modifying handler results', async ( assert ) => {
 
 				const manager = new LoadingManager();
@@ -1262,7 +1285,7 @@ export default QUnit.module( 'Addons', () => {
 				assert.strictEqual( loaded.format, RGB_S3TC_DXT1_Format, 'The compressed format is preserved.' );
 				assert.deepEqual( loaded.mipmaps, mipmaps, 'Every mip level retains its dimensions and compressed data.' );
 				assert.strictEqual( loaded.minFilter, source.minFilter, 'The mipmap filter is preserved.' );
-				assert.strictEqual( loaded.colorSpace, SRGBColorSpace, 'The color space is preserved.' );
+				assert.strictEqual( loaded.colorSpace, NoColorSpace, 'sRGB texels are sampled as stored; the file color space converts them.' );
 				assert.false( loaded.generateMipmaps, 'Compressed mipmaps are not regenerated.' );
 				assert.false( loaded.flipY, 'Compressed textures are not flipped.' );
 				assert.true( loaded.clone().isCompressedTexture, 'Cloning preserves compressed upload behavior.' );
