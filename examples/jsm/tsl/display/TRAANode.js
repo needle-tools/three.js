@@ -1,5 +1,5 @@
 import { HalfFloatType, Vector2, RenderTarget, RendererUtils, QuadMesh, NodeMaterial, TempNode, NodeUpdateType, Matrix4, DepthTexture, FloatType } from 'three/webgpu';
-import { float, Fn, max, texture, uniform, uv, vec2, convertToTexture, passTexture, velocity, ivec2, mix, context, OnBeforeRenderPipeline, OnAfterRenderPipeline } from 'three/tsl';
+import { float, Fn, max, texture, uniform, uv, vec2, convertToTexture, passTexture, velocity, mix, context, OnBeforeRenderPipeline, OnAfterRenderPipeline } from 'three/tsl';
 import { clipAABB, computeHaltonOffsets, flickerReduction, sampleCurrentDepth, samplePreviousDepth } from '../utils/TAAUtils.js';
 
 const _quadMesh = /*@__PURE__*/ new QuadMesh();
@@ -501,7 +501,8 @@ class TRAANode extends TempNode {
 			for ( const [ x, y ] of offsets ) {
 
 				// Use max() to prevent NaN values from propagating.
-				const neighbor = this.beautyNode.offset( ivec2( x, y ) ).load( positionTexel ).max( 0 );
+				// texelFetch outside the texture is undefined in GLSL
+				const neighbor = this.beautyNode.load( positionTexel.add( vec2( x, y ) ).clamp( vec2( 0 ), vec2( this.beautyNode.size() ).sub( 1 ) ) ).max( 0 );
 				moment1.addAssign( neighbor );
 				moment2.addAssign( neighbor.pow2() );
 

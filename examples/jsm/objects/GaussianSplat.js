@@ -15,6 +15,7 @@ import {
 
 import {
 	Discard,
+	EPSILON,
 	Fn,
 	If,
 	atan,

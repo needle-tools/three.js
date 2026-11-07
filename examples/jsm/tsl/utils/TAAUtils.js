@@ -95,7 +95,8 @@ export const sampleCurrentDepth = Fn( ( [ depthNode, positionTexel, cameraNearFa
 
 		for ( let y = - 1; y <= 1; ++ y ) {
 
-			const neighbor = positionTexel.add( vec2( x, y ) ).toVar();
+			// texelFetch outside the texture is undefined in GLSL
+			const neighbor = positionTexel.add( vec2( x, y ) ).clamp( vec2( 0 ), vec2( depthNode.size() ).sub( 1 ) ).toVar();
 			let depth = depthNode.load( neighbor ).r;
 			if ( builder.renderer.reversedDepthBuffer ) depth = depth.oneMinus();
 			if ( builder.renderer.logarithmicDepthBuffer ) depth = logarithmicToPerspectiveDepth( depth, cameraNearFar );
