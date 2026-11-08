@@ -34,18 +34,18 @@ class DotScreenNode extends TempNode {
 		this.inputNode = inputNode;
 
 		/**
-		 * The rotation of the effect in radians.
+		 * The node that represents the rotation of the effect in radians.
 		 *
 		 * @type {Node<float>}
 		 */
-		this.angle = nodeObject( angle );
+		this.angle = angle.isNode ? angle : uniform( angle );
 
 		/**
-		 * The scale of the effect. A higher value means smaller dots.
+		 * The node that represents the scale of the effect. A higher value means smaller dots.
 		 *
 		 * @type {Node<float>}
 		 */
-		this.scale = nodeObject( scale );
+		this.scale = scale.isNode ? scale : uniform( scale );
 
 	}
 

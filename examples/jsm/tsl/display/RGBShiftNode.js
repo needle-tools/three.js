@@ -39,14 +39,14 @@ class RGBShiftNode extends TempNode {
 		 *
 		 * @type {Node<float>}
 		 */
-		this.amount = nodeObject( amount );
+		this.amount = amount.isNode ? amount : uniform( amount );
 
 		/**
 		 * Defines in which direction colors are shifted.
 		 *
 		 * @type {Node<float>}
 		 */
-		this.angle = nodeObject( angle );
+		this.angle = angle.isNode ? angle : uniform( angle );
 
 	}
 

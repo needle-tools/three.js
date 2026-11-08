@@ -35,11 +35,20 @@ const _startEvent = { type: 'start' };
  */
 const _endEvent = { type: 'end' };
 
+/**
+ * Fires when all movements have finished, including potential damping.
+ *
+ * @event OrbitControls#endMovement
+ * @type {Object}
+ */
+const _endMovementEvent = { type: 'endMovement' };
+
 const _ray = new Ray();
 const _plane = new Plane();
 const _TILT_LIMIT = Math.cos( 70 * MathUtils.DEG2RAD );
 
 const _v = new Vector3();
+const _p = new Vector3();
 const _twoPI = 2 * Math.PI;
 
 const _STATE = {
@@ -411,6 +420,7 @@ class OrbitControls extends Controls {
 		this._sphericalDelta = new Spherical();
 
 		this._scale = 1;
+		this._currentScale = 1;
 		this._panOffset = new Vector3();
 
 		this._rotateStart = new Vector2();
@@ -433,6 +443,8 @@ class OrbitControls extends Controls {
 		this._pointerPositions = {};
 
 		this._controlActive = false;
+		this._lastIsDamping = false;
+		this._isDamping = false;
 
 		// event listeners
 
@@ -630,6 +642,7 @@ class OrbitControls extends Controls {
 		this.update();
 
 		this.state = _STATE.NONE;
+		this._isDamping = false;
 
 	}
 
@@ -696,7 +709,10 @@ class OrbitControls extends Controls {
 
 	update( deltaTime = null ) {
 
-		const position = this.object.position;
+		// Needle: if damping is enabled, update is managed externally, so we don't want to do it here.
+		if ( this.enableDamping && deltaTime === null ) return;
+
+		const position = this.object.getWorldPosition( this.object.position );
 
 		_v.copy( position ).sub( this.target );
 
@@ -773,6 +789,17 @@ class OrbitControls extends Controls {
 		this.target.add( this.cursor );
 
 		let zoomChanged = false;
+
+		if ( this.enableDamping ) {
+
+			this._currentScale = MathUtils.lerp( this._currentScale, this._scale, this.dampingFactor );
+
+		} else {
+
+			this._currentScale = this._scale;
+
+		}
+
 		// adjust the camera position based on zoom only if we're not zooming to the cursor or if it's an ortho camera
 		// we adjust zoom later in these cases
 		if ( this.zoomToCursor && this._performCursorZoom || this.object.isOrthographicCamera ) {
@@ -782,8 +809,8 @@ class OrbitControls extends Controls {
 		} else {
 
 			const prevRadius = this._spherical.radius;
-			this._spherical.radius = this._clampDistance( this._spherical.radius * this._scale );
-			zoomChanged = prevRadius != this._spherical.radius;
+			this._spherical.radius = this._clampDistance( this._spherical.radius * this._currentScale );
+			zoomChanged = Math.abs( prevRadius - this._spherical.radius ) > _EPS * 100;
 
 		}
 
@@ -793,6 +820,7 @@ class OrbitControls extends Controls {
 		_v.applyQuaternion( this._quatInverse );
 
 		position.copy( this.target ).add( _v );
+		this.object.parent ? this.object.parent.worldToLocal( position ) : this.object.position.copy( position );
 
 		this.object.lookAt( this.target );
 
@@ -820,13 +848,13 @@ class OrbitControls extends Controls {
 				// move the camera down the pointer ray
 				// this method avoids floating point error
 				const prevRadius = _v.length();
-				newRadius = this._clampDistance( prevRadius * this._scale );
+				newRadius = this._clampDistance( prevRadius * this._currentScale );
 
 				const radiusDelta = prevRadius - newRadius;
 				this.object.position.addScaledVector( this._dollyDirection, radiusDelta );
 				this.object.updateMatrixWorld();
 
-				zoomChanged = !! radiusDelta;
+				zoomChanged = Math.abs( radiusDelta ) > _EPS;
 
 			} else if ( this.object.isOrthographicCamera ) {
 
@@ -835,10 +863,10 @@ class OrbitControls extends Controls {
 				mouseBefore.unproject( this.object );
 
 				const prevZoom = this.object.zoom;
-				this.object.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.object.zoom / this._scale ) );
+				this.object.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.object.zoom / this._currentScale ) );
 				this.object.updateProjectionMatrix();
 
-				zoomChanged = prevZoom !== this.object.zoom;
+				zoomChanged = Math.abs( prevZoom - this.object.zoom ) > _EPS;
 
 				const mouseAfter = new Vector3( this._mouse.x, this._mouse.y, 0 );
 				mouseAfter.unproject( this.object );
@@ -894,7 +922,7 @@ class OrbitControls extends Controls {
 			const prevZoom = this.object.zoom;
 			this.object.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.object.zoom / this._scale ) );
 
-			if ( prevZoom !== this.object.zoom ) {
+			if ( Math.abs( prevZoom - this.object.zoom ) > _EPS ) {
 
 				this.object.updateProjectionMatrix();
 				zoomChanged = true;
@@ -904,7 +932,6 @@ class OrbitControls extends Controls {
 		}
 
 		this._scale = 1;
-		this._performCursorZoom = false;
 
 		// update condition is:
 		// min(camera displacement, camera rotation in radians)^2 > EPS
@@ -921,9 +948,35 @@ class OrbitControls extends Controls {
 			this._lastQuaternion.copy( this.object.quaternion );
 			this._lastTargetPosition.copy( this.target );
 
+			this._lastIsDamping = true;
+			this._isDamping = true;
+
 			return true;
 
+		} else {
+
+			this._lastPosition.copy( this.object.position );
+			this._lastQuaternion.copy( this.object.quaternion );
+			this._lastTargetPosition.copy( this.target );
+
+			if ( this.state === _STATE.NONE ) {
+
+				this._lastIsDamping = this._isDamping;
+				this._isDamping = false;
+
+			}
+
 		}
+
+		if ( this._lastIsDamping && ! this._isDamping && this.state === _STATE.NONE ) {
+
+			this._isDamping = false;
+			this._lastIsDamping = false;
+			this.dispatchEvent( _endMovementEvent );
+
+		}
+
+		this._performCursorZoom = false;
 
 		return false;
 
@@ -998,22 +1051,21 @@ class OrbitControls extends Controls {
 		if ( this.object.isPerspectiveCamera ) {
 
 			// perspective
-			const position = this.object.position;
-			_v.copy( position ).sub( this.target );
+			this.object.getWorldPosition( _v ).sub( this.target );
 			let targetDistance = _v.length();
 
 			// half of the fov is center to top of screen
 			targetDistance *= Math.tan( ( this.object.fov / 2 ) * Math.PI / 180.0 );
 
 			// we use only clientHeight here so aspect ratio does not distort speed
-			this._panLeft( 2 * deltaX * targetDistance / element.clientHeight, this.object.matrix );
-			this._panUp( 2 * deltaY * targetDistance / element.clientHeight, this.object.matrix );
+			this._panLeft( 2 * deltaX * targetDistance / element.clientHeight, this.object.matrixWorld );
+			this._panUp( 2 * deltaY * targetDistance / element.clientHeight, this.object.matrixWorld );
 
 		} else if ( this.object.isOrthographicCamera ) {
 
 			// orthographic
-			this._panLeft( deltaX * ( this.object.right - this.object.left ) / this.object.zoom / element.clientWidth, this.object.matrix );
-			this._panUp( deltaY * ( this.object.top - this.object.bottom ) / this.object.zoom / element.clientHeight, this.object.matrix );
+			this._panLeft( deltaX * ( this.object.right - this.object.left ) / this.object.zoom / element.clientWidth, this.object.matrixWorld );
+			this._panUp( deltaY * ( this.object.top - this.object.bottom ) / this.object.zoom / element.clientHeight, this.object.matrixWorld );
 
 		} else {
 

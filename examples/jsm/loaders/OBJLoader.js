@@ -15,6 +15,7 @@ import {
 	Color,
 	SRGBColorSpace
 } from 'three';
+import { MTLLoader } from './MTLLoader.js';
 
 // o object_name | g group_name
 const _object_pattern = /^[og]\s*(.+)?/;
@@ -468,6 +469,7 @@ class OBJLoader extends Loader {
 		 * @default null
 		 */
 		this.materials = null;
+		this.materialsLoader = new MTLLoader( manager );
 
 	}
 
@@ -488,11 +490,41 @@ class OBJLoader extends Loader {
 		loader.setPath( this.path );
 		loader.setRequestHeader( this.requestHeader );
 		loader.setWithCredentials( this.withCredentials );
-		loader.load( url, function ( text ) {
+		loader.load( url, async function ( text ) {
 
 			try {
 
-				onLoad( scope.parse( text ) );
+				const state = scope.parse( text, true );
+
+
+				for ( let i = 0, l = state.materialLibraries.length; i < l; i ++ ) {
+
+					const mtlfile = state.materialLibraries[ i ];
+
+					// Safety check: skip if mtlfile is not a valid string
+					if ( !mtlfile || typeof mtlfile !== 'string' || mtlfile.trim() === '' ) {
+						console.warn( 'THREE.OBJLoader: Invalid or empty material library reference, skipping.' );
+						continue;
+					}
+
+					const newUrl = url.startsWith("blob:")
+						? (url + "/" + mtlfile)
+						: new URL(mtlfile, url);
+
+					console.debug( 'Loading MTL file: ' + newUrl );
+
+					await (new Promise((resolve, reject) => {
+						scope.materialsLoader.load( newUrl.toString(), creator => {
+
+							scope.setMaterials( creator );
+							resolve();
+
+						}, null, reject );
+					}));
+
+				}
+
+				onLoad( scope.createObjects( state ) );
 
 			} catch ( e ) {
 
@@ -514,6 +546,14 @@ class OBJLoader extends Loader {
 
 	}
 
+	setMTLLoader ( loader ) {
+
+		this.materialsLoader = loader;
+
+		return this;
+
+	}
+
 	/**
 	 * Sets the material creator for this OBJ. This object is loaded via {@link MTLLoader}.
 	 *
@@ -532,9 +572,10 @@ class OBJLoader extends Loader {
 	 * Parses the given OBJ data and returns the resulting group.
 	 *
 	 * @param {string} text - The raw OBJ data as a string.
+	 * @param {boolean} parseOnly - If true, only parse without creating meshes.
 	 * @return {Group} The parsed OBJ.
 	 */
-	parse( text ) {
+	parse( text, parseOnly = false ) {
 
 		const state = new ParserState();
 
@@ -765,6 +806,16 @@ class OBJLoader extends Loader {
 
 		state.finalize();
 
+		// If the method is called from the load() function we do first load materials before creating the objects
+		// This is to not modify the functionality of parse() e.g. by making it async
+		if ( parseOnly ) return state;
+
+		return this.createObjects(state);
+	}
+
+
+	createObjects ( state ) {
+
 		const container = new Group();
 		container.materialLibraries = [].concat( state.materialLibraries );
 
@@ -947,9 +998,7 @@ class OBJLoader extends Loader {
 		}
 
 		return container;
-
 	}
-
 }
 
 export { OBJLoader };

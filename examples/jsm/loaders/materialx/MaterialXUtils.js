@@ -1,11 +1,30 @@
 import {
+	RepeatWrapping,
+	ClampToEdgeWrapping,
+	MirroredRepeatWrapping,
+} from 'three/webgpu';
+
+import {
+	Fn,
+	positionLocal,
+	positionWorld,
 	bool,
 	element,
 	float,
 	vec3,
 } from 'three/tsl';
 
+// Volume coefficients are evaluated at ray samples rather than mesh vertices.
+const materialXPositionLocal = Fn( ( _inputs, builder ) => builder.context.materialXPositionLocal || positionLocal )();
+const materialXPositionWorld = Fn( ( _inputs, builder ) => builder.context.materialXPositionWorld || positionWorld )();
+
 const BOOLEAN_OPERATOR_OPS = new Set( [ '&&', '||', '^^', '!', '==', '!=', '<', '>', '<=', '>=' ] );
+const TEXTURE_ADDRESS_MODE_WRAPPING = {
+	constant: ClampToEdgeWrapping,
+	clamp: ClampToEdgeWrapping,
+	periodic: RepeatWrapping,
+	mirror: MirroredRepeatWrapping,
+};
 
 function normalizeSpaceName( value, fallback = 'world' ) {
 
@@ -48,10 +67,25 @@ function toVec3Channels( input ) {
 
 }
 
+// Normalizes a raw `*addressmode` attribute value, defaulting to `'periodic'`
+// when unset and returning `null` when the value isn't a recognized mode.
+function resolveTextureAddressMode( value ) {
+
+	if ( typeof value !== 'string' || value === '' ) return 'periodic';
+
+	const mode = value.trim().toLowerCase();
+	return mode in TEXTURE_ADDRESS_MODE_WRAPPING ? mode : null;
+
+}
+
 export {
+	materialXPositionLocal,
+	materialXPositionWorld,
 	getComponentCountForType,
 	isBooleanNode,
 	normalizeSpaceName,
+	resolveTextureAddressMode,
+	TEXTURE_ADDRESS_MODE_WRAPPING,
 	toBooleanNode,
 	toVec3Channels,
 };

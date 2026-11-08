@@ -22,6 +22,7 @@ import {
 	Mesh,
 	MeshLambertMaterial,
 	MeshPhongMaterial,
+	MeshStandardMaterial,
 	NumberKeyframeTrack,
 	Object3D,
 	PerspectiveCamera,
@@ -183,6 +184,12 @@ class FBXLoader extends Loader {
 		const textureLoader = new TextureLoader( this.manager ).setPath( this.resourcePath || path ).setCrossOrigin( this.crossOrigin );
 
 		return new FBXTreeParser( textureLoader, this.manager, this.trimAnimationClips ).parse( fbxTree );
+
+	}
+
+	getFbxTree() {
+
+		return fbxTree;
 
 	}
 
@@ -913,9 +920,9 @@ class FBXTreeParser {
 			const modelNode = modelNodes[ model.ID ];
 			scope.setLookAtProperties( model, modelNode );
 
-			const parentConnections = connections.get( model.ID ).parents;
+			const parentConnections = connections.get( model.ID )?.parents;
 
-			parentConnections.forEach( function ( connection ) {
+			parentConnections?.forEach( function ( connection ) {
 
 				const parent = modelMap.get( connection.ID );
 				if ( parent !== undefined ) parent.add( model );
@@ -948,6 +955,16 @@ class FBXTreeParser {
 
 				node.applyMatrix4( transform );
 				node.updateWorldMatrix();
+
+			}
+
+			if (node.isSkinnedMesh) {
+
+				// Compute bounding sphere
+				node.computeBoundingBox();
+				node.computeBoundingSphere();
+				node.boundingBox.expandByScalar( 3 );
+				node.boundingSphere.radius *= 3;
 
 			}
 
@@ -1105,7 +1122,7 @@ class FBXTreeParser {
 
 		let bone = null;
 
-		relationships.parents.forEach( function ( parent ) {
+		relationships?.parents.forEach( function ( parent ) {
 
 			for ( const ID in skeletons ) {
 
@@ -1441,7 +1458,7 @@ class FBXTreeParser {
 
 			if ( needsDefaultMaterial ) {
 
-				const defaultMaterial = new MeshPhongMaterial();
+				const defaultMaterial = new MeshStandardMaterial();
 				materials.push( defaultMaterial );
 
 			}
@@ -2249,6 +2266,11 @@ class GeometryParser {
 			// so that we don't end up with an array of 0 triangles for the faces not participating in morph.
 			triangles = ShapeUtils.triangulateShape( triangulationInput, [] );
 
+		} else if ( faceLength === 2 ) {
+
+			console.warn( 'THREE.FBXLoader: Edge topology detected. This is currently not supported. The resulting mesh will not be correct.' );
+			triangles = [[ 0, 1, 2 ]];
+
 		} else {
 
 			// Regular triangle, skip earcut triangulation step
@@ -2501,6 +2523,8 @@ class GeometryParser {
 
 	// Parse Vertex Colors from FBXTree.Objects.Geometry.LayerElementColor if it exists
 	parseVertexColors( ColorNode ) {
+
+		if ( !ColorNode.Colors ) return undefined;
 
 		const mappingType = ColorNode.MappingInformationType;
 		const referenceType = ColorNode.ReferenceInformationType;

@@ -82,7 +82,7 @@ class MaterialXLoader extends Loader {
 	 */
 	load( url, onLoad, onProgress, onError, options = {} ) {
 
-		const _onError = function ( e ) {
+		const _onError = ( e ) => {
 
 			if ( onError ) {
 
@@ -94,7 +94,14 @@ class MaterialXLoader extends Loader {
 
 			}
 
+			this.manager.itemError( url );
+			this.manager.itemEnd( url );
+
 		};
+
+		// Keep the LoadingManager active until parsing and dependent resources
+		// have finished, matching the lifecycle used by GLTFLoader.
+		this.manager.itemStart( url );
 
 		new FileLoader( this.manager )
 			.setPath( this.path )
@@ -103,7 +110,17 @@ class MaterialXLoader extends Loader {
 
 				try {
 
-					onLoad( this.parseBuffer( data, url, options ) );
+					const parsed = this._parseBuffer( data, url, options );
+
+					parsed.document.waitForResources().then( () => {
+
+						parsed.result.errors = parsed.log.errors;
+						parsed.result.warnings = parsed.log.warnings;
+						this._throwOnErrors( parsed.log, options );
+						onLoad( parsed.result );
+						this.manager.itemEnd( url );
+
+					} ).catch( _onError );
 
 				} catch ( e ) {
 
@@ -153,6 +170,14 @@ class MaterialXLoader extends Loader {
 	 */
 	parseBuffer( data, url = '', options = {} ) {
 
+		const parsed = this._parseBuffer( data, url, options );
+		this._throwOnErrors( parsed.log, options );
+		return parsed.result;
+
+	}
+
+	_parseBuffer( data, url = '', options = {} ) {
+
 		this.dispose();
 
 		let text;
@@ -181,7 +206,7 @@ class MaterialXLoader extends Loader {
 
 		}
 
-		return this.parse( text, {
+		return this._parse( text, {
 			...options,
 			archiveResolver,
 			path: options.path || getResourcePath( this.path, url )
@@ -199,17 +224,37 @@ class MaterialXLoader extends Loader {
 	 * @param {string} [options.materialName] - Only translate the material with this name. Defaults to all materials.
 	 * @param {string} [options.uvSpace='bottom-left'] - The UV space of the document's textures, `'bottom-left'` or `'top-left'`.
 	 * @param {Function} [options.interfaceValidator] - Validates node interfaces, see `createStrictInterfaceValidator()` in `MaterialXInterfaceValidation.js`.
+	 * @param {function(Object, ?string): ?Node} [options.nodeResolver] - Builds the TSL node of a MaterialX node before the built-in node library. Called with the node and the requested output (`null` for the default output); returns the node, or `null` to leave it to the loader. For channel outputs such as `outx`, the loader takes the channel of the returned node.
+	 * @param {boolean} [options.valuesAsUniforms=false] - Use uniforms for float, vector, color and matrix inputs.
+	 * This allows value changes without rebuilding the material. Integers and booleans stay constant.
+	 * Features controlled by uniforms stay enabled so later edits can turn them on.
 	 * @param {boolean} [options.throwOnErrors=true] - Whether translation errors throw or are only reported in the log.
-	 * @return {{materials: Object<string,NodeMaterial>, log: Array<Object>, errors: Array<Object>, warnings: Array<Object>}} The materials keyed by name and the translation log.
+	 * @return {{materials: Object<string,NodeMaterial>, uniforms: Object<string,UniformNode>, log: Array<Object>, errors: Array<Object>, warnings: Array<Object>}} Materials by name, uniforms by input path (when enabled), and translation diagnostics.
 	 */
 	parse( text, options = {} ) {
+
+		const parsed = this._parse( text, options );
+		this._throwOnErrors( parsed.log, options );
+		return parsed.result;
+
+	}
+
+	_parse( text, options = {} ) {
 
 		const log = new MaterialXLog();
 
 		const document = new MaterialXDocument( this.manager, options.path || this.path, log, options.archiveResolver || null, options.uvSpace );
 		const result = document.parse( text, options.materialName || null, {
 			interfaceValidator: options.interfaceValidator,
+			nodeResolver: options.nodeResolver,
+			valuesAsUniforms: options.valuesAsUniforms,
 		} );
+
+		return { document, log, result };
+
+	}
+
+	_throwOnErrors( log, options ) {
 
 		if ( options.throwOnErrors !== false && log.errors.length > 0 ) {
 
@@ -217,8 +262,6 @@ class MaterialXLoader extends Loader {
 			throw new Error( `THREE.MaterialXLoader: MaterialX translation failed with ${log.errors.length} error(s). ${details}` );
 
 		}
-
-		return result;
 
 	}
 

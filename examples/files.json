@@ -219,6 +219,7 @@
 		"webgl_tonemapping",
 		"webgl_video_kinect",
 		"webgl_video_panorama_equirectangular",
+		"webgl_loader_multiple",
 		"webgl_watch"
 	],
 	"webgl / postprocessing": [
@@ -390,6 +391,7 @@
 		"webgpu_loader_gltf_sheen",
 		"webgpu_loader_gltf_transmission",
 		"webgpu_loader_materialx",
+		"webgpu_loader_materialx_drop",
 		"webgpu_loader_texture_ktx2",
 		"webgpu_materials",
 		"webgpu_materials_alphahash",

@@ -1580,6 +1580,18 @@ class GLTFWriter {
 
 		if ( cache.textures.has( map ) ) return cache.textures.get( map );
 
+		const beforeWriteArgs = { keep: true, newTexture: null };
+
+		await this._invokeAllAsync( function ( ext ) {
+
+			ext.beforeWriteTexture && ext.beforeWriteTexture( map, beforeWriteArgs );
+
+		} );
+
+		if ( beforeWriteArgs.keep === false ) return null;
+
+		if ( beforeWriteArgs.newTexture != null ) map = beforeWriteArgs.newTexture;
+
 		if ( ! json.textures ) json.textures = [];
 
 		// make non-readable textures (e.g. CompressedTexture) readable by blitting them into a new texture
@@ -1685,9 +1697,11 @@ class GLTFWriter {
 		}
 
 		// pbrMetallicRoughness.metallicRoughnessTexture
-		if ( material.metalnessMap || material.roughnessMap ) {
+		const metalnessMap = material.metalnessMap?.image ? material.metalnessMap : undefined;
+		const roughnessMap = material.roughnessMap?.image ? material.roughnessMap : undefined;
+		if ( metalnessMap || roughnessMap ) {
 
-			const metalRoughTexture = await this.buildMetalRoughTextureAsync( material.metalnessMap, material.roughnessMap );
+			const metalRoughTexture = await this.buildMetalRoughTextureAsync( metalnessMap, roughnessMap );
 
 			const metalRoughMapDef = {
 				index: await this.processTextureAsync( metalRoughTexture ),
@@ -1722,7 +1736,7 @@ class GLTFWriter {
 			}
 
 			// emissiveTexture
-			if ( material.emissiveMap ) {
+			if ( material.emissiveMap?.image ) {
 
 				const emissiveMapDef = {
 					index: await this.processTextureAsync( material.emissiveMap ),
@@ -1736,7 +1750,7 @@ class GLTFWriter {
 		}
 
 		// normalTexture
-		if ( material.normalMap ) {
+		if ( material.normalMap?.image ) {
 
 			const normalScale = material.normalScale;
 
@@ -1788,7 +1802,7 @@ class GLTFWriter {
 		}
 
 		// occlusionTexture
-		if ( material.aoMap ) {
+		if ( material.aoMap?.image ) {
 
 			const occlusionMapDef = {
 				index: await this.processTextureAsync( material.aoMap ),
@@ -1846,6 +1860,20 @@ class GLTFWriter {
 	 * @return {Promise<?number>} Index of the processed mesh in the "meshes" array
 	 */
 	async processMeshAsync( mesh ) {
+
+		const beforeWriteArgs = { keep: true }
+
+		await this._invokeAllAsync( function ( ext ) {
+
+			ext.beforeWriteMesh && ext.beforeWriteMesh( mesh, beforeWriteArgs );
+
+		} );
+
+		if ( beforeWriteArgs.keep != true ) {
+
+			return null;
+
+		}
 
 		const cache = this.cache;
 		const json = this.json;
@@ -2015,14 +2043,14 @@ class GLTFWriter {
 
 				for ( const attributeName in geometry.morphAttributes ) {
 
-					// glTF 2.0 morph supports only POSITION/NORMAL/TANGENT.
+					// glTF 2.0 morph supports only POSITION/NORMAL/TANGENT/COLOR.
 					// Three.js doesn't support TANGENT yet.
 
-					if ( attributeName !== 'position' && attributeName !== 'normal' ) {
+					if ( attributeName !== 'position' && attributeName !== 'normal' && attributeName !== 'color' ) {
 
 						if ( ! warned ) {
 
-							console.warn( 'GLTFExporter: Only POSITION and NORMAL morph are supported.' );
+							console.warn( 'GLTFExporter: Only POSITION, NORMAL and COLOR morph are supported.' );
 							warned = true;
 
 						}
@@ -2032,7 +2060,7 @@ class GLTFWriter {
 					}
 
 					const attribute = geometry.morphAttributes[ attributeName ][ i ];
-					const gltfAttributeName = attributeName.toUpperCase();
+					const gltfAttributeName = attributeName.toUpperCase() + ( attributeName === 'color' ? '_0' : '' );
 
 					// Three.js morph attribute has absolute values while the one of glTF has relative values.
 					//
@@ -2456,6 +2484,20 @@ class GLTFWriter {
 	 * @return {Promise<number>} Index of the node in the nodes list
 	 */
 	async processNodeAsync( object ) {
+
+		const beforeWriteArgs = { keep: true }
+
+		await this._invokeAllAsync( function ( ext ) {
+
+			ext.beforeWriteNode && ext.beforeWriteNode( object, beforeWriteArgs );
+
+		} );
+
+		if ( beforeWriteArgs.keep != true ) {
+
+			return null;
+
+		}
 
 		const json = this.json;
 		const options = this.options;

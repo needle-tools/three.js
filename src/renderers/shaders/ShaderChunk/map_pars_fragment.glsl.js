@@ -3,5 +3,9 @@ export default /* glsl */`
 
 	uniform sampler2D map;
 
+#ifdef USE_MIPMAP_BIAS
+    uniform float mipmapBias;
+#endif
+
 #endif
 `;

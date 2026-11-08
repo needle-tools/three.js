@@ -188,7 +188,7 @@
 					new THREE.SphereGeometry( .05, 8, 8 ),
 					new THREE.MeshBasicNodeMaterial( { color: 0xffffff } )
 				);
-				scene.add( particleLight );
+				particleLight.receiveShadow = true;
 
 				const pointLight = new THREE.PointLight( 0xffffff, 30 );
 				pointLight.castShadow = true;
@@ -199,7 +199,6 @@
 				renderer.shadowMap.enabled = true;
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
-				renderer.setAnimationLoop( animate );
 				document.body.appendChild( renderer.domElement );
 
 				//

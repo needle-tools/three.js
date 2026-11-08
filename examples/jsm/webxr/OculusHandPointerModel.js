@@ -309,6 +309,9 @@ class OculusHandPointerModel extends Object3D {
 		this.pointerObject.add( this.cursorObject );
 
 		this.add( this.pointerObject );
+		// NEEDLE: The pointer object should by default inherit layers from the hand object.
+		this.pointerObject.layers.mask = this.layers.mask;
+		this.pointerMesh.layers.mask = this.layers.mask;
 
 	}
 

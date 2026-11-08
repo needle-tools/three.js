@@ -53,7 +53,7 @@ import { WebGLMaterials } from './webgl/WebGLMaterials.js';
 import { WebGLUniformsGroups } from './webgl/WebGLUniformsGroups.js';
 import { createCanvasElement, probeAsync, error, warn, log } from '../utils.js';
 import { ColorManagement } from '../math/ColorManagement.js';
-import { getDFGLUT } from './shaders/DFGLUTData.js';
+import { createDFGLUT } from './shaders/DFGLUTData.js';
 
 /**
  * This renderer uses WebGL 2 to display scenes.
@@ -302,6 +302,7 @@ class WebGLRenderer {
 
 		let _isContextLost = false;
 		let _nodesHandler = null;
+		let _dfgLUT = null;
 
 		let _scratchFramebuffer = null;
 		let _srcFramebuffer = null;
@@ -1090,6 +1091,14 @@ class WebGLRenderer {
 			canvas.removeEventListener( 'webglcontextcreationerror', onContextCreationError, false );
 
 			background.dispose();
+			// A global LUT retains every renderer through its texture dispose listeners.
+			// Release this renderer's internal texture before clearing WebGL properties.
+			if ( _dfgLUT !== null ) {
+
+				_dfgLUT.dispose();
+				_dfgLUT = null;
+
+			}
 			renderLists.dispose();
 			renderStates.dispose();
 			properties.dispose();
@@ -1361,6 +1370,8 @@ class WebGLRenderer {
 
 			if ( _clippingEnabled === true ) clipping.setState( material, camera, false );
 
+			if ( _nodesHandler !== null && material.isNodeMaterial ) _nodesHandler.setObject( object, material );
+
 			if ( material.transparent === true && material.side === DoubleSide && material.forceSinglePass === false ) {
 
 				material.side = BackSide;
@@ -1449,9 +1460,7 @@ class WebGLRenderer {
 
 			if ( _clippingEnabled === true ) clipping.setGlobalState( this.clippingPlanes, camera );
 
-			// node materials reference the shadow map when they are built, so it must exist by now
-
-			if ( _nodesHandler !== null ) shadowMap.render( currentRenderState.state.shadowsArray, targetScene, camera );
+			if ( _nodesHandler !== null ) shadowMap.setup( currentRenderState.state.shadowsArray, targetScene );
 
 			// Only initialize materials in the new scene, not the targetScene.
 
@@ -2245,6 +2254,8 @@ class WebGLRenderer {
 
 				}
 
+				material.onBuild( object, parameters, _this );
+
 				material.onBeforeCompile( parameters, _this );
 
 				program = programCache.acquireProgram( parameters, programCacheKey );
@@ -2569,11 +2580,12 @@ class WebGLRenderer {
 
 			}
 
-			if ( material.id !== _currentMaterialId ) {
+			if ( material.id !== _currentMaterialId || material._forceRefresh ) {
 
 				_currentMaterialId = material.id;
 
 				refreshMaterial = true;
+				material._forceRefresh = false;
 
 			}
 
@@ -2742,7 +2754,8 @@ class WebGLRenderer {
 			// Set DFG LUT for physically-based materials
 			if ( m_uniforms.dfgLUT !== undefined ) {
 
-				m_uniforms.dfgLUT.value = getDFGLUT();
+				if ( _dfgLUT === null ) _dfgLUT = createDFGLUT();
+				m_uniforms.dfgLUT.value = _dfgLUT;
 
 			}
 

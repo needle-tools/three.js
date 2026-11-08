@@ -17,6 +17,8 @@ import { linearDepth } from '../display/ViewportDepthNode.js';
  */
 export const viewportSafeUV = /*@__PURE__*/ Fn( ( [ uv = null ] ) => {
 
+	uv = uv || screenUV;
+
 	const depth = linearDepth();
 	const depthDiff = linearDepth( viewportDepthTexture( uv ) ).sub( depth );
 	const finalUV = depthDiff.lessThan( 0 ).select( screenUV, uv );
