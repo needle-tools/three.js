@@ -5,6 +5,13 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.186.2-alpha.0] – 2026-11-09
+- Base the Needle package on upstream three.js 0.186.1, retaining CubeUV PMREM support for existing FastHDR environments.
+- Carry Needle controls, exporter extensions, WebGL node materials, USD Preview Surface, Disney principled and bounded volumes.
+- Include MaterialX editable uniforms, nodegraph implementations, geometry properties, texture defaults and color-space fixes.
+- Include Gaussian Float32 SH/HDR inputs, projection, opacity-aware tails and GPU resource disposal fixes.
+- Clamp TRAA border reads and backport framebuffer texture cloning and storage-buffer disposal fixes.
+
 ## [0.185.2-alpha.8] – 2026-11-03
 - Keep cloned framebuffer texture dimensions independent, fixing WebGPU transmission copies after preview and capture resizes (upstream #34636).
 - Fix `viewportSafeUV()` using zero coordinates when its optional UV input is omitted.

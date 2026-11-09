@@ -9,8 +9,8 @@ import {
 	mx_fractal_noise_float as fractal_noise_float, mx_fractal_noise_vec2 as fractal_noise_vec2, mx_fractal_noise_vec3 as fractal_noise_vec3, mx_fractal_noise_vec4 as fractal_noise_vec4
 } from './MaterialXNoise.js';
 import { mx_rotate2d, mx_rotate3d } from './MaterialXCore.js';
-import { mx_hsvtorgb, mx_rgbtohsv } from './lib/mx_hsv.js';
-import { mx_srgb_texture_to_lin_rec709 } from './lib/mx_transform_color.js';
+import { mx_hsvtorgb, mx_rgbtohsv } from './MaterialXColor.js';
+import { mx_srgb_texture_to_lin_rec709 } from './MaterialXColorTransform.js';
 
 import { Fn, float, bool, vec2, vec3, vec4, int, mat3, add, sub, mul, div, atan, mix, pow, smoothstep, step, floor, clamp, normalize, fract, abs, min, max, reflect, not as tslNot, xor as tslXor } from '../tsl/TSLBase.js';
 import { uv } from '../accessors/UV.js';
