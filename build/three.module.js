@@ -3,7 +3,7 @@
  * Copyright 2010-2026 Three.js Authors
  * SPDX-License-Identifier: MIT
  */
-import { Matrix3, Vector2, Color, Vector3, mergeUniforms, CubeUVReflectionMapping, Mesh, BoxGeometry, ShaderMaterial, BackSide, cloneUniforms, Matrix4, ColorManagement, SRGBTransfer, PlaneGeometry, FrontSide, getUnlitUniformColorSpace, IntType, warn, HalfFloatType, UnsignedByteType, FloatType, RGBAFormat, Plane, CubeReflectionMapping, CubeRefractionMapping, BufferGeometry, OrthographicCamera, PerspectiveCamera, NoToneMapping, MeshBasicMaterial, NoBlending, WebGLRenderTarget, BufferAttribute, LinearSRGBColorSpace, LinearFilter, CubeTexture, LinearMipmapLinearFilter, CubeCamera, EquirectangularReflectionMapping, EquirectangularRefractionMapping, warnOnce, Uint32BufferAttribute, Uint16BufferAttribute, error, DataArrayTexture, Vector4, Float32BufferAttribute, RawShaderMaterial, CustomToneMapping, NeutralToneMapping, AgXToneMapping, ACESFilmicToneMapping, CineonToneMapping, ReinhardToneMapping, LinearToneMapping, Data3DTexture, GreaterEqualCompare, LessEqualCompare, DepthTexture, Texture, GLSL3, VSMShadowMap, PCFShadowMap, AddOperation, MixOperation, MultiplyOperation, LinearTransfer, UniformsUtils, DoubleSide, NormalBlending, TangentSpaceNormalMap, ObjectSpaceNormalMap, Layers, RGFormat, RG11_EAC_Format, RED_GREEN_RGTC2_Format, MeshDepthMaterial, MeshDistanceMaterial, PCFSoftShadowMap, DepthFormat, NearestFilter, CubeDepthTexture, UnsignedIntType, Frustum, LessEqualDepth, ReverseSubtractEquation, SubtractEquation, AddEquation, OneMinusConstantAlphaFactor, ConstantAlphaFactor, OneMinusConstantColorFactor, ConstantColorFactor, OneMinusDstAlphaFactor, OneMinusDstColorFactor, OneMinusSrcAlphaFactor, OneMinusSrcColorFactor, DstAlphaFactor, DstColorFactor, SrcAlphaSaturateFactor, SrcAlphaFactor, SrcColorFactor, OneFactor, ZeroFactor, NotEqualDepth, GreaterDepth, GreaterEqualDepth, EqualDepth, LessDepth, AlwaysDepth, NeverDepth, CullFaceNone, CullFaceBack, CullFaceFront, CustomBlending, MultiplyBlending, SubtractiveBlending, AdditiveBlending, ReversedDepthFuncs, MinEquation, MaxEquation, MirroredRepeatWrapping, ClampToEdgeWrapping, RepeatWrapping, LinearMipmapNearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, NotEqualCompare, GreaterCompare, EqualCompare, LessCompare, AlwaysCompare, NeverCompare, NoColorSpace, DepthStencilFormat, getByteLength, UnsignedInt248Type, UnsignedShortType, createElementNS, UnsignedShort4444Type, UnsignedShort5551Type, UnsignedInt5999Type, UnsignedInt101111Type, ByteType, ShortType, AlphaFormat, RGBFormat, RedFormat, RedIntegerFormat, RGIntegerFormat, RGBAIntegerFormat, RGB_S3TC_DXT1_Format, RGBA_S3TC_DXT1_Format, RGBA_S3TC_DXT3_Format, RGBA_S3TC_DXT5_Format, RGB_PVRTC_4BPPV1_Format, RGB_PVRTC_2BPPV1_Format, RGBA_PVRTC_4BPPV1_Format, RGBA_PVRTC_2BPPV1_Format, RGB_ETC1_Format, RGB_ETC2_Format, RGBA_ETC2_EAC_Format, R11_EAC_Format, SIGNED_R11_EAC_Format, SIGNED_RG11_EAC_Format, RGBA_ASTC_4x4_Format, RGBA_ASTC_5x4_Format, RGBA_ASTC_5x5_Format, RGBA_ASTC_6x5_Format, RGBA_ASTC_6x6_Format, RGBA_ASTC_8x5_Format, RGBA_ASTC_8x6_Format, RGBA_ASTC_8x8_Format, RGBA_ASTC_10x5_Format, RGBA_ASTC_10x6_Format, RGBA_ASTC_10x8_Format, RGBA_ASTC_10x10_Format, RGBA_ASTC_12x10_Format, RGBA_ASTC_12x12_Format, RGBA_BPTC_Format, RGB_BPTC_SIGNED_Format, RGB_BPTC_UNSIGNED_Format, RED_RGTC1_Format, SIGNED_RED_RGTC1_Format, SIGNED_RED_GREEN_RGTC2_Format, ExternalTexture, EventDispatcher, ArrayCamera, WebXRController, RAD2DEG, DataTexture, createCanvasElement, SRGBColorSpace, REVISION, log, WebGLCoordinateSystem, probeAsync } from './three.core.js';
+import { Matrix3, Vector2, Color, Vector3, mergeUniforms, CubeUVReflectionMapping, Mesh, BoxGeometry, ShaderMaterial, BackSide, cloneUniforms, Matrix4, ColorManagement, SRGBTransfer, PlaneGeometry, FrontSide, getUnlitUniformColorSpace, IntType, warn, HalfFloatType, UnsignedByteType, FloatType, RGBAFormat, Plane, CubeReflectionMapping, CubeRefractionMapping, BufferGeometry, OrthographicCamera, PerspectiveCamera, NoToneMapping, MeshBasicMaterial, NoBlending, WebGLRenderTarget, BufferAttribute, LinearSRGBColorSpace, LinearFilter, CubeTexture, LinearMipmapLinearFilter, CubeCamera, EquirectangularReflectionMapping, EquirectangularRefractionMapping, warnOnce, Uint32BufferAttribute, Uint16BufferAttribute, error, DataArrayTexture, Vector4, Float32BufferAttribute, RawShaderMaterial, CustomToneMapping, NeutralToneMapping, AgXToneMapping, ACESFilmicToneMapping, CineonToneMapping, ReinhardToneMapping, LinearToneMapping, Data3DTexture, GreaterEqualCompare, LessEqualCompare, DepthTexture, Texture, GLSL3, VSMShadowMap, PCFShadowMap, AddOperation, MixOperation, MultiplyOperation, LinearTransfer, UniformsUtils, DoubleSide, NormalBlending, TangentSpaceNormalMap, ObjectSpaceNormalMap, Layers, RGFormat, RG11_EAC_Format, RED_GREEN_RGTC2_Format, MeshDepthMaterial, MeshDistanceMaterial, Frustum, PCFSoftShadowMap, DepthFormat, NearestFilter, CubeDepthTexture, UnsignedIntType, LessEqualDepth, ReverseSubtractEquation, SubtractEquation, AddEquation, OneMinusConstantAlphaFactor, ConstantAlphaFactor, OneMinusConstantColorFactor, ConstantColorFactor, OneMinusDstAlphaFactor, OneMinusDstColorFactor, OneMinusSrcAlphaFactor, OneMinusSrcColorFactor, DstAlphaFactor, DstColorFactor, SrcAlphaSaturateFactor, SrcAlphaFactor, SrcColorFactor, OneFactor, ZeroFactor, NotEqualDepth, GreaterDepth, GreaterEqualDepth, EqualDepth, LessDepth, AlwaysDepth, NeverDepth, CullFaceNone, CullFaceBack, CullFaceFront, CustomBlending, MultiplyBlending, SubtractiveBlending, AdditiveBlending, ReversedDepthFuncs, MinEquation, MaxEquation, MirroredRepeatWrapping, ClampToEdgeWrapping, RepeatWrapping, LinearMipmapNearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, NotEqualCompare, GreaterCompare, EqualCompare, LessCompare, AlwaysCompare, NeverCompare, NoColorSpace, DepthStencilFormat, getByteLength, UnsignedInt248Type, UnsignedShortType, createElementNS, UnsignedShort4444Type, UnsignedShort5551Type, UnsignedInt5999Type, UnsignedInt101111Type, ByteType, ShortType, AlphaFormat, RGBFormat, RedFormat, RedIntegerFormat, RGIntegerFormat, RGBAIntegerFormat, RGB_S3TC_DXT1_Format, RGBA_S3TC_DXT1_Format, RGBA_S3TC_DXT3_Format, RGBA_S3TC_DXT5_Format, RGB_PVRTC_4BPPV1_Format, RGB_PVRTC_2BPPV1_Format, RGBA_PVRTC_4BPPV1_Format, RGBA_PVRTC_2BPPV1_Format, RGB_ETC1_Format, RGB_ETC2_Format, RGBA_ETC2_EAC_Format, R11_EAC_Format, SIGNED_R11_EAC_Format, SIGNED_RG11_EAC_Format, RGBA_ASTC_4x4_Format, RGBA_ASTC_5x4_Format, RGBA_ASTC_5x5_Format, RGBA_ASTC_6x5_Format, RGBA_ASTC_6x6_Format, RGBA_ASTC_8x5_Format, RGBA_ASTC_8x6_Format, RGBA_ASTC_8x8_Format, RGBA_ASTC_10x5_Format, RGBA_ASTC_10x6_Format, RGBA_ASTC_10x8_Format, RGBA_ASTC_10x10_Format, RGBA_ASTC_12x10_Format, RGBA_ASTC_12x12_Format, RGBA_BPTC_Format, RGB_BPTC_SIGNED_Format, RGB_BPTC_UNSIGNED_Format, RED_RGTC1_Format, SIGNED_RED_RGTC1_Format, SIGNED_RED_GREEN_RGTC2_Format, ExternalTexture, EventDispatcher, ArrayCamera, WebXRController, RAD2DEG, DataTexture, createCanvasElement, SRGBColorSpace, REVISION, log, WebGLCoordinateSystem, probeAsync } from './three.core.js';
 export { AdditiveAnimationBlendMode, AlwaysStencilFunc, AmbientLight, AnimationAction, AnimationClip, AnimationLoader, AnimationMixer, AnimationObjectGroup, AnimationUtils, ArcCurve, ArrowHelper, AttachedBindMode, Audio, AudioAnalyser, AudioContext, AudioListener, AudioLoader, AxesHelper, BasicDepthPacking, BasicShadowMap, BatchedMesh, BezierInterpolant, Bone, BooleanKeyframeTrack, Box2, Box3, Box3Helper, BoxHelper, BufferGeometryLoader, Cache, Camera, CameraHelper, CanvasTexture, CapsuleGeometry, CatmullRomCurve3, CircleGeometry, Clock, ColorKeyframeTrack, Compatibility, CompressedArrayTexture, CompressedCubeTexture, CompressedTexture, CompressedTextureLoader, ConeGeometry, Controls, CubeTextureLoader, CubicBezierCurve, CubicBezierCurve3, CubicInterpolant, CullFaceFrontBack, Curve, CurvePath, CylinderGeometry, Cylindrical, DataTextureLoader, DataUtils, DecrementStencilOp, DecrementWrapStencilOp, DefaultLoadingManager, DetachedBindMode, DirectionalLight, DirectionalLightHelper, DiscreteInterpolant, DodecahedronGeometry, DynamicCopyUsage, DynamicDrawUsage, DynamicReadUsage, EdgesGeometry, EllipseCurve, EqualStencilFunc, Euler, ExtrudeGeometry, FileLoader, Float16BufferAttribute, Fog, FogExp2, FramebufferTexture, FrustumArray, GLBufferAttribute, GLSL1, GreaterEqualStencilFunc, GreaterStencilFunc, GridHelper, Group, HTMLTexture, HemisphereLight, HemisphereLightHelper, IcosahedronGeometry, ImageBitmapLoader, ImageLoader, ImageUtils, IncrementStencilOp, IncrementWrapStencilOp, InstancedBufferAttribute, InstancedBufferGeometry, InstancedInterleavedBuffer, InstancedMesh, Int16BufferAttribute, Int32BufferAttribute, Int8BufferAttribute, InterleavedBuffer, InterleavedBufferAttribute, Interpolant, InterpolateBezier, InterpolateDiscrete, InterpolateLinear, InterpolateSmooth, InterpolationSamplingMode, InterpolationSamplingType, InvertStencilOp, KeepStencilOp, KeyframeTrack, LOD, LatheGeometry, LessEqualStencilFunc, LessStencilFunc, Light, LightProbe, LightShadow, Line, Line3, LineBasicMaterial, LineCurve, LineCurve3, LineDashedMaterial, LineLoop, LineSegments, LinearInterpolant, LinearMipMapLinearFilter, LinearMipMapNearestFilter, Loader, LoaderUtils, LoadingManager, LoopOnce, LoopPingPong, LoopRepeat, MOUSE, Material, MaterialBlending, MaterialLoader, MathUtils, Matrix2, MeshLambertMaterial, MeshMatcapMaterial, MeshNormalMaterial, MeshPhongMaterial, MeshPhysicalMaterial, MeshStandardMaterial, MeshToonMaterial, NearestMipMapLinearFilter, NearestMipMapNearestFilter, NeverStencilFunc, NoNormalPacking, NormalAnimationBlendMode, NormalGAPacking, NormalRGPacking, NotEqualStencilFunc, NumberKeyframeTrack, Object3D, ObjectLoader, OctahedronGeometry, Path, PlaneHelper, PointLight, PointLightHelper, Points, PointsMaterial, PolarGridHelper, PolyhedronGeometry, PositionalAudio, PropertyBinding, PropertyMixer, QuadraticBezierCurve, QuadraticBezierCurve3, Quaternion, QuaternionKeyframeTrack, QuaternionLinearInterpolant, RGBADepthPacking, RGBDepthPacking, RGBIntegerFormat, RGDepthPacking, Ray, Raycaster, RectAreaLight, RenderObjectRefreshType, RenderTarget, RenderTarget3D, ReplaceStencilOp, RingGeometry, Scene, ShadowMaterial, Shape, ShapeGeometry, ShapePath, ShapeUtils, Skeleton, SkeletonHelper, SkinnedMesh, Source, Sphere, SphereGeometry, Spherical, SphericalHarmonics3, SplineCurve, SpotLight, SpotLightHelper, Sprite, SpriteMaterial, StaticCopyUsage, StaticDrawUsage, StaticReadUsage, StereoCamera, StreamCopyUsage, StreamDrawUsage, StreamReadUsage, StringKeyframeTrack, TOUCH, TetrahedronGeometry, TextureLoader, TextureSource, TextureUtils, Timer, TimestampQuery, TorusGeometry, TorusKnotGeometry, Triangle, TriangleFanDrawMode, TriangleStripDrawMode, TrianglesDrawMode, TubeGeometry, UVMapping, Uint8BufferAttribute, Uint8ClampedBufferAttribute, Uniform, UniformsGroup, VectorKeyframeTrack, VideoFrameTexture, VideoTexture, WebGL3DRenderTarget, WebGLArrayRenderTarget, WebGPUCoordinateSystem, WireframeGeometry, WrapAroundEnding, ZeroCurvatureEnding, ZeroSlopeEnding, ZeroStencilOp, getConsoleFunction, setConsoleFunction } from './three.core.js';
 
 function WebGLAnimation() {
@@ -416,9 +416,9 @@ var logdepthbuf_pars_vertex = "#ifdef USE_LOGARITHMIC_DEPTH_BUFFER\n\tvarying fl
 
 var logdepthbuf_vertex = "#ifdef USE_LOGARITHMIC_DEPTH_BUFFER\n\tvFragDepth = 1.0 + gl_Position.w;\n\tvIsPerspective = float( isPerspectiveMatrix( projectionMatrix ) );\n#endif";
 
-var map_fragment = "#ifdef USE_MAP\n\tvec4 sampledDiffuseColor = texture2D( map, vMapUv );\n\t#ifdef DECODE_VIDEO_TEXTURE\n\t\tsampledDiffuseColor = sRGBTransferEOTF( sampledDiffuseColor );\n\t#endif\n\tdiffuseColor *= sampledDiffuseColor;\n#endif";
+var map_fragment = "#ifdef USE_MAP\n#ifdef USE_MIPMAP_BIAS\n    vec4 sampledDiffuseColor = texture2D( map, vMapUv, mipmapBias );\n#else\n\tvec4 sampledDiffuseColor = texture2D( map, vMapUv );\n#endif\n\t#ifdef DECODE_VIDEO_TEXTURE\n\t\tsampledDiffuseColor = sRGBTransferEOTF( sampledDiffuseColor );\n\t#endif\n\tdiffuseColor *= sampledDiffuseColor;\n#endif";
 
-var map_pars_fragment = "#ifdef USE_MAP\n\tuniform sampler2D map;\n#endif";
+var map_pars_fragment = "#ifdef USE_MAP\n\tuniform sampler2D map;\n#ifdef USE_MIPMAP_BIAS\n    uniform float mipmapBias;\n#endif\n#endif";
 
 var map_particle_fragment = "#if defined( USE_MAP ) || defined( USE_ALPHAMAP )\n\t#if defined( USE_POINTS_UV )\n\t\tvec2 uv = vUv;\n\t#else\n\t\tvec2 uv = ( uvTransform * vec3( gl_PointCoord.x, 1.0 - gl_PointCoord.y, 1 ) ).xy;\n\t#endif\n#endif\n#ifdef USE_MAP\n\tdiffuseColor *= texture2D( map, uv );\n#endif\n#ifdef USE_ALPHAMAP\n\tdiffuseColor.a *= texture2D( alphaMap, uv ).g;\n#endif";
 
@@ -5761,11 +5761,30 @@ function setValueV4uiArray( gl, v ) {
 
 // Array of textures (2D / 3D / Cube / 2DArray)
 
+const _warnedEmptySamplerArray = new Set();
+
 function setValueT1Array( gl, v, textures ) {
 
 	const cache = this.cache;
 
 	const n = v.length;
+
+	// An empty sampler array (`sampler2D x[0]`) has nothing to bind, and Chrome throws
+	// "WebGL: INVALID_VALUE: uniform1iv: no array" on `gl.uniform1iv([])` — every frame.
+	// Skip the upload (a genuine no-op) and warn once per uniform so the source of the
+	// empty array can be tracked down. Seen with empty shadow sampler arrays (ContactShadows).
+	if ( n === 0 ) {
+
+		if ( ! _warnedEmptySamplerArray.has( this.id ) ) {
+
+			_warnedEmptySamplerArray.add( this.id );
+			console.warn( `THREE.WebGLUniforms: skipping empty sampler array uniform '${ this.id }' (nothing to bind).` );
+
+		}
+
+		return;
+
+	}
 
 	const units = allocTexUnits( textures, n );
 
@@ -8174,6 +8193,8 @@ function WebGLRenderList() {
 
 		const renderItem = getNextRenderItem( object, geometry, material, groupOrder, z, group );
 
+		object.onBeforeRenderListPush?.( object, geometry, material, group );
+
 		if ( material.transmission > 0.0 ) {
 
 			transmissive.push( renderItem );
@@ -8187,6 +8208,8 @@ function WebGLRenderList() {
 			opaque.push( renderItem );
 
 		}
+
+		object.onAfterRenderListPush?.( object, geometry, material, group );
 
 	}
 
@@ -9140,45 +9163,48 @@ function WebGLShadowMap( renderer, objects, capabilities ) {
 	this.type = PCFShadowMap;
 	let _previousType = this.type;
 
-	this.render = function ( lights, scene, camera ) {
+	function updateShadowMapSize( shadow ) {
 
-		if ( scope.enabled === false ) return;
-		if ( scope.autoUpdate === false && scope.needsUpdate === false ) return;
+		_shadowMapSize.copy( shadow.mapSize );
 
-		if ( lights.length === 0 ) return;
+		const shadowFrameExtents = shadow.getFrameExtents();
 
-		if ( this.type === PCFSoftShadowMap ) {
+		_shadowMapSize.multiply( shadowFrameExtents );
+
+		_viewportSize.copy( shadow.mapSize );
+
+		if ( _shadowMapSize.x > _maxTextureSize || _shadowMapSize.y > _maxTextureSize ) {
+
+			if ( _shadowMapSize.x > _maxTextureSize ) {
+
+				_viewportSize.x = Math.floor( _maxTextureSize / shadowFrameExtents.x );
+				_shadowMapSize.x = _viewportSize.x * shadowFrameExtents.x;
+				shadow.mapSize.x = _viewportSize.x;
+
+			}
+
+			if ( _shadowMapSize.y > _maxTextureSize ) {
+
+				_viewportSize.y = Math.floor( _maxTextureSize / shadowFrameExtents.y );
+				_shadowMapSize.y = _viewportSize.y * shadowFrameExtents.y;
+				shadow.mapSize.y = _viewportSize.y;
+
+			}
+
+		}
+
+	}
+
+	function setupShadowMapType( scene ) {
+
+		if ( scope.type === PCFSoftShadowMap ) {
 
 			warn( 'WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.' );
-			this.type = PCFShadowMap;
+			scope.type = PCFShadowMap;
 
 		}
 
-		const currentRenderTarget = renderer.getRenderTarget();
-		const activeCubeFace = renderer.getActiveCubeFace();
-		const activeMipmapLevel = renderer.getActiveMipmapLevel();
-
-		const _state = renderer.state;
-
-		// Set GL state for depth map.
-		_state.setBlending( NoBlending );
-
-		if ( _state.buffers.depth.getReversed() === true ) {
-
-			_state.buffers.color.setClear( 0, 0, 0, 0 );
-
-		} else {
-
-			_state.buffers.color.setClear( 1, 1, 1, 1 );
-
-		}
-
-		_state.buffers.depth.setTest( true );
-		_state.setScissorTest( false );
-
-		// check for shadow map type changes
-
-		const typeChanged = _previousType !== this.type;
+		const typeChanged = _previousType !== scope.type;
 
 		// When shadow map type changes, materials need recompilation because sampler types change
 		// (sampler2DShadow for PCF vs sampler2D for Basic)
@@ -9204,6 +9230,155 @@ function WebGLShadowMap( renderer, objects, capabilities ) {
 
 		}
 
+		return typeChanged;
+
+	}
+
+	function setupShadowMap( light, typeChanged ) {
+
+		const shadow = light.shadow;
+
+		if ( shadow === undefined ) {
+
+			warn( 'WebGLShadowMap:', light, 'has no shadow.' );
+			return null;
+
+		}
+
+		updateShadowMapSize( shadow );
+
+		const reversedDepthBuffer = renderer.state.buffers.depth.getReversed();
+		shadow.camera._reversedDepth = reversedDepthBuffer;
+
+		if ( shadow.map === null || typeChanged === true ) {
+
+			if ( shadow.map !== null ) {
+
+				if ( shadow.map.depthTexture !== null ) {
+
+					shadow.map.depthTexture.dispose();
+					shadow.map.depthTexture = null;
+
+				}
+
+				shadow.map.dispose();
+
+			}
+
+			if ( scope.type === VSMShadowMap ) {
+
+				if ( light.isPointLight ) {
+
+					warn( 'WebGLShadowMap: VSM shadow maps are not supported for PointLights. Use PCF or BasicShadowMap instead.' );
+					return null;
+
+				}
+
+				shadow.map = new WebGLRenderTarget( _shadowMapSize.x, _shadowMapSize.y, {
+					format: RGFormat,
+					type: HalfFloatType,
+					minFilter: LinearFilter,
+					magFilter: LinearFilter,
+					generateMipmaps: false
+				} );
+				shadow.map.texture.name = light.name + '.shadowMap';
+
+				// Native depth texture for VSM - depth is captured here, then blurred into the color texture
+				shadow.map.depthTexture = new DepthTexture( _shadowMapSize.x, _shadowMapSize.y, FloatType );
+				shadow.map.depthTexture.name = light.name + '.shadowMapDepth';
+				shadow.map.depthTexture.format = DepthFormat;
+				shadow.map.depthTexture.compareFunction = null; // For regular sampling (not shadow comparison)
+				shadow.map.depthTexture.minFilter = NearestFilter;
+				shadow.map.depthTexture.magFilter = NearestFilter;
+
+			} else {
+
+				if ( light.isPointLight ) {
+
+					shadow.map = new WebGLCubeRenderTarget( _shadowMapSize.x );
+					shadow.map.depthTexture = new CubeDepthTexture( _shadowMapSize.x, UnsignedIntType );
+
+				} else {
+
+					shadow.map = new WebGLRenderTarget( _shadowMapSize.x, _shadowMapSize.y );
+					shadow.map.depthTexture = new DepthTexture( _shadowMapSize.x, _shadowMapSize.y, UnsignedIntType );
+
+				}
+
+				shadow.map.depthTexture.name = light.name + '.shadowMap';
+				shadow.map.depthTexture.format = DepthFormat;
+
+				if ( scope.type === PCFShadowMap ) {
+
+					shadow.map.depthTexture.compareFunction = reversedDepthBuffer ? GreaterEqualCompare : LessEqualCompare;
+					shadow.map.depthTexture.minFilter = LinearFilter;
+					shadow.map.depthTexture.magFilter = LinearFilter;
+
+				} else {
+
+					shadow.map.depthTexture.compareFunction = null;
+					shadow.map.depthTexture.minFilter = NearestFilter;
+					shadow.map.depthTexture.magFilter = NearestFilter;
+
+				}
+
+			}
+
+			shadow.camera.updateProjectionMatrix();
+
+		}
+
+		return shadow;
+
+	}
+
+	this.setup = function ( lights, scene ) {
+
+		if ( scope.enabled === false || lights.length === 0 ) return;
+
+		const typeChanged = setupShadowMapType( scene );
+
+		for ( let i = 0, il = lights.length; i < il; i ++ ) {
+
+			setupShadowMap( lights[ i ], typeChanged );
+
+		}
+
+		_previousType = scope.type;
+
+	};
+
+	this.render = function ( lights, scene, camera ) {
+
+		if ( scope.enabled === false ) return;
+		if ( scope.autoUpdate === false && scope.needsUpdate === false ) return;
+
+		if ( lights.length === 0 ) return;
+
+		const typeChanged = setupShadowMapType( scene );
+
+		const currentRenderTarget = renderer.getRenderTarget();
+		const activeCubeFace = renderer.getActiveCubeFace();
+		const activeMipmapLevel = renderer.getActiveMipmapLevel();
+
+		const _state = renderer.state;
+
+		// Set GL state for depth map.
+		_state.setBlending( NoBlending );
+
+		if ( _state.buffers.depth.getReversed() === true ) {
+
+			_state.buffers.color.setClear( 0, 0, 0, 0 );
+
+		} else {
+
+			_state.buffers.color.setClear( 1, 1, 1, 1 );
+
+		}
+
+		_state.buffers.depth.setTest( true );
+		_state.setScissorTest( false );
+
 		// render depth map
 
 		for ( let i = 0, il = lights.length; i < il; i ++ ) {
@@ -9211,123 +9386,9 @@ function WebGLShadowMap( renderer, objects, capabilities ) {
 			const light = lights[ i ];
 			const shadow = light.shadow;
 
-			if ( shadow === undefined ) {
+			if ( shadow !== undefined && shadow.autoUpdate === false && shadow.needsUpdate === false ) continue;
 
-				warn( 'WebGLShadowMap:', light, 'has no shadow.' );
-				continue;
-
-			}
-
-			if ( shadow.autoUpdate === false && shadow.needsUpdate === false ) continue;
-
-			_shadowMapSize.copy( shadow.mapSize );
-
-			const shadowFrameExtents = shadow.getFrameExtents();
-
-			_shadowMapSize.multiply( shadowFrameExtents );
-
-			_viewportSize.copy( shadow.mapSize );
-
-			if ( _shadowMapSize.x > _maxTextureSize || _shadowMapSize.y > _maxTextureSize ) {
-
-				if ( _shadowMapSize.x > _maxTextureSize ) {
-
-					_viewportSize.x = Math.floor( _maxTextureSize / shadowFrameExtents.x );
-					_shadowMapSize.x = _viewportSize.x * shadowFrameExtents.x;
-					shadow.mapSize.x = _viewportSize.x;
-
-				}
-
-				if ( _shadowMapSize.y > _maxTextureSize ) {
-
-					_viewportSize.y = Math.floor( _maxTextureSize / shadowFrameExtents.y );
-					_shadowMapSize.y = _viewportSize.y * shadowFrameExtents.y;
-					shadow.mapSize.y = _viewportSize.y;
-
-				}
-
-			}
-
-			const reversedDepthBuffer = renderer.state.buffers.depth.getReversed();
-			shadow.camera._reversedDepth = reversedDepthBuffer;
-
-			if ( shadow.map === null || typeChanged === true ) {
-
-				if ( shadow.map !== null ) {
-
-					if ( shadow.map.depthTexture !== null ) {
-
-						shadow.map.depthTexture.dispose();
-						shadow.map.depthTexture = null;
-
-					}
-
-					shadow.map.dispose();
-
-				}
-
-				if ( this.type === VSMShadowMap ) {
-
-					if ( light.isPointLight ) {
-
-						warn( 'WebGLShadowMap: VSM shadow maps are not supported for PointLights. Use PCF or BasicShadowMap instead.' );
-						continue;
-
-					}
-
-					shadow.map = new WebGLRenderTarget( _shadowMapSize.x, _shadowMapSize.y, {
-						format: RGFormat,
-						type: HalfFloatType,
-						minFilter: LinearFilter,
-						magFilter: LinearFilter,
-						generateMipmaps: false
-					} );
-					shadow.map.texture.name = light.name + '.shadowMap';
-
-					// Native depth texture for VSM - depth is captured here, then blurred into the color texture
-					shadow.map.depthTexture = new DepthTexture( _shadowMapSize.x, _shadowMapSize.y, FloatType );
-					shadow.map.depthTexture.name = light.name + '.shadowMapDepth';
-					shadow.map.depthTexture.format = DepthFormat;
-					shadow.map.depthTexture.compareFunction = null; // For regular sampling (not shadow comparison)
-					shadow.map.depthTexture.minFilter = NearestFilter;
-					shadow.map.depthTexture.magFilter = NearestFilter;
-
-				} else {
-
-					if ( light.isPointLight ) {
-
-						shadow.map = new WebGLCubeRenderTarget( _shadowMapSize.x );
-						shadow.map.depthTexture = new CubeDepthTexture( _shadowMapSize.x, UnsignedIntType );
-
-					} else {
-
-						shadow.map = new WebGLRenderTarget( _shadowMapSize.x, _shadowMapSize.y );
-						shadow.map.depthTexture = new DepthTexture( _shadowMapSize.x, _shadowMapSize.y, UnsignedIntType );
-
-					}
-
-					shadow.map.depthTexture.name = light.name + '.shadowMap';
-					shadow.map.depthTexture.format = DepthFormat;
-
-					if ( this.type === PCFShadowMap ) {
-
-						shadow.map.depthTexture.compareFunction = reversedDepthBuffer ? GreaterEqualCompare : LessEqualCompare;
-						shadow.map.depthTexture.minFilter = LinearFilter;
-						shadow.map.depthTexture.magFilter = LinearFilter;
-
-					} else {
-
-						shadow.map.depthTexture.compareFunction = null;
-						shadow.map.depthTexture.minFilter = NearestFilter;
-						shadow.map.depthTexture.magFilter = NearestFilter;
-
-					}
-
-				}
-
-				shadow.camera.updateProjectionMatrix();
-
-			}
+			if ( setupShadowMap( light, typeChanged ) === null ) continue;
 
 			if ( shadow.map.isWebGLCubeRenderTarget !== true && ( shadow.map.width !== _shadowMapSize.x || shadow.map.height !== _shadowMapSize.y ) ) {
 
@@ -9422,7 +9483,7 @@ function WebGLShadowMap( renderer, objects, capabilities ) {
 
 		}
 
-		_previousType = this.type;
+		_previousType = scope.type;
 
 		scope.needsUpdate = false;
 
@@ -13993,6 +14054,8 @@ class WebXRManager extends EventDispatcher {
 		 */
 		this.isPresenting = false;
 
+		this.controllerAutoUpdate = true;
+
 		/**
 		 * Returns a group representing the `target ray` space of the XR controller.
 		 * Use this space for visualizing 3D objects that support the user in pointing
@@ -14111,7 +14174,7 @@ class WebXRManager extends EventDispatcher {
 
 				controllerInputSources[ i ] = null;
 
-				controllers[ i ].disconnect( inputSource );
+				if ( controllers[ i ] ) controllers[ i ].disconnect( inputSource );
 
 			}
 
@@ -14457,7 +14520,7 @@ class WebXRManager extends EventDispatcher {
 				if ( index >= 0 ) {
 
 					controllerInputSources[ index ] = null;
-					controllers[ index ].disconnect( inputSource );
+					if ( controllers[ index ] ) controllers[ index ].disconnect( inputSource );
 
 				}
 
@@ -14963,14 +15026,18 @@ class WebXRManager extends EventDispatcher {
 
 			//
 
-			for ( let i = 0; i < controllers.length; i ++ ) {
+			if ( scope.controllerAutoUpdate ) {
 
-				const inputSource = controllerInputSources[ i ];
-				const controller = controllers[ i ];
+				for ( let i = 0; i < controllers.length; i ++ ) {
 
-				if ( inputSource !== null && controller !== undefined ) {
+					const inputSource = controllerInputSources[ i ];
+					const controller = controllers[ i ];
 
-					controller.update( inputSource, frame, customReferenceSpace || referenceSpace );
+					if ( inputSource !== null && controller !== undefined ) {
+
+						controller.update( inputSource, frame, customReferenceSpace || referenceSpace );
+
+					}
 
 				}
 
@@ -16071,22 +16138,17 @@ const DATA = new Uint16Array( [
 	0x3c00, 0x0000, 0x3c00, 0x0001, 0x3bff, 0x0015, 0x3bfb, 0x0059, 0x3bf2, 0x00fd, 0x3bdd, 0x01df, 0x3bb7, 0x031c, 0x3b79, 0x047c, 0x3b1d, 0x05d4, 0x3aa0, 0x06d5, 0x3a08, 0x075a, 0x395d, 0x075e, 0x38aa, 0x06f7, 0x37f4, 0x0648, 0x36ac, 0x0576, 0x3586, 0x049f
 ] );
 
-let lut = null;
+function createDFGLUT() {
 
-function getDFGLUT() {
-
-	if ( lut === null ) {
-
-		lut = new DataTexture( DATA, 16, 16, RGFormat, HalfFloatType );
-		lut.name = 'DFG_LUT';
-		lut.minFilter = LinearFilter;
-		lut.magFilter = LinearFilter;
-		lut.wrapS = ClampToEdgeWrapping;
-		lut.wrapT = ClampToEdgeWrapping;
-		lut.generateMipmaps = false;
-		lut.needsUpdate = true;
-
-	}
+	// Pixel data is shared; the texture and its WebGL listeners belong to one renderer.
+	const lut = new DataTexture( DATA, 16, 16, RGFormat, HalfFloatType );
+	lut.name = 'DFG_LUT';
+	lut.minFilter = LinearFilter;
+	lut.magFilter = LinearFilter;
+	lut.wrapS = ClampToEdgeWrapping;
+	lut.wrapT = ClampToEdgeWrapping;
+	lut.generateMipmaps = false;
+	lut.needsUpdate = true;
 
 	return lut;
 
@@ -16339,6 +16401,7 @@ class WebGLRenderer {
 
 		let _isContextLost = false;
 		let _nodesHandler = null;
+		let _dfgLUT = null;
 
 		let _scratchFramebuffer = null;
 		let _srcFramebuffer = null;
@@ -17127,6 +17190,15 @@ class WebGLRenderer {
 			canvas.removeEventListener( 'webglcontextcreationerror', onContextCreationError, false );
 
 			background.dispose();
+			// A global LUT retains every renderer through its texture dispose listeners.
+			// Release this renderer's internal texture before clearing WebGL properties.
+			if ( _dfgLUT !== null ) {
+
+				_dfgLUT.dispose();
+				_dfgLUT = null;
+
+			}
+
 			renderLists.dispose();
 			renderStates.dispose();
 			properties.dispose();
@@ -17398,6 +17470,8 @@ class WebGLRenderer {
 
 			if ( _clippingEnabled === true ) clipping.setState( material, camera, false );
 
+			if ( _nodesHandler !== null && material.isNodeMaterial ) _nodesHandler.setObject( object, material );
+
 			if ( material.transparent === true && material.side === DoubleSide && material.forceSinglePass === false ) {
 
 				material.side = BackSide;
@@ -17486,9 +17560,7 @@ class WebGLRenderer {
 
 			if ( _clippingEnabled === true ) clipping.setGlobalState( this.clippingPlanes, camera );
 
-			// node materials reference the shadow map when they are built, so it must exist by now
-
-			if ( _nodesHandler !== null ) shadowMap.render( currentRenderState.state.shadowsArray, targetScene, camera );
+			if ( _nodesHandler !== null ) shadowMap.setup( currentRenderState.state.shadowsArray, targetScene );
 
 			// Only initialize materials in the new scene, not the targetScene.
 
@@ -18282,6 +18354,8 @@ class WebGLRenderer {
 
 				}
 
+				material.onBuild( object, parameters, _this );
+
 				material.onBeforeCompile( parameters, _this );
 
 				program = programCache.acquireProgram( parameters, programCacheKey );
@@ -18606,11 +18680,12 @@ class WebGLRenderer {
 
 			}
 
-			if ( material.id !== _currentMaterialId ) {
+			if ( material.id !== _currentMaterialId || material._forceRefresh ) {
 
 				_currentMaterialId = material.id;
 
 				refreshMaterial = true;
+				material._forceRefresh = false;
 
 			}
 
@@ -18779,7 +18854,8 @@ class WebGLRenderer {
 			// Set DFG LUT for physically-based materials
 			if ( m_uniforms.dfgLUT !== undefined ) {
 
-				m_uniforms.dfgLUT.value = getDFGLUT();
+				if ( _dfgLUT === null ) _dfgLUT = createDFGLUT();
+				m_uniforms.dfgLUT.value = _dfgLUT;
 
 			}
 
