@@ -1099,6 +1099,7 @@ class WebGLRenderer {
 				_dfgLUT = null;
 
 			}
+
 			renderLists.dispose();
 			renderStates.dispose();
 			properties.dispose();
