@@ -5,6 +5,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.186.2-alpha.1] – 2026-11-21
+- Fix TSL expressions shared by several conditional blocks reading an unassigned value: r186 cached the expression inside the first block that used it (upstream #34531).
+
 ## [0.186.2-alpha.0] – 2026-11-09
 - Base the Needle package on upstream three.js 0.186.1, retaining CubeUV PMREM support for existing FastHDR environments.
 - Carry Needle controls, exporter extensions, WebGL node materials, USD Preview Surface, Disney principled and bounded volumes.
