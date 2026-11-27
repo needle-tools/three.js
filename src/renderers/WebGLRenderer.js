@@ -2255,7 +2255,8 @@ class WebGLRenderer {
 
 				}
 
-				material.onBuild( object, parameters, _this );
+				// onBuild is a legacy hook that upstream materials may omit.
+				material.onBuild?.( object, parameters, _this );
 
 				material.onBeforeCompile( parameters, _this );
 
